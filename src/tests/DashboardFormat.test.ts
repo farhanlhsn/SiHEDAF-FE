@@ -5,7 +5,9 @@ import {
   formatConfidence,
   formatWib,
   isNormalResult,
+  resultStatus,
   shareOf,
+  splitShares,
   tracePath,
 } from "../components/dashboard/DashboardFormat";
 
@@ -61,4 +63,30 @@ test("refuses to draw a trace from missing or single-sample data", () => {
 
 test("centres a flat signal instead of dividing by zero", () => {
   assert.equal(tracePath([3, 3, 3], 100, 40), "M0 20L50 20L100 20");
+});
+
+test("reads result status as normal, af, or unknown", () => {
+  assert.equal(resultStatus("Normal Rhythm"), "normal");
+  assert.equal(resultStatus("AF Detected"), "af");
+  assert.equal(resultStatus("Atrial Fibrillation"), "af");
+  assert.equal(resultStatus(undefined), "unknown");
+  assert.equal(resultStatus(null), "unknown");
+  assert.equal(resultStatus(""), "unknown");
+});
+
+test("splits counts into shares that always add up to 100", () => {
+  assert.deepEqual(splitShares([7, 1], 8), [88, 12]);
+  assert.deepEqual(splitShares([20, 3], 23), [87, 13]);
+  assert.deepEqual(splitShares([19, 3], 23), [83, 13]);
+  assert.deepEqual(splitShares([1, 1, 1], 3), [34, 33, 33]);
+  assert.deepEqual(splitShares([0, 0], 0), [0, 0]);
+  assert.deepEqual(splitShares([5, 0], 5), [100, 0]);
+  assert.deepEqual(splitShares([Number.NaN, -2], 5), [0, 0]);
+
+  for (let total = 1; total <= 60; total += 1) {
+    for (let af = 0; af <= total; af += 1) {
+      const [normal, afShare] = splitShares([total - af, af], total);
+      assert.equal(normal + afShare, 100, `total ${total}, af ${af}`);
+    }
+  }
 });
