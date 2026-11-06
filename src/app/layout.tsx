@@ -14,9 +14,28 @@ const switzer = localFont({
   display: "swap",
 });
 
+const siteUrl = process.env.SIHEDAF_SITE_URL;
+const siteDescription =
+  "Wearable PPG dan AI untuk deteksi dini Atrial Fibrillation, faktor risiko utama stroke. Pantau irama jantungmu dari pergelangan tangan.";
+
 export const metadata: Metadata = {
+  // Absolute URLs for link previews; set SIHEDAF_SITE_URL in production.
+  metadataBase: siteUrl ? new URL(siteUrl) : undefined,
   title: "SiHEDAF",
-  description: "SiHEDAF",
+  description: siteDescription,
+  applicationName: "SiHEDAF",
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    siteName: "SiHEDAF",
+    title: "SiHEDAF — Deteksi dini risiko stroke dengan AI",
+    description: siteDescription,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SiHEDAF — Deteksi dini risiko stroke dengan AI",
+    description: siteDescription,
+  },
 };
 
 export default function RootLayout({

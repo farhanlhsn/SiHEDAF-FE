@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import {
   useMyDevice,
@@ -103,10 +104,12 @@ export function useDashboardOverview() {
           }
         }
       } else {
-        alert(json.message || "Gagal mengubah status monitoring");
+        toast.error(json.message || "Gagal mengubah status monitoring.");
       }
     } catch {
-      alert("Terjadi kesalahan saat mengubah status monitoring");
+      toast.error(
+        "Terjadi kesalahan saat mengubah status monitoring. Coba lagi.",
+      );
     } finally {
       setIsTogglingAction(false);
     }

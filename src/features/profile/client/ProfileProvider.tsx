@@ -11,6 +11,8 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 
+import { PulseLoader } from "@/components/ui/PulseLoader";
+
 import type { UserProfile } from "@/features/profile/shared/ProfileTypes";
 
 import { fetchCurrentProfile } from "./services/ProfileClient";
@@ -103,12 +105,7 @@ export function ProfileProvider({
         aria-busy="true"
         className="grid min-h-dvh place-items-center bg-paper px-6"
       >
-        <div className="text-center">
-          <span className="mx-auto block h-9 w-9 animate-spin rounded-full border-4 border-primary-100 border-t-primary-300" />
-          <p className="mt-4 text-[15px] font-medium text-primary-900">
-            Memverifikasi sesi...
-          </p>
-        </div>
+        <PulseLoader label="Memverifikasi sesi..." />
       </main>
     );
   }

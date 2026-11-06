@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { DashboardIcon } from "@/components/dashboard/DashboardIcon";
 import { DashboardModal } from "@/components/dashboard/DashboardModal";
 import { ProfileAvatar } from "@/components/dashboard/ProfileAvatar";
+import { PulseLoader } from "@/components/ui/PulseLoader";
 import { useMyDevice } from "@/components/dashboard/hooks/UseMyDevice";
 import { useLogout } from "@/features/profile/client/hooks/UseLogout";
 import { useUpdatePassword } from "@/features/profile/client/hooks/UseUpdatePassword";
@@ -116,7 +117,7 @@ export function ProfileView() {
   if (isLoading) {
     return (
       <section aria-busy="true" className="px-4 py-8 sm:px-7 lg:px-10 lg:py-10">
-        <div className="h-56 max-w-[760px] animate-pulse rounded-[24px] bg-white" />
+        <PulseLoader className="max-w-[760px] py-24" label="Memuat profil..." />
       </section>
     );
   }

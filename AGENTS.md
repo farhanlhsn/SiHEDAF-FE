@@ -48,6 +48,14 @@ Sebelum mengubah API, route, layout, metadata, atau convention Next.js, baca pan
 - Footer gelap memuat kepanjangan SiHEDAF dan disclaimer bahwa SiHEDAF bukan pengganti diagnosis dokter.
 - Setiap section dipisahkan ke komponen PascalCase di `src/components/sections`; elemen visual landing ada di `src/components/landing`.
 
+### Halaman sistem dan metadata
+
+- `app/not-found.tsx` (404 "Sinyal hilang") dan `app/error.tsx` (memakai `unstable_retry` dari Next 16) memakai visual `SignalLost`: garis PPG yang terputus lalu tersambung lagi.
+- `app/(dashboard)/loading.tsx`, gerbang sesi di `ProfileProvider`, dan skeleton profil memakai `PulseLoader` (sinyal pendek berjalan di atas garis PPG, `role="status"`).
+- Tidak ada `alert()` bawaan browser; error memakai toast (`sonner`) yang ditema dengan token `primary`, `af`, dan `warn`.
+- Metadata root berisi deskripsi, Open Graph (`locale: "id_ID"`), dan Twitter `summary_large_image`; `app/opengraph-image.tsx` membuat gambar pratinjau 1200×630 dengan garis PPG normal → AF, dan `app/icon.svg` adalah favicon line-art.
+- Set `SIHEDAF_SITE_URL` (server-only, lihat `.env.example`) di production agar URL gambar pratinjau absolut; tanpa itu Next memakai `localhost` dan memberi peringatan saat build.
+
 ### Tim Kami
 
 - Route `/tim-kami` dengan shared header/footer.
@@ -130,6 +138,7 @@ Token permukaan halaman publik:
 Semantic colors yang konsisten dipakai pada dashboard:
 
 - AF/error: `#FF4572` (`af-500`) dengan background `#FFE8EE` (`af-50`); teks kecil AF memakai `#C8264F` (`af-700`) agar kontrasnya lolos AA.
+- Peringatan non-medis (toast warning): `warn-50` `#FFF7E6`, `warn-500` `#C98613`, `warn-700` `#8A5A00`.
 - Di visual landing, irama normal memakai biru `primary-300`, bukan hijau: pasangan hijau–pink gagal uji buta warna (deutan ΔE 2.7), sedangkan biru–pink lolos. Status selalu disertai ikon/label.
 - Normal/success: sekitar `#43B956`–`#4BC35A` dengan background `#E6F7E9`.
 - App background: `#F7F7F8`; card background: `#FFFFFF`.

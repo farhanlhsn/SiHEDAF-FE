@@ -19,10 +19,20 @@ test("themes every Sonner state with the SiHEDAF palette", async () => {
   assert.match(toaster, /LoaderCircle/);
   assert.match(toaster, /X/);
   assert.match(toaster, /icons={{/);
-  assert.match(toaster, /success: "border-\[#BDE9C5\] bg-\[#F2FBF4\]"/);
-  assert.match(toaster, /error: "border-\[#FFC2D1\] bg-\[#FFF5F7\]"/);
-  assert.match(toaster, /info: "border-primary-200 bg-primary-50"/);
-  assert.match(toaster, /warning: "border-\[#F7D58B\] bg-\[#FFF9EB\]"/);
+  assert.match(toaster, /success: "border-primary-200 bg-primary-50"/);
+  assert.match(toaster, /error: "border-af-500\/30 bg-af-50"/);
+  assert.match(toaster, /info: "border-primary-900\/15 bg-white"/);
+  assert.match(toaster, /warning: "border-warn-500\/40 bg-warn-50"/);
+  assert.doesNotMatch(
+    toaster,
+    /\[#[0-9A-Fa-f]{3,8}\]/,
+    "toasts use palette tokens only",
+  );
+  assert.doesNotMatch(
+    toaster,
+    /text-\[(?:[0-9]|1[0-2])px\]/,
+    "toast text stays at 13px or larger",
+  );
   assert.match(toaster, /actionButton:/);
   assert.match(toaster, /closeButton:/);
   assert.match(toaster, /rounded-\[18px\]/);

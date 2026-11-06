@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { DashboardModal } from "@/components/dashboard/DashboardModal";
 import { ProfileAvatar } from "@/components/dashboard/ProfileAvatar";
+import { PulseLoader } from "@/components/ui/PulseLoader";
 import { useMyDevice } from "@/components/dashboard/hooks/UseMyDevice";
 import { useUpdateProfile } from "@/features/profile/client/hooks/UseUpdateProfile";
 import { useProfile } from "@/features/profile/client/ProfileProvider";
@@ -222,10 +223,9 @@ export function EditProfileView() {
           Ubah Profil
         </h1>
         {isLoading ? (
-          <div
-            aria-busy="true"
-            className="mt-8 h-96 animate-pulse rounded-[24px] bg-white"
-          />
+          <div aria-busy="true" className="mt-8">
+            <PulseLoader className="py-24" label="Memuat profil..." />
+          </div>
         ) : error || !user ? (
           <div className="mt-8 rounded-[24px] border border-af-500/30 bg-white p-7">
             <p className="text-[16px] font-medium text-af-700">

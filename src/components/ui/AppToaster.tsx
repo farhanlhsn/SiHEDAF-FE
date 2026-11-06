@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Toaster } from "sonner";
 
-const iconClassName = "h-[18px] w-[18px] shrink-0";
+const iconClassName = "h-5 w-5 shrink-0";
 
 export function AppToaster() {
   return (
@@ -24,25 +24,25 @@ export function AppToaster() {
         success: (
           <CheckCircle2
             aria-hidden="true"
-            className={`${iconClassName} text-[#43B956]`}
+            className={`${iconClassName} text-primary-300`}
           />
         ),
         error: (
           <CircleAlert
             aria-hidden="true"
-            className={`${iconClassName} text-[#FF4572]`}
+            className={`${iconClassName} text-af-700`}
           />
         ),
         info: (
           <Info
             aria-hidden="true"
-            className={`${iconClassName} text-primary-300`}
+            className={`${iconClassName} text-primary-500`}
           />
         ),
         warning: (
           <TriangleAlert
             aria-hidden="true"
-            className={`${iconClassName} text-[#C98613]`}
+            className={`${iconClassName} text-warn-500`}
           />
         ),
         loading: (
@@ -51,7 +51,7 @@ export function AppToaster() {
             className={`${iconClassName} animate-spin text-primary-300`}
           />
         ),
-        close: <X aria-hidden="true" className="h-3.5 w-3.5" />,
+        close: <X aria-hidden="true" className="h-4 w-4" />,
       }}
       mobileOffset={{ top: 12, left: 12, right: 12 }}
       offset={{ top: 20 }}
@@ -68,23 +68,23 @@ export function AppToaster() {
         unstyled: true,
         classNames: {
           toast:
-            "pointer-events-auto relative flex w-[min(380px,calc(100vw-24px))] items-start gap-3 rounded-[18px] border px-4 py-3.5 pr-11 font-sans shadow-[0_16px_42px_rgba(0,49,113,0.14)]",
-          default: "border-primary-200 bg-white",
-          info: "border-primary-200 bg-primary-50",
-          success: "border-[#BDE9C5] bg-[#F2FBF4]",
-          error: "border-[#FFC2D1] bg-[#FFF5F7]",
-          warning: "border-[#F7D58B] bg-[#FFF9EB]",
-          loading: "border-primary-200 bg-white",
+            "pointer-events-auto relative flex w-[min(380px,calc(100vw-24px))] items-start gap-3 rounded-[18px] border-[1.5px] px-4 py-4 pr-12 font-sans shadow-[0_18px_44px_rgba(0,39,88,0.16)]",
+          default: "border-primary-900/15 bg-white",
+          info: "border-primary-900/15 bg-white",
+          success: "border-primary-200 bg-primary-50",
+          error: "border-af-500/30 bg-af-50",
+          warning: "border-warn-500/40 bg-warn-50",
+          loading: "border-primary-900/15 bg-white",
           content: "min-w-0 flex-1",
           icon: "mt-0.5 flex shrink-0 items-center",
-          title: "text-[13px] font-semibold leading-5 text-primary-900",
-          description: "mt-0.5 text-[12px] leading-5 text-primary-900/65",
+          title: "text-[15px] font-semibold leading-[1.4] text-primary-900",
+          description: "mt-0.5 text-[14px] leading-[1.45] text-primary-900/80",
           closeButton:
-            "absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full border border-primary-100 bg-white text-primary-700 shadow-sm transition-colors hover:border-primary-200 hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-primary-300",
+            "absolute top-2.5 right-2.5 grid h-8 w-8 place-items-center rounded-full border border-primary-900/15 bg-white text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300",
           actionButton:
-            "rounded-full bg-primary-300 px-3 py-1.5 text-[12px] font-semibold text-white transition-colors hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-primary-300",
+            "rounded-full bg-primary-900 px-3.5 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-primary-800 focus-visible:outline-2 focus-visible:outline-primary-300",
           cancelButton:
-            "rounded-full border border-primary-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-primary-700 transition-colors hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-primary-300",
+            "rounded-full border border-primary-900/20 bg-white px-3.5 py-2 text-[14px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300",
         },
       }}
       visibleToasts={1}

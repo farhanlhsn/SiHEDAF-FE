@@ -21,6 +21,9 @@
   --color-primary-900: #002758;
   --color-paper: #f5f3ee;
   --color-paper-deep: #ebe6dc;
+  --color-warn-50: #fff7e6;
+  --color-warn-500: #c98613;
+  --color-warn-700: #8a5a00;
   --color-af-50: #ffe8ee;
   --color-af-500: #ff4572;
   --color-af-700: #c8264f;
@@ -660,6 +663,72 @@ footer[id] {
   }
 }
 
+/* Loading: a short signal travels along a PPG trace. */
+.pulse-loader-track,
+.pulse-loader-line {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.pulse-loader-track {
+  stroke: rgb(0 39 88 / 0.1);
+}
+
+.pulse-loader-line {
+  animation: pulse-loader 1.4s linear infinite;
+  stroke: #006efb;
+  stroke-dasharray: 0.32 0.68;
+}
+
+@keyframes pulse-loader {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* 404 / error: the trace drops out, then picks up again. */
+.signal-lost-wave {
+  animation: signal-lost-draw 1.4s cubic-bezier(0.65, 0, 0.35, 1) 200ms both;
+  stroke: #006efb;
+  stroke-dasharray: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.signal-lost-wave-late {
+  animation-delay: 1.5s;
+}
+
+.signal-lost-gap {
+  animation: signal-lost-scan 1.6s ease-in-out 1.4s infinite;
+  stroke: rgb(0 39 88 / 0.35);
+  stroke-dasharray: 2 14;
+  stroke-linecap: round;
+  stroke-width: 3;
+}
+
+@keyframes signal-lost-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes signal-lost-scan {
+  50% {
+    stroke: rgb(0 110 251 / 0.7);
+  }
+}
+
 /* In-view reveals. `InView` sets data-play once the block scrolls in. */
 .reveal {
   transition:
@@ -721,6 +790,17 @@ footer[id] {
 
   .monitor-sweep {
     display: none;
+  }
+
+  .pulse-loader-line,
+  .signal-lost-wave,
+  .signal-lost-gap {
+    animation: none !important;
+    stroke-dasharray: none;
+  }
+
+  .signal-lost-gap {
+    stroke-dasharray: 2 14;
   }
 
   [data-play="false"] .reveal,
