@@ -12,6 +12,7 @@ const viewFiles = [
   "components/dashboard/DashboardSidebar.tsx",
   "components/dashboard/DashboardTopbar.tsx",
   "components/dashboard/DashboardOverview.tsx",
+  "components/dashboard/FirstRunGuide.tsx",
   "components/dashboard/SignalChart.tsx",
   "components/dashboard/PpgTrace.tsx",
   "components/dashboard/Sparkline.tsx",

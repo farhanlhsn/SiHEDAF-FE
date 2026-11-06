@@ -7,6 +7,7 @@ import {
   useMyDevice,
   type MeasurementDevice,
 } from "@/components/dashboard/hooks/UseMyDevice";
+import { firstRunSteps } from "@/components/dashboard/FirstRun";
 import { isNormalResult } from "@/components/dashboard/DashboardFormat";
 import { useProfile } from "@/features/profile/client/ProfileProvider";
 
@@ -35,6 +36,7 @@ export function useDashboardOverview() {
 
   const { device: deviceData } = useMyDevice();
   const [latestData, setLatestData] = useState<MeasurementData | null>(null);
+  const [hasLoadedLatest, setHasLoadedLatest] = useState(false);
   const [signalsData, setSignalsData] = useState<number[]>([]);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
@@ -51,6 +53,8 @@ export function useDashboardOverview() {
         }
       } catch (e) {
         console.error("Gagal memuat data terakhir:", e);
+      } finally {
+        setHasLoadedLatest(true);
       }
     }
     fetchLatest();
@@ -117,14 +121,21 @@ export function useDashboardOverview() {
 
   const firstName = user?.fullname ? user.fullname.split(" ")[0] : "Pengguna";
   const isNormal = isNormalResult(latestData?.resultLabel);
+  const firstRunGuideSteps = firstRunSteps({
+    deviceOnline: deviceData?.status === "ONLINE",
+    monitoringActive: isMonitoringActive,
+    hasResult: Boolean(latestData),
+  });
 
   return {
     user,
     firstName,
     deviceData,
     latestData,
+    hasLoadedLatest,
     signalsData,
     isNormal,
+    firstRunGuideSteps,
     isMonitoringActive,
     monitoringRange,
     setMonitoringRange,

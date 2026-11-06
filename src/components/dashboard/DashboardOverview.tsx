@@ -15,6 +15,7 @@ import {
   formatConfidence,
   formatWib,
 } from "@/components/dashboard/DashboardFormat";
+import { FirstRunGuide } from "@/components/dashboard/FirstRunGuide";
 import { SignalChart } from "@/components/dashboard/SignalChart";
 import { Sparkline } from "@/components/dashboard/Sparkline";
 import { StatusMark } from "@/components/dashboard/StatusMark";
@@ -29,6 +30,8 @@ export function DashboardOverview() {
     firstName,
     deviceData,
     latestData,
+    hasLoadedLatest,
+    firstRunGuideSteps,
     signalsData,
     isNormal,
     isMonitoringActive,
@@ -56,13 +59,10 @@ export function DashboardOverview() {
         </p>
 
         <h1 className="mt-3 max-w-[900px] text-[clamp(2.3rem,4.4vw,4rem)] leading-[0.98] tracking-[-0.05em] text-primary-900">
-          {isNormal === null ? (
-            <>
-              <span className="font-bold">Belum ada hasil analisis.</span>{" "}
-              <span className="font-extralight">
-                Mulai monitoring untuk merekam sinyal pertamamu.
-              </span>
-            </>
+          {!hasLoadedLatest ? (
+            <span className="font-bold">Memuat hasil terakhir</span>
+          ) : isNormal === null ? (
+            <span className="font-bold">Belum ada hasil analisis.</span>
           ) : (
             <>
               <span className="font-extralight">Irama terakhirmu</span>{" "}
@@ -74,6 +74,10 @@ export function DashboardOverview() {
             </>
           )}
         </h1>
+
+        {hasLoadedLatest && !latestData ? (
+          <FirstRunGuide steps={firstRunGuideSteps} />
+        ) : null}
 
         {latestData ? (
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -125,7 +129,10 @@ export function DashboardOverview() {
           </div>
         ) : null}
 
-        <article className={`mt-10 ${panelClassName} px-5 pt-6 pb-5 sm:px-7`}>
+        <article
+          className={`mt-10 scroll-mt-24 ${panelClassName} px-5 pt-6 pb-5 sm:px-7`}
+          id="monitor"
+        >
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h2 className="text-[22px] font-bold tracking-[-0.03em] text-primary-900">

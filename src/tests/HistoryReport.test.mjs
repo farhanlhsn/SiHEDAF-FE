@@ -117,3 +117,21 @@ test("report only claims no AF when the summary agrees", async () => {
   assert.match(source, /totalAfib === 0\s*\?\s*"Tidak ada AF terdeteksi pada periode ini\."/);
   assert.ok(source.includes("Ringkasan mencatat ${report.summary.totalAfib} kejadian AF, tetapi kejadian tersebut berada di luar ${report.scanned} rekaman pertama yang ditampilkan. Persempit periode laporan untuk melihatnya."));
 });
+
+test("first-run guide shows only after the latest data loaded and is empty", async () => {
+  const overview = await read("components/dashboard/DashboardOverview.tsx");
+  const hook = await read("components/dashboard/hooks/UseDashboardOverview.ts");
+  const guide = await read("components/dashboard/FirstRunGuide.tsx");
+
+  assert.match(hook, /hasLoadedLatest/);
+  assert.match(hook, /finally\s*\{\s*setHasLoadedLatest\(true\)/);
+  assert.match(overview, /hasLoadedLatest && !latestData\s*\?\s*\(\s*<FirstRunGuide/);
+  assert.match(overview, /<article[^>]*id="monitor"/);
+  assert.match(overview, /!hasLoadedLatest[\s\S]*?Memuat hasil terakhir/);
+  assert.match(guide, /<a[\s\S]*?href="#monitor"/);
+  assert.match(guide, /aria-current=/);
+  assert.match(guide, /<ol/);
+  assert.match(guide, /Kenakan SiHEDAF di pergelangan tangan dan pastikan statusnya Terhubung\./);
+  assert.match(guide, /Tekan Mulai Monitoring\. Sinyal PPG akan direkam secara berkala\./);
+  assert.match(guide, /Hentikan monitoring untuk melihat hasil analisis pertamamu\./);
+});
