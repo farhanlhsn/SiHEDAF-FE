@@ -8,6 +8,10 @@ import {
   SessionExpiredError,
 } from "@/features/auth/session/client/ApiFetch";
 
+import {
+  describeCaughtError,
+  type DataError,
+} from "@/components/ui/FetchError";
 import { useMyDevice } from "@/components/dashboard/hooks/UseMyDevice";
 import type { HistoryItem } from "@/components/dashboard/hooks/UseHistoryView";
 import {
@@ -24,7 +28,11 @@ import {
 } from "@/components/dashboard/ReportRange";
 import { useProfile } from "@/features/profile/client/ProfileProvider";
 
-const FETCH_ERROR = "Gagal mengambil riwayat.";
+class HttpError extends Error {
+  constructor(readonly status?: number) {
+    super("Gagal mengambil riwayat.");
+  }
+}
 
 type InitialParams = { from?: string | string[]; to?: string | string[] };
 
@@ -36,9 +44,9 @@ const fetchHistoryPage: FetchHistoryPage = async (page, pageSize, range) => {
     endDate: range.to,
   });
   const res = await apiFetch(`/api/v1/measurement/history?${params.toString()}`);
-  if (!res.ok) throw new Error(FETCH_ERROR);
+  if (!res.ok) throw new HttpError(res.status);
   const json = await res.json();
-  if (json.code !== 200 || !json.data) throw new Error(FETCH_ERROR);
+  if (json.code !== 200 || !json.data) throw new HttpError(res.status);
 
   const items: HistoryItem[] = json.data.data ?? [];
   return {
@@ -63,7 +71,7 @@ export function useDoctorReport(initialParams: InitialParams) {
   const [reloadKey, setReloadKey] = useState(0);
   const [report, setReport] = useState<ReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<DataError | null>(null);
 
   useEffect(() => {
     let isCancelled = false;
@@ -75,14 +83,19 @@ export function useDoctorReport(initialParams: InitialParams) {
         const data = await collectReport(fetchHistoryPage, range);
         if (!isCancelled) setReport(data);
       } catch (error) {
+        // Navigating to /login: keep the loader instead of flashing no data.
         if (error instanceof SessionExpiredError) return;
         if (!isCancelled) {
           setReport(null);
-          setError(FETCH_ERROR);
+          setError(
+            describeCaughtError(
+              error,
+              error instanceof HttpError ? error.status : undefined,
+            ),
+          );
         }
-      } finally {
-        if (!isCancelled) setIsLoading(false);
       }
+      if (!isCancelled) setIsLoading(false);
     }
 
     void load();

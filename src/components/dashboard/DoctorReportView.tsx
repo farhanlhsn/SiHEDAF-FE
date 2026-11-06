@@ -13,6 +13,7 @@ import { StatusMark } from "@/components/dashboard/StatusMark";
 import { useDoctorReport } from "@/components/dashboard/hooks/UseDoctorReport";
 import { toDateRange } from "@/components/dashboard/ReportRange";
 import { BrandLogo } from "@/components/ui/BrandLogo";
+import { DataErrorState } from "@/components/ui/DataErrorState";
 import { PulseLoader } from "@/components/ui/PulseLoader";
 
 type DoctorReportViewProps = {
@@ -103,16 +104,7 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
           {isLoading ? (
             <PulseLoader className="py-16" label="Menyusun laporan..." />
           ) : error ? (
-            <div className="py-12 text-center" role="alert">
-              <p className="text-[0.9375rem] font-medium text-af-700">{error}</p>
-              <button
-                className="mt-4 h-11 rounded-full border-[1.5px] border-primary-900/20 px-6 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300 print:hidden"
-                onClick={reload}
-                type="button"
-              >
-                Coba lagi
-              </button>
-            </div>
+            <DataErrorState {...error} onRetry={reload} />
           ) : report ? (
             <>
               <section aria-label="Ringkasan" className="print-avoid-break mt-8">

@@ -7,6 +7,11 @@ import { id as localeId } from "date-fns/locale";
 
 import { formatWib } from "@/components/dashboard/DashboardFormat";
 import { StatusMark } from "@/components/dashboard/StatusMark";
+import { DataErrorState } from "@/components/ui/DataErrorState";
+import {
+  describeCaughtError,
+  type DataError,
+} from "@/components/ui/FetchError";
 import {
   apiFetch,
   SessionExpiredError,
@@ -27,30 +32,55 @@ type NotificationPanelProps = {
   onUnreadChange?: (hasUnread: boolean) => void;
 };
 
+class HttpError extends Error {
+  constructor(readonly status: number) {
+    super(`HTTP ${status}`);
+  }
+}
+
 export function NotificationPanel({
   onClose,
   onUnreadChange,
 }: NotificationPanelProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<DataError | null>(null);
+  const [reloadCount, setReloadCount] = useState(0);
 
   useEffect(() => {
+    let isCancelled = false;
+
     async function fetchNotifications() {
+      setIsLoading(true);
+      setLoadError(null);
       try {
         const res = await apiFetch("/api/v1/notification");
+        if (!res.ok) throw new HttpError(res.status);
         const json = await res.json();
-        if (json.code === 200 && json.data) {
+        if (!isCancelled && json.code === 200 && json.data) {
           setNotifications(json.data);
         }
       } catch (e) {
+        // Navigating to /login: stay quiet and keep the loader.
         if (e instanceof SessionExpiredError) return;
         console.error("Gagal memuat notifikasi:", e);
-      } finally {
-        setIsLoading(false);
+        if (!isCancelled) {
+          setLoadError(
+            describeCaughtError(
+              e,
+              e instanceof HttpError ? e.status : undefined,
+            ),
+          );
+        }
       }
+      if (!isCancelled) setIsLoading(false);
     }
-    fetchNotifications();
-  }, []);
+    void fetchNotifications();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [reloadCount]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -121,6 +151,13 @@ export function NotificationPanel({
           <p className="text-center text-[0.9375rem] text-primary-900/75">
             Memuat notifikasi...
           </p>
+        ) : loadError ? (
+          <DataErrorState
+            compact
+            message={loadError.message}
+            onRetry={() => setReloadCount((count) => count + 1)}
+            title={loadError.title}
+          />
         ) : notifications.length === 0 ? (
           <p className="text-center text-[0.9375rem] text-primary-900/75">
             Belum ada notifikasi.

@@ -136,7 +136,7 @@ export function ProfileView() {
             Profil Akun
           </h1>
           <p className="mt-3 text-[1rem] font-medium text-af-700">
-            {profileError ?? "Data profil tidak tersedia."}
+            {profileError?.message ?? "Data profil tidak tersedia."}
           </p>
           <button
             className="btn-primary mt-5 h-12 rounded-full bg-primary-900 px-6 text-[0.9375rem] font-semibold text-white"

@@ -1,3 +1,5 @@
+import { SessionExpiredError } from "@/features/auth/session/client/ApiFetch";
+
 import { resultStatus } from "@/components/dashboard/DashboardFormat";
 
 /** Where the monitoring moment is: the signal card and the AI modal follow it. */
@@ -242,7 +244,9 @@ export async function pollForFreshResult<T>({
     let data: T | null | undefined = null;
     try {
       data = await fetchLatest();
-    } catch {
+    } catch (error) {
+      // The reader is being sent to /login: stop instead of retrying.
+      if (error instanceof SessionExpiredError) return { kind: "cancelled" };
       data = null;
     }
 

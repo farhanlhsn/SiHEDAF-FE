@@ -69,7 +69,7 @@ test("doctor report view carries the required copy and states", async () => {
     "Grafik ditampilkan tanpa skala waktu",
     "<PpgTrace",
     "<PulseLoader",
-    "Coba lagi",
+    "<DataErrorState",
   ]) {
     assert.ok(source.includes(text), `missing ${text}`);
   }
@@ -139,7 +139,7 @@ test("report page sets a document title", async () => {
 
 test("report fetch errors never show a raw browser message", async () => {
   const source = await read("components/dashboard/hooks/UseDoctorReport.ts");
-  assert.match(source, /setError\(FETCH_ERROR\)/);
+  assert.match(source, /setError\(\s*describeCaughtError\(/);
   assert.doesNotMatch(source, /err\.message/);
 });
 
@@ -151,7 +151,7 @@ test("first-run guide shows only after the latest data loaded and is empty", asy
   assert.match(hook, /hasLoadedLatest/);
   assert.match(hook, /finally\s*\{\s*if \(!cancelled\) setHasLoadedLatest\(true\)/);
   assert.match(overview, /showFirstRun\s*\?\s*\(\s*<FirstRunGuide/);
-  assert.match(hook, /showFirstRun = hasLoadedLatest && !isDeviceLoading && !latestData/);
+  assert.match(hook, /showFirstRun =\s*hasLoadedLatest && !isDeviceLoading && !latestData/);
   assert.match(overview, /<article[^>]*id="monitor"/);
   assert.match(overview, /!hasLoadedLatest[\s\S]*?Memuat hasil terakhir/);
   assert.match(guide, /<a[\s\S]*?href="#monitor"/);

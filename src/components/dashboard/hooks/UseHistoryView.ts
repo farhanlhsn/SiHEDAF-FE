@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  describeCaughtError,
+  type DataError,
+} from "@/components/ui/FetchError";
 import type { DateRange } from "@daypicker/react";
 import {
   apiFetch,
@@ -18,6 +22,12 @@ export type HistoryItem = {
   ppgResult?: { rawPpgData?: number[] };
 };
 
+class HttpError extends Error {
+  constructor(readonly status: number) {
+    super(`HTTP ${status}`);
+  }
+}
+
 export function useHistoryView() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -26,7 +36,7 @@ export function useHistoryView() {
   const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<DataError | null>(null);
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
   const [reloadCount, setReloadCount] = useState(0);
 
@@ -63,7 +73,7 @@ export function useHistoryView() {
         const res = await apiFetch(
           `/api/v1/measurement/history?${params.toString()}`,
         );
-        if (!res.ok) throw new Error("Gagal mengambil data");
+        if (!res.ok) throw new HttpError(res.status);
         const json = await res.json();
 
         if (json.code === 200 && json.data) {
@@ -87,10 +97,14 @@ export function useHistoryView() {
       } catch (err: unknown) {
         if (err instanceof SessionExpiredError) return;
         console.error("Gagal mengambil riwayat:", err);
-        setError("Gagal mengambil riwayat.");
-      } finally {
-        setIsLoading(false);
+        setError(
+          describeCaughtError(
+            err,
+            err instanceof HttpError ? err.status : undefined,
+          ),
+        );
       }
+      setIsLoading(false);
     }
 
     fetchHistory();

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { SessionExpiredError } from "../features/auth/session/client/ApiFetch";
 import {
   EMPTY_BASELINE,
   POLL_INTERVAL_MS,
@@ -385,4 +386,24 @@ test("start and stop wait longer than polls; timeouts are told apart from failur
   assert.equal(isTimeoutError(new TypeError("Failed to fetch")), false);
   assert.equal(isTimeoutError(new SyntaxError("Unexpected token")), false);
   assert.equal(isTimeoutError(undefined), false);
+});
+
+test("pollForFreshResult stops on an expired session instead of retrying", async () => {
+  const { log, wait } = fakeClock();
+  let fetches = 0;
+  const outcome = await pollForFreshResult({
+    fetchLatest: async () => {
+      fetches += 1;
+      throw new SessionExpiredError();
+    },
+    isFresh: () => true,
+    wait,
+    isCancelled: () => false,
+    maxAttempts: 5,
+    intervalMs: 3000,
+  });
+
+  assert.deepEqual(outcome, { kind: "cancelled" });
+  assert.equal(fetches, 1);
+  assert.deepEqual(log, []);
 });

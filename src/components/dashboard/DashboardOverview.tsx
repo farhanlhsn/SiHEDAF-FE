@@ -17,6 +17,7 @@ import {
   formatConfidence,
   formatWib,
 } from "@/components/dashboard/DashboardFormat";
+import { DataErrorState } from "@/components/ui/DataErrorState";
 import { FirstRunGuide } from "@/components/dashboard/FirstRunGuide";
 import { SignalChart } from "@/components/dashboard/SignalChart";
 import { Sparkline } from "@/components/dashboard/Sparkline";
@@ -33,6 +34,8 @@ export function DashboardOverview() {
     deviceData,
     latestData,
     hasLoadedLatest,
+    latestError,
+    reloadLatest,
     showFirstRun,
     firstRunGuideSteps,
     signalsData,
@@ -71,6 +74,8 @@ export function DashboardOverview() {
         <h1 className="mt-3 max-w-[900px] text-[clamp(2.3rem,4.4vw,4rem)] leading-[0.98] tracking-[-0.05em] text-primary-900">
           {!hasLoadedLatest ? (
             <span className="font-bold">Memuat hasil terakhir</span>
+          ) : latestError && !latestData ? (
+            <span className="font-bold">Hasil terakhir belum bisa dimuat.</span>
           ) : result === "unknown" && isMonitoringActive ? (
             <span className="font-bold">Monitoring sedang berjalan.</span>
           ) : result === "unknown" ? (
@@ -86,6 +91,14 @@ export function DashboardOverview() {
             </>
           )}
         </h1>
+
+        {latestError && !latestData ? (
+          <DataErrorState
+            {...latestError}
+            className="mt-6 items-start text-left"
+            onRetry={reloadLatest}
+          />
+        ) : null}
 
         {showFirstRun ? (
           <FirstRunGuide steps={firstRunGuideSteps} />

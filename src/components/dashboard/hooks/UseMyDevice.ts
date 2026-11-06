@@ -30,11 +30,8 @@ export function useMyDevice() {
       } catch (e) {
         if (e instanceof SessionExpiredError) return;
         console.error("Gagal memuat status perangkat:", e);
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
-        }
       }
+      if (!isCancelled) setIsLoading(false);
     }
 
     void fetchDevice();

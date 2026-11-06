@@ -11,6 +11,11 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 
+import { DataErrorState } from "@/components/ui/DataErrorState";
+import {
+  describeCaughtError,
+  type DataError,
+} from "@/components/ui/FetchError";
 import { PulseLoader } from "@/components/ui/PulseLoader";
 import { SESSION_EXPIRED_PATH } from "@/features/auth/session/client/ApiFetch";
 
@@ -19,7 +24,7 @@ import type { UserProfile } from "@/features/profile/shared/ProfileTypes";
 import { fetchCurrentProfile } from "./services/ProfileClient";
 
 type ProfileContextValue = {
-  error: string | null;
+  error: DataError | null;
   isLoading: boolean;
   reload: () => Promise<void>;
   updateUser: (changes: Partial<Pick<UserProfile, "fullname">>) => void;
@@ -38,7 +43,7 @@ export function ProfileProvider({
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(initialUser ?? null);
   const [isLoading, setIsLoading] = useState(!initialUser);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<DataError | null>(null);
 
   const reload = useCallback(async () => {
     setIsLoading(true);
@@ -51,7 +56,7 @@ export function ProfileProvider({
         router.replace(SESSION_EXPIRED_PATH);
         return;
       }
-      setError(result.message);
+      setError(describeCaughtError(undefined, result.status));
       return;
     }
 
@@ -73,7 +78,7 @@ export function ProfileProvider({
           router.replace(SESSION_EXPIRED_PATH);
           return;
         }
-        setError(result.message);
+        setError(describeCaughtError(undefined, result.status));
         return;
       }
 
@@ -116,19 +121,13 @@ export function ProfileProvider({
           <h1 className="text-[1.5rem] font-bold tracking-[-0.035em] text-primary-900">
             Sesi belum dapat diverifikasi
           </h1>
-          <p className="mt-3 text-[1rem] leading-[1.55] text-primary-900/80">
-            {error ?? "Konten dashboard belum dapat ditampilkan."}
-          </p>
-          <p className="mt-2 text-[0.9375rem] text-primary-900/75">
-            Konten dashboard belum dapat ditampilkan sebelum sesi terverifikasi.
-          </p>
-          <button
-            className="btn-primary mt-6 h-12 rounded-full bg-primary-900 px-7 text-[0.9375rem] font-semibold text-white"
-            onClick={() => void reload()}
-            type="button"
-          >
-            Coba lagi
-          </button>
+          <DataErrorState
+            message={
+              error?.message ?? "Konten dashboard belum dapat ditampilkan."
+            }
+            onRetry={() => void reload()}
+            title={error?.title ?? "Profil belum dapat dimuat"}
+          />
         </div>
       </main>
     );

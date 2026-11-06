@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+import {
+  describeCaughtError,
+  type DataError,
+} from "@/components/ui/FetchError";
 
 import {
   apiFetch,
@@ -33,6 +38,12 @@ export type MeasurementData = {
   };
 };
 
+class HttpError extends Error {
+  constructor(readonly status: number) {
+    super(`HTTP ${status}`);
+  }
+}
+
 export function useDashboardOverview() {
   const { user } = useProfile();
   const [monitoringRange, setMonitoringRange] = useState("12");
@@ -40,6 +51,8 @@ export function useDashboardOverview() {
   const { device: deviceData, isLoading: isDeviceLoading } = useMyDevice();
   const [latestData, setLatestData] = useState<MeasurementData | null>(null);
   const [hasLoadedLatest, setHasLoadedLatest] = useState(false);
+  const [latestError, setLatestError] = useState<DataError | null>(null);
+  const [latestReloadKey, setLatestReloadKey] = useState(0);
   const [signalsData, setSignalsData] = useState<number[]>([]);
 
   const session = useMonitoringSession({ onFreshResult: setLatestData });
@@ -50,8 +63,11 @@ export function useDashboardOverview() {
     let cancelled = false;
 
     async function fetchLatest() {
+      setLatestError(null);
       try {
         const res = await apiFetch("/api/v1/measurement/latest");
+        // 404 means "no measurement yet", which is the first-run state.
+        if (!res.ok && res.status !== 404) throw new HttpError(res.status);
         const json = await res.json();
         if (cancelled) return;
         // Ignored once the user started or stopped while this was loading.
@@ -61,6 +77,14 @@ export function useDashboardOverview() {
       } catch (e) {
         if (e instanceof SessionExpiredError) return;
         console.error("Gagal memuat data terakhir:", e);
+        if (!cancelled) {
+          setLatestError(
+            describeCaughtError(
+              e,
+              e instanceof HttpError ? e.status : undefined,
+            ),
+          );
+        }
       } finally {
         if (!cancelled) setHasLoadedLatest(true);
       }
@@ -70,7 +94,12 @@ export function useDashboardOverview() {
     return () => {
       cancelled = true;
     };
-  }, [adoptInitial]);
+  }, [adoptInitial, latestReloadKey]);
+
+  const reloadLatest = useCallback(() => {
+    setHasLoadedLatest(false);
+    setLatestReloadKey((key) => key + 1);
+  }, []);
 
   useEffect(() => {
     async function fetchSignals() {
@@ -111,7 +140,8 @@ export function useDashboardOverview() {
   });
 
   // Wait for the device request too, or step 1 flashes "current" while loading.
-  const showFirstRun = hasLoadedLatest && !isDeviceLoading && !latestData;
+  const showFirstRun =
+    hasLoadedLatest && !isDeviceLoading && !latestData && !latestError;
 
   return {
     user,
@@ -119,6 +149,8 @@ export function useDashboardOverview() {
     deviceData,
     latestData,
     hasLoadedLatest,
+    latestError,
+    reloadLatest,
     showFirstRun,
     signalsData,
     result,

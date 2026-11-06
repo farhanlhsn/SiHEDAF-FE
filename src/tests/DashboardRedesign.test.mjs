@@ -30,6 +30,9 @@ const viewFiles = [
   "components/dashboard/EditProfileView.tsx",
   "components/dashboard/ProfileAvatar.tsx",
   "features/profile/client/ProfileProvider.tsx",
+  "components/ui/DataErrorState.tsx",
+  "components/ui/BrokenSignal.tsx",
+  "components/ui/FetchError.ts",
 ];
 
 async function readSource(relativePath) {

@@ -14,6 +14,7 @@ import { HistoryDetailModal } from "@/components/dashboard/HistoryDetailModal";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { Sparkline } from "@/components/dashboard/Sparkline";
 import { StatusMark } from "@/components/dashboard/StatusMark";
+import { DataErrorState } from "@/components/ui/DataErrorState";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { useHistoryView } from "@/components/dashboard/hooks/UseHistoryView";
 import {
@@ -179,23 +180,8 @@ export function HistoryView() {
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td
-                      className="px-6 py-12 text-center"
-                      colSpan={4}
-                    >
-                      <p
-                        className="text-[0.9375rem] font-medium text-af-700"
-                        role="alert"
-                      >
-                        {error}
-                      </p>
-                      <button
-                        className="mt-4 h-11 rounded-full border-[1.5px] border-primary-900/20 px-5 text-[0.9375rem] font-semibold text-primary-900 hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
-                        onClick={reload}
-                        type="button"
-                      >
-                        Coba lagi
-                      </button>
+                    <td className="px-6 py-4" colSpan={4}>
+                      <DataErrorState {...error} onRetry={reload} />
                     </td>
                   </tr>
                 ) : (
