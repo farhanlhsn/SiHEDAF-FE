@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   ChevronDown,
+  Clock,
   Hand,
   Pause,
   Play,
@@ -156,10 +157,7 @@ export function DashboardOverview() {
               <h2 className="text-[22px] font-bold tracking-[-0.03em] text-primary-900">
                 Sinyal PPG Terbaru
               </h2>
-              <div
-                aria-live="polite"
-                className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px]"
-              >
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px]">
                 <span className="flex items-center gap-2 font-semibold text-primary-900">
                   {isMonitoringActive ? (
                     <span
@@ -172,18 +170,22 @@ export function DashboardOverview() {
                       className="h-2.5 w-2.5 rounded-full border-2 border-primary-900/40"
                     />
                   )}
-                  {isMonitoringActive
-                    ? "Merekam"
-                    : isAnalysing
-                      ? "Menganalisis rekaman…"
-                      : "Monitoring dijeda"}
+                  {/* Only the phase word is live; the timer would be read every second. */}
+                  <span aria-live="polite">
+                    {isMonitoringActive
+                      ? "Merekam"
+                      : isAnalysing
+                        ? "Menganalisis rekaman…"
+                        : "Monitoring dijeda"}
+                  </span>
                   {isMonitoringActive ? (
                     <>
                       <span aria-hidden="true">·</span>
                       <span
+                        aria-label={`Lama perekaman ${elapsed}`}
+                        aria-live="off"
                         className="tabular-nums"
                         role="timer"
-                        aria-label={`Lama perekaman ${elapsed}`}
                       >
                         {elapsed}
                       </span>
@@ -265,6 +267,27 @@ export function DashboardOverview() {
               />
               <p>
                 {"Biarkan wristband tetap terpasang dan usahakan tangan tidak banyak bergerak selama perekaman."}
+              </p>
+            </div>
+          ) : null}
+          {phase === "timeout" ? (
+            <div
+              className="mt-4 flex max-w-[760px] gap-3 rounded-[18px] bg-paper p-4 text-[15px] leading-[1.55] text-primary-900"
+              role="note"
+            >
+              <Clock
+                aria-hidden="true"
+                className="mt-0.5 size-5 shrink-0 text-primary-500"
+                strokeWidth={2}
+              />
+              <p>
+                {"Hasil sesi terakhir belum tersedia. Cek Riwayat beberapa saat lagi."}{" "}
+                <Link
+                  className="font-semibold text-primary-500 underline underline-offset-4 transition-colors hover:text-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
+                  href="/riwayat"
+                >
+                  Buka Riwayat
+                </Link>
               </p>
             </div>
           ) : null}

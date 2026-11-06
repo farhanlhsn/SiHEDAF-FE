@@ -103,7 +103,9 @@ export function isFreshResult(
 
   const createdAt = parseTime(data.createdAt);
 
-  return sessionStart !== null && createdAt !== null && createdAt >= sessionStart;
+  return (
+    sessionStart !== null && createdAt !== null && createdAt >= sessionStart
+  );
 }
 
 /** The baseline after `data` was shown (first /latest or a fresh poll result). */

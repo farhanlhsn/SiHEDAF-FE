@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useId } from "react";
 
 import {
   formatConfidence,
@@ -32,10 +33,15 @@ type AiResultModalProps = Readonly<{
   view: ResultModalView;
 }>;
 
-const primaryActionClassName =
-  "btn-primary flex h-12 flex-1 items-center justify-center rounded-full bg-primary-900 px-5 text-[15px] font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300";
-const secondaryActionClassName =
-  "flex h-12 flex-1 items-center justify-center rounded-full border-[1.5px] border-primary-900/20 px-5 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300 disabled:cursor-not-allowed disabled:opacity-60";
+// One column on phones, two from sm; with an odd number of actions the first
+// (primary) one spans both columns. Grid, not flex-grow: a zero flex-basis in a
+// column flexbox collapses the buttons below their 48px height.
+const actionsClassName =
+  "grid gap-3 sm:grid-cols-2 sm:[&>:first-child:nth-last-child(odd)]:col-span-2";
+const actionClassName =
+  "flex h-12 items-center justify-center whitespace-nowrap rounded-full px-5 text-center text-[15px] font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300";
+const primaryActionClassName = `btn-primary ${actionClassName} bg-primary-900 text-white`;
+const secondaryActionClassName = `${actionClassName} border-[1.5px] border-primary-900/20 text-primary-900 transition-colors hover:bg-paper-deep disabled:cursor-not-allowed disabled:border-primary-900/15 disabled:text-primary-900/70 disabled:hover:bg-transparent`;
 
 const titles = {
   normal: "Irama Jantung Normal",
@@ -101,7 +107,7 @@ function AnalysingBody({ onClose }: Readonly<{ onClose: () => void }>) {
         AI sedang membaca sinyal PPG dari sesi ini. Kamu boleh menutup jendela
         ini; hasilnya akan muncul di dashboard dan Riwayat.
       </p>
-      <div className="mt-7 flex w-full">
+      <div className={`mt-7 w-full ${actionsClassName}`}>
         <button
           className={secondaryActionClassName}
           onClick={onClose}
@@ -120,7 +126,7 @@ function TimeoutBody({ onClose }: Readonly<{ onClose: () => void }>) {
       <p className="text-[16px] leading-[1.55] text-primary-900/80">
         Analisis mungkin masih berjalan. Cek Riwayat beberapa saat lagi.
       </p>
-      <div className="mt-7 flex w-full flex-col gap-3 sm:flex-row">
+      <div className={`mt-7 ${actionsClassName}`}>
         <Link
           className={primaryActionClassName}
           href="/riwayat"
@@ -151,6 +157,7 @@ function ResultBody({
   onRestart: () => void;
   restart: RestartAction;
 }>) {
+  const restartHintId = useId();
   const status = resultStatus(data?.resultLabel);
   const confidence = formatConfidence(data?.confidenceLevel);
   const measuredAt = formatWib(
@@ -166,18 +173,19 @@ function ResultBody({
       Lihat Riwayat
     </Link>
   );
-  // Offered only after a session ended, never while one is recording.
-  const restartButton =
-    restart === "hidden" ? null : (
-      <button
-        className={secondaryActionClassName}
-        disabled={restart !== "ready"}
-        onClick={onRestart}
-        type="button"
-      >
-        Mulai monitoring lagi
-      </button>
-    );
+  // Offered with a result only once no session runs, never while recording.
+  const offersRestart = status !== "unknown" && restart !== "hidden";
+  const restartButton = offersRestart ? (
+    <button
+      aria-describedby={restart === "offline" ? restartHintId : undefined}
+      className={secondaryActionClassName}
+      disabled={restart !== "ready"}
+      onClick={onRestart}
+      type="button"
+    >
+      Mulai monitoring lagi
+    </button>
+  ) : null;
   const closeButton = (
     <button
       className={
@@ -206,7 +214,7 @@ function ResultBody({
       <PpgTrace
         className="h-36 w-full rounded-[18px] bg-paper"
         data={data?.ppgResult?.rawPpgData}
-        label="Grafik sinyal PPG sesi ini"
+        label="Grafik sinyal PPG"
         tone={status === "af" ? "pink" : "blue"}
       />
 
@@ -231,7 +239,7 @@ function ResultBody({
         </div>
       </dl>
 
-      <div className="flex w-full flex-col gap-3 sm:flex-row">
+      <div className={actionsClassName}>
         {status === "af" ? (
           <>
             <Link
@@ -260,6 +268,14 @@ function ResultBody({
           </>
         )}
       </div>
+      {offersRestart && restart === "offline" ? (
+        <p
+          className="-mt-2 text-[14px] text-primary-900/75"
+          id={restartHintId}
+        >
+          Perangkat belum terhubung.
+        </p>
+      ) : null}
     </div>
   );
 }
