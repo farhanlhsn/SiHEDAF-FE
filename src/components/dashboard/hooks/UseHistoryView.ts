@@ -24,6 +24,7 @@ export function useHistoryView() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
+  const [reloadCount, setReloadCount] = useState(0);
 
   const [summaries, setSummaries] = useState([
     { label: "Total jumlah monitoring", value: 0 },
@@ -80,16 +81,15 @@ export function useHistoryView() {
           ]);
         }
       } catch (err: unknown) {
-        const message =
-          err instanceof Error ? err.message : "Terjadi kesalahan";
-        setError(message);
+        console.error("Gagal mengambil riwayat:", err);
+        setError("Gagal mengambil riwayat.");
       } finally {
         setIsLoading(false);
       }
     }
 
     fetchHistory();
-  }, [currentPage, itemsPerPage, dateRange]);
+  }, [currentPage, itemsPerPage, dateRange, reloadCount]);
 
   return {
     currentPage,
@@ -103,6 +103,7 @@ export function useHistoryView() {
     isLoading,
     error,
     summaries,
+    reload: () => setReloadCount((count) => count + 1),
     selectedItem,
     setSelectedItem,
   };

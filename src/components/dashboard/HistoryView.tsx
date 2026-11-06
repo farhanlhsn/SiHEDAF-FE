@@ -7,8 +7,8 @@ import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   formatConfidence,
   formatWib,
-  isNormalResult,
-  shareOf,
+  resultStatus,
+  splitShares,
 } from "@/components/dashboard/DashboardFormat";
 import { HistoryDetailModal } from "@/components/dashboard/HistoryDetailModal";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
@@ -37,6 +37,7 @@ export function HistoryView() {
     isLoading,
     error,
     summaries,
+    reload,
     selectedItem,
     setSelectedItem,
   } = useHistoryView();
@@ -51,9 +52,10 @@ export function HistoryView() {
     setCurrentPage(1);
   }
 
-  const [total, afCount] = summaries.map((summary) => summary.value);
-  const afShare = shareOf(afCount, total);
-  const normalShare = total > 0 ? 100 - afShare : 0;
+  const [total, afCount, normalCount] = summaries.map(
+    (summary) => summary.value,
+  );
+  const [normalShare, afShare] = splitShares([normalCount, afCount], total);
 
   return (
     <section className="px-4 py-8 sm:px-7 lg:px-10 lg:py-10">
@@ -178,17 +180,29 @@ export function HistoryView() {
                 ) : error ? (
                   <tr>
                     <td
-                      className="px-6 py-12 text-center text-[15px] font-medium text-af-700"
+                      className="px-6 py-12 text-center"
                       colSpan={4}
                     >
-                      {error}
+                      <p
+                        className="text-[15px] font-medium text-af-700"
+                        role="alert"
+                      >
+                        {error}
+                      </p>
+                      <button
+                        className="mt-4 h-11 rounded-full border-[1.5px] border-primary-900/20 px-5 text-[15px] font-semibold text-primary-900 hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
+                        onClick={reload}
+                        type="button"
+                      >
+                        Coba lagi
+                      </button>
                     </td>
                   </tr>
                 ) : (
                   historyData.map((row) => {
-                    const result = isNormalResult(row.resultLabel);
-                    const isUnknown = result === null;
-                    const isNormal = result === true;
+                    const result = resultStatus(row.resultLabel);
+                    const isUnknown = result === "unknown";
+                    const isNormal = result === "normal";
                     const dateLabel = formatWib(row.requestedAt, "date");
                     const timeLabel = formatWib(row.requestedAt, "time");
 
