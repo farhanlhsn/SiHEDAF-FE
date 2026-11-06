@@ -26,6 +26,7 @@ const viewFiles = [
   "components/dashboard/DateRangePicker.tsx",
   "components/dashboard/ProfileView.tsx",
   "components/dashboard/TextSizeSetting.tsx",
+  "components/dashboard/InstallGuide.tsx",
   "components/dashboard/EditProfileView.tsx",
   "components/dashboard/ProfileAvatar.tsx",
   "features/profile/client/ProfileProvider.tsx",

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { DashboardIcon } from "@/components/dashboard/DashboardIcon";
 import { DashboardModal } from "@/components/dashboard/DashboardModal";
+import { InstallGuide } from "@/components/dashboard/InstallGuide";
 import { ProfileAvatar } from "@/components/dashboard/ProfileAvatar";
 import { TextSizeSetting } from "@/components/dashboard/TextSizeSetting";
 import { PulseLoader } from "@/components/ui/PulseLoader";
@@ -225,6 +226,8 @@ export function ProfileView() {
           </h2>
           <TextSizeSetting />
         </article>
+
+        <InstallGuide />
 
         <div className="mt-6 space-y-3">
           <button

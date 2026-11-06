@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 
 import { HashRouteRedirect } from "@/components/auth/HashRouteRedirect";
@@ -25,6 +25,7 @@ export const metadata: Metadata = {
   title: "SiHEDAF",
   description: siteDescription,
   applicationName: "SiHEDAF",
+  appleWebApp: { capable: true, title: "SiHEDAF", statusBarStyle: "default" },
   openGraph: {
     type: "website",
     locale: "id_ID",
@@ -38,6 +39,8 @@ export const metadata: Metadata = {
     description: siteDescription,
   },
 };
+
+export const viewport: Viewport = { themeColor: "#f5f3ee" };
 
 export default function RootLayout({
   children,

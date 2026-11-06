@@ -226,6 +226,7 @@ src/
 - `public/logo.png`: logo icon SiHEDAF.
 - `public/watch.png`: smartwatch untuk landing/auth visual.
 - `public/watch2.png`: wearable ramping untuk device-status dashboard.
+- `public/icons/*`, `src/app/apple-icon.png`: ikon PWA (manifest di `src/app/manifest.ts`). Dirasterisasi dari `icon.svg` / `icon-maskable.svg` lewat skrip Node sekali jalan memakai `require("sharp")` dari `node_modules` (transitif dari Next; tidak ada di package.json dan skripnya tidak di-commit): `icon-192/512.png` dan `icon-maskable-512.png` (512), `apple-icon.png` dari varian maskable di 180.
 - `src/app/favicon.ico`: favicon aplikasi.
 - `src/app/fonts/switzer-variable.woff2`: font utama.
 
