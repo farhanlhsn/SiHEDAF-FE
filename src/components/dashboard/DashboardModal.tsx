@@ -1,7 +1,12 @@
 "use client";
 
-import { useEffect, useId, type ReactNode } from "react";
+import { useEffect, useId, useSyncExternalStore, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+
+function subscribeNoop() {
+  return () => {};
+}
 
 type DashboardModalProps = Readonly<{
   children: ReactNode;
@@ -24,6 +29,13 @@ export function DashboardModal({
 }: DashboardModalProps) {
   const titleId = useId();
   const descriptionId = useId();
+  // False during server render and hydration, true on the client afterwards,
+  // so an initially open modal never touches document before mount.
+  const mounted = useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false,
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -43,9 +55,9 @@ export function DashboardModal({
     };
   }, [onClose, open]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto px-4 py-8">
       <button
         aria-label="Tutup dialog"
@@ -87,6 +99,7 @@ export function DashboardModal({
         ) : null}
         <div className="mt-6">{children}</div>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }

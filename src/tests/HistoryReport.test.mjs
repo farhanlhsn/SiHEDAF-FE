@@ -135,3 +135,11 @@ test("first-run guide shows only after the latest data loaded and is empty", asy
   assert.match(guide, /Tekan Mulai Monitoring\. Sinyal PPG akan direkam secara berkala\./);
   assert.match(guide, /Hentikan monitoring untuk melihat hasil analisis pertamamu\./);
 });
+
+test("dashboard modal renders through a portal to the document body", async () => {
+  const modal = await read("components/dashboard/DashboardModal.tsx");
+
+  assert.match(modal, /import \{ createPortal \} from "react-dom"/);
+  assert.ok(modal.includes("createPortal("));
+  assert.ok(modal.includes("document.body,"));
+});
