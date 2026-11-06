@@ -160,7 +160,7 @@ export function rememberInitial(
     : baseline;
 }
 
-export type RestartAction = "hidden" | "ready" | "busy" | "offline";
+export type RestartAction = "hidden" | "ready" | "busy" | "offline" | "no-network";
 
 /** "Mulai monitoring lagi" is offered only while no session is running. */
 export function restartAction(
@@ -169,9 +169,16 @@ export function restartAction(
     deviceOnline,
     deviceLoading = false,
     busy,
-  }: { deviceOnline: boolean; deviceLoading?: boolean; busy: boolean },
+    networkOnline = true,
+  }: {
+    deviceOnline: boolean;
+    deviceLoading?: boolean;
+    busy: boolean;
+    networkOnline?: boolean;
+  },
 ): RestartAction {
   if (phase === "recording" || phase === "analysing") return "hidden";
+  if (!networkOnline) return "no-network";
   // Still asking for the device: wait, do not claim it is offline.
   if (deviceLoading) return "busy";
   if (!deviceOnline) return "offline";

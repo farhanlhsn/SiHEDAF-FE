@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { useOnlineStatus } from "@/components/ui/hooks/UseOnlineStatus";
 import {
   apiFetch,
   SessionExpiredError,
@@ -16,6 +17,7 @@ export type MeasurementDevice = {
 export function useMyDevice() {
   const [device, setDevice] = useState<MeasurementDevice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { reconnectCount } = useOnlineStatus();
 
   useEffect(() => {
     let isCancelled = false;
@@ -39,7 +41,7 @@ export function useMyDevice() {
     return () => {
       isCancelled = true;
     };
-  }, []);
+  }, [reconnectCount]);
 
   return { device, isLoading };
 }

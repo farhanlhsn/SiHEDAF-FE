@@ -12,6 +12,7 @@ import {
   describeCaughtError,
   type DataError,
 } from "@/components/ui/FetchError";
+import { useOnlineStatus } from "@/components/ui/hooks/UseOnlineStatus";
 import { useMyDevice } from "@/components/dashboard/hooks/UseMyDevice";
 import type { HistoryItem } from "@/components/dashboard/hooks/UseHistoryView";
 import {
@@ -61,6 +62,7 @@ const fetchHistoryPage: FetchHistoryPage = async (page, pageSize, range) => {
 };
 
 export function useDoctorReport(initialParams: InitialParams) {
+  const { reconnectCount } = useOnlineStatus();
   const router = useRouter();
   const { user } = useProfile();
   const { device } = useMyDevice();
@@ -103,7 +105,7 @@ export function useDoctorReport(initialParams: InitialParams) {
     return () => {
       isCancelled = true;
     };
-  }, [range, reloadKey]);
+  }, [range, reloadKey, reconnectCount]);
 
   const setRange = useCallback(
     (next: ReportRange) => {

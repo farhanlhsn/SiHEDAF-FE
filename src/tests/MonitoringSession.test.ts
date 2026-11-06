@@ -202,6 +202,18 @@ test("restartAction offers a restart only once no session is running", () => {
   assert.equal(restartAction("recording", { deviceOnline: false, busy: true }), "hidden");
 });
 
+test("restartAction reports a missing network before device checks", () => {
+  const base = { deviceOnline: true, busy: false, networkOnline: false };
+  assert.equal(restartAction("idle", base), "no-network");
+  assert.equal(restartAction("result", { ...base, deviceOnline: false }), "no-network");
+  assert.equal(restartAction("recording", base), "hidden");
+  assert.equal(restartAction("analysing", base), "hidden");
+  assert.equal(
+    restartAction("idle", { deviceOnline: true, busy: false, networkOnline: true }),
+    "ready",
+  );
+});
+
 function fakeClock() {
   const log: string[] = [];
   return {

@@ -178,7 +178,11 @@ function ResultBody({
   const offersRestart = status !== "unknown" && restart !== "hidden";
   const restartButton = offersRestart ? (
     <button
-      aria-describedby={restart === "offline" ? restartHintId : undefined}
+      aria-describedby={
+        restart === "offline" || restart === "no-network"
+          ? restartHintId
+          : undefined
+      }
       className={secondaryActionClassName}
       disabled={restart !== "ready"}
       onClick={onRestart}
@@ -269,12 +273,14 @@ function ResultBody({
           </>
         )}
       </div>
-      {offersRestart && restart === "offline" ? (
+      {offersRestart && (restart === "offline" || restart === "no-network") ? (
         <p
           className="-mt-2 text-[0.875rem] text-primary-900/75"
           id={restartHintId}
         >
-          Perangkat belum terhubung.
+          {restart === "no-network"
+            ? "Tidak ada koneksi internet."
+            : "Perangkat belum terhubung."}
         </p>
       ) : null}
     </div>

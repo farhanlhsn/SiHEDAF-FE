@@ -7,6 +7,7 @@ import { id as localeId } from "date-fns/locale";
 
 import { formatWib } from "@/components/dashboard/DashboardFormat";
 import { StatusMark } from "@/components/dashboard/StatusMark";
+import { useOnlineStatus } from "@/components/ui/hooks/UseOnlineStatus";
 import { DataErrorState } from "@/components/ui/DataErrorState";
 import {
   describeCaughtError,
@@ -46,6 +47,7 @@ export function NotificationPanel({
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<DataError | null>(null);
   const [reloadCount, setReloadCount] = useState(0);
+  const { reconnectCount } = useOnlineStatus();
 
   useEffect(() => {
     let isCancelled = false;
@@ -80,7 +82,7 @@ export function NotificationPanel({
     return () => {
       isCancelled = true;
     };
-  }, [reloadCount]);
+  }, [reloadCount, reconnectCount]);
 
   useEffect(() => {
     if (!isLoading) {

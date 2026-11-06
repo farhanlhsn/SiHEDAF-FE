@@ -5,6 +5,7 @@ import {
   describeCaughtError,
   type DataError,
 } from "@/components/ui/FetchError";
+import { useOnlineStatus } from "@/components/ui/hooks/UseOnlineStatus";
 import type { DateRange } from "@daypicker/react";
 import {
   apiFetch,
@@ -29,6 +30,7 @@ class HttpError extends Error {
 }
 
 export function useHistoryView() {
+  const { reconnectCount } = useOnlineStatus();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -108,7 +110,7 @@ export function useHistoryView() {
     }
 
     fetchHistory();
-  }, [currentPage, itemsPerPage, dateRange, reloadCount]);
+  }, [currentPage, itemsPerPage, dateRange, reloadCount, reconnectCount]);
 
   return {
     currentPage,

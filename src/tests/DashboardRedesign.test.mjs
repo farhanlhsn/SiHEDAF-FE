@@ -9,6 +9,7 @@ const sourceDirectory = path.resolve(testsDirectory, "..");
 
 const viewFiles = [
   "components/dashboard/DashboardShell.tsx",
+  "components/dashboard/OfflineBanner.tsx",
   "components/dashboard/DashboardSidebar.tsx",
   "components/dashboard/DashboardTopbar.tsx",
   "components/dashboard/DashboardOverview.tsx",

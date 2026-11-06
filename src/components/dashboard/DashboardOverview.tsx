@@ -26,6 +26,7 @@ import { useDashboardOverview } from "@/components/dashboard/hooks/UseDashboardO
 
 const panelClassName = "rounded-[24px] border border-primary-900/10 bg-white";
 const labelClassName = "text-[0.875rem] font-medium text-primary-900/75";
+const offlineHintId = "monitoring-offline-hint";
 const valueClassName = "mt-1 text-[1rem] font-semibold text-primary-900";
 
 export function DashboardOverview() {
@@ -53,6 +54,7 @@ export function DashboardOverview() {
     closeAiModal,
     restartMonitoring,
     restartState,
+    networkOnline: online,
   } = useDashboardOverview();
 
   const isAnalysing = phase === "analysing";
@@ -239,7 +241,9 @@ export function DashboardOverview() {
                     ? "border-[1.5px] border-primary-900/20 bg-white text-primary-900 hover:bg-paper-deep"
                     : "btn-primary bg-primary-900 text-white"
                 }`}
+                aria-describedby={online ? undefined : offlineHintId}
                 disabled={
+                  !online ||
                   isTogglingAction ||
                   isAnalysing ||
                   !deviceData ||
@@ -268,6 +272,14 @@ export function DashboardOverview() {
               </button>
             </div>
           </div>
+          {online ? null : (
+            <p
+              className="mt-3 text-[0.9375rem] font-medium text-primary-900/80"
+              id={offlineHintId}
+            >
+              Tidak ada koneksi internet.
+            </p>
+          )}
           {isMonitoringActive ? (
             <div
               className="mt-4 flex max-w-[760px] gap-3 rounded-[18px] bg-primary-50 p-4 text-[0.9375rem] leading-[1.55] text-primary-900"

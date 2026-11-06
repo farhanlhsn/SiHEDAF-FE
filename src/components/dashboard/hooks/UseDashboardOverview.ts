@@ -7,6 +7,7 @@ import {
   type DataError,
 } from "@/components/ui/FetchError";
 
+import { useOnlineStatus } from "@/components/ui/hooks/UseOnlineStatus";
 import {
   apiFetch,
   SessionExpiredError,
@@ -46,6 +47,7 @@ class HttpError extends Error {
 
 export function useDashboardOverview() {
   const { user } = useProfile();
+  const { online, reconnectCount } = useOnlineStatus();
   const [monitoringRange, setMonitoringRange] = useState("12");
 
   const { device: deviceData, isLoading: isDeviceLoading } = useMyDevice();
@@ -94,7 +96,7 @@ export function useDashboardOverview() {
     return () => {
       cancelled = true;
     };
-  }, [adoptInitial, latestReloadKey]);
+  }, [adoptInitial, latestReloadKey, reconnectCount]);
 
   const reloadLatest = useCallback(() => {
     setHasLoadedLatest(false);
@@ -171,6 +173,8 @@ export function useDashboardOverview() {
       deviceOnline: isDeviceOnline,
       deviceLoading: isDeviceLoading,
       busy: session.isTogglingAction,
+      networkOnline: online,
     }),
+    networkOnline: online,
   };
 }
