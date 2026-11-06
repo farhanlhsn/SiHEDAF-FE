@@ -1,24 +1,28 @@
-import { LineIcon } from "@/components/ui/LineIcon";
-import { SectionLabel } from "@/components/ui/SectionLabel";
+import { DayDial } from "@/components/landing/DayDial";
+import { InView } from "@/components/landing/InView";
+import { ThreadPoint } from "@/components/landing/ThreadPoint";
+import { ThreadStation } from "@/components/landing/ThreadStation";
 
 const features = [
   {
-    icon: "heart" as const,
-    title: "Pemantauan Berkala",
+    title: "Pemantauan berkala",
     description:
-      "PPG dari wearable device dipantau secara terus-menerus 24/7.",
+      "Sinyal PPG direkam setiap 3 menit, siang dan malam. Kamu tidak perlu ingat apa-apa.",
   },
   {
-    icon: "spark" as const,
-    title: "AI Detection",
+    title: "Deteksi AI",
     description:
-      "Model AI menganalisis sinyal untuk mendeteksi AF dengan akurasi tinggi.",
+      "Setiap rekaman diklasifikasikan Normal atau AF oleh model dengan akurasi di atas 90%.",
   },
   {
-    icon: "chart" as const,
-    title: "Analisis Mendalam",
+    title: "Riwayat di dashboard",
     description:
-      "PPG dari wearable device dipantau secara terus-menerus 24/7.",
+      "Hasil analisis tersimpan per tanggal, mudah ditunjukkan saat kontrol ke dokter.",
+  },
+  {
+    title: "Hemat energi",
+    description:
+      "Perangkat dan koneksi nirkabelnya dirancang hemat daya, jadi nyaman dipakai seharian.",
   },
 ];
 
@@ -26,50 +30,58 @@ export function FeaturesSection() {
   return (
     <section
       aria-labelledby="features-title"
-      className="section-reveal bg-[#f8f8f8] px-5 py-24 sm:px-8 lg:px-10 lg:py-36"
+      className="relative py-28 lg:py-36"
       id="fitur"
     >
-      <div className="mx-auto max-w-[1440px]">
-        <div className="flex justify-start md:justify-end">
-          <SectionLabel>Fitur</SectionLabel>
-        </div>
+      <div className="mx-auto max-w-[1440px] px-5 lg:px-10">
+        <ThreadStation index="02" label="Berjaga 24 jam" />
 
-        <div className="mt-14 grid items-end gap-10 md:grid-cols-2">
-          <p className="max-w-[620px] text-[15px] leading-[1.7] font-medium text-primary-900/43 sm:text-[16px]">
-            Kombinasi hardware wearable hemat energi dengan AI analisis sinyal
-            untuk perlindungan kesehatan jantung yang komprehensif.
-          </p>
-          <h2
-            className="max-w-[760px] text-[clamp(2.5rem,3.55vw,3.75rem)] leading-[1.02] font-medium tracking-[-0.055em] text-primary-900 md:justify-self-end md:text-right"
-            id="features-title"
-          >
-            Teknologi Pemantauan{" "}
-            <span className="font-serif font-normal italic text-primary-300">
-              Cerdas
-            </span>
-            <span className="block">yang Kamu Butuhkan</span>
-          </h2>
-        </div>
+        <h2
+          className="mt-10 max-w-[980px] pl-10 text-[clamp(2.4rem,4.7vw,4.75rem)] leading-[0.96] tracking-[-0.05em] text-primary-900 lg:pl-14"
+          id="features-title"
+        >
+          <span className="font-bold">Teknologi pemantauan</span>{" "}
+          <span className="font-extralight">
+            yang tetap bekerja saat kamu tidur.
+          </span>
+        </h2>
 
-        <div className="mt-16 grid gap-5 md:grid-cols-3">
-          {features.map((feature, index) => (
-            <article
-              className="child-reveal dashboard-card min-h-[270px] rounded-[30px] bg-white p-9 shadow-[0_8px_30px_rgba(0,39,88,0.02)]"
-              key={feature.title}
-              style={{ "--child": index } as React.CSSProperties}
-            >
-              <LineIcon
-                className="size-12 text-primary-300"
-                name={feature.icon}
-              />
-              <h3 className="mt-9 text-[21px] font-semibold tracking-[-0.04em] text-primary-900">
-                {feature.title}
-              </h3>
-              <p className="mt-4 max-w-[360px] text-[14px] leading-[1.7] font-medium text-primary-900/42">
-                {feature.description}
-              </p>
-            </article>
-          ))}
+        <div className="relative mt-20 grid gap-16 pl-10 lg:mt-24 lg:grid-cols-12 lg:gap-10 lg:pl-14">
+          {/* Run down the rail past the heading before swinging into the dial. */}
+          <ThreadPoint className="-top-10 left-[11px]" dir="down" />
+
+          <InView as="ol" className="space-y-10 lg:col-span-5 lg:pt-32">
+            {features.map((feature, index) => (
+              <li
+                className="reveal grid grid-cols-[44px_1fr] gap-4 border-t border-primary-900/10 pt-6"
+                key={feature.title}
+                style={{ "--i": index } as React.CSSProperties}
+              >
+                <span className="text-[15px] font-semibold tabular-nums text-primary-500">
+                  0{index + 1}
+                </span>
+                <span>
+                  <span className="block text-[22px] font-bold tracking-[-0.035em] text-primary-900">
+                    {feature.title}
+                  </span>
+                  <span className="mt-2 block max-w-[440px] text-[17px] leading-[1.55] text-primary-900/80">
+                    {feature.description}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </InView>
+
+          <div className="lg:col-span-6 lg:col-start-7">
+            <DayDial />
+          </div>
+
+          {/* Desktop: drop down the right edge, then cross back below everything. */}
+          <ThreadPoint
+            className="-right-[14px] -bottom-10 hidden lg:block"
+            dir="down"
+          />
+          <ThreadPoint className="-bottom-28 left-[11px]" dir="down" />
         </div>
       </div>
     </section>

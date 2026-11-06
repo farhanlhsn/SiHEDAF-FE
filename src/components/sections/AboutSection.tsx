@@ -1,85 +1,38 @@
-import { LineIcon } from "@/components/ui/LineIcon";
-import { SectionLabel } from "@/components/ui/SectionLabel";
+import { AfFacts } from "@/components/landing/AfFacts";
+import { RhythmCompare } from "@/components/landing/RhythmCompare";
+import { ThreadStation } from "@/components/landing/ThreadStation";
 
 export function AboutSection() {
   return (
     <section
       aria-labelledby="about-title"
-      className="section-reveal bg-[#f8f8f8] px-5 py-24 sm:px-8 lg:px-10 lg:py-36"
+      className="relative pt-36 pb-28 lg:pt-44 lg:pb-36"
       id="tentang"
     >
-      <div className="mx-auto max-w-[1440px]">
-        <div className="text-center">
-          <SectionLabel>Tentang SiHEDAF</SectionLabel>
+      <div className="mx-auto max-w-[1440px] px-5 lg:px-10">
+        <ThreadStation index="01" label="Masalahnya" />
+
+        <div className="mt-10 grid gap-8 pl-10 lg:grid-cols-12 lg:pl-14">
           <h2
-            aria-label="Stroke adalah Ancaman yang Bisa Dicegah"
-            className="mx-auto mt-9 max-w-[780px] text-[clamp(2.5rem,3.55vw,3.75rem)] leading-[1.02] font-medium tracking-[-0.055em] text-primary-900"
+            className="text-[clamp(2.4rem,4.7vw,4.75rem)] leading-[0.96] tracking-[-0.05em] text-primary-900 lg:col-span-8"
             id="about-title"
           >
-            <span className="font-serif font-normal italic text-primary-300">
-              Stroke
+            <span className="font-bold">
+              Stroke adalah ancaman yang bisa dicegah,
             </span>{" "}
-            adalah Ancaman
-            <span className="block">yang Bisa Dicegah</span>
+            <span className="font-extralight">
+              asal AF ketahuan lebih awal.
+            </span>
           </h2>
-          <p className="mx-auto mt-8 max-w-[820px] text-[15px] leading-[1.7] font-medium text-primary-900/43 sm:text-[16px]">
-            Atrial Fibrillation adalah faktor risiko utama stroke yang sering kali
-            tidak terdeteksi. Teknologi PPG dan AI membuka peluang pencegahan yang
-            lebih baik.
+          <p className="max-w-[460px] self-end text-[18px] leading-[1.6] text-primary-900/80 lg:col-span-4">
+            Atrial Fibrillation (AF) adalah gangguan irama jantung yang menjadi
+            faktor risiko utama stroke. SiHEDAF, Sistem Hemat Energi Detektor
+            Atrial Fibrilasi, memantaunya untukmu dari pergelangan tangan.
           </p>
         </div>
 
-        <div className="mt-16 grid rounded-[34px] bg-primary-900/[0.035] p-2.5 md:grid-cols-2 md:grid-rows-2">
-          <article className="child-reveal dashboard-card min-h-[390px] rounded-[29px] bg-white p-8 shadow-[0_8px_30px_rgba(0,39,88,0.02)] sm:p-11 md:row-span-2" style={{ "--child": 0 } as React.CSSProperties}>
-            <p className="text-[64px] leading-none font-semibold tracking-[-0.06em] text-primary-300">
-              5x
-            </p>
-            <p className="mt-6 max-w-[470px] text-[16px] leading-[1.6] font-medium text-primary-900/45">
-              Penderita AF memiliki risiko stroke 5–7 kali lebih tinggi dibanding
-              populasi umum.
-            </p>
-            <ul className="mt-9 max-w-[560px] space-y-5 pl-5 text-[14px] leading-[1.65] font-medium text-primary-900/72 marker:text-primary-900">
-              <li className="list-disc pl-1">
-                Sekitar 20–25% stroke iskemik disebabkan oleh emboli kardiogenik
-                dari Atrial Fibrilasi.
-              </li>
-              <li className="list-disc pl-1">
-                Hampir 50% kasus AF tidak terdiagnosis karena sering tanpa gejala
-                (silent AF).
-              </li>
-              <li className="list-disc pl-1">
-                AF sering tidak menimbulkan gejala sehingga sulit dideteksi tanpa
-                monitoring berkelanjutan.
-              </li>
-            </ul>
-          </article>
-
-          <article className="child-reveal dashboard-card mt-2.5 min-h-[194px] rounded-[29px] bg-white p-8 shadow-[0_8px_30px_rgba(0,39,88,0.02)] md:mt-0 md:ml-2.5" style={{ "--child": 1 } as React.CSSProperties}>
-            <span className="inline-flex size-13 items-center justify-center rounded-full bg-primary-50 text-primary-300">
-              <LineIcon className="size-7" name="pulse" />
-            </span>
-            <h3 className="mt-5 text-[20px] font-semibold tracking-[-0.035em] text-primary-900">
-              Sinyal PPG Akurat
-            </h3>
-            <p className="mt-2.5 max-w-[560px] text-[14px] leading-[1.65] font-medium text-primary-900/43">
-              Sensor photoplethysmography pada wristband menangkap sinyal irama
-              jantung dengan presisi tinggi secara non-invasif.
-            </p>
-          </article>
-
-          <article className="child-reveal dashboard-card mt-2.5 min-h-[194px] rounded-[29px] bg-white p-8 shadow-[0_8px_30px_rgba(0,39,88,0.02)] md:ml-2.5" style={{ "--child": 2 } as React.CSSProperties}>
-            <span className="inline-flex size-13 items-center justify-center rounded-full bg-primary-50 text-primary-300">
-              <LineIcon className="size-7" name="scan" />
-            </span>
-            <h3 className="mt-5 text-[20px] font-semibold tracking-[-0.035em] text-primary-900">
-              AI Klasifikasi AF
-            </h3>
-            <p className="mt-2.5 max-w-[560px] text-[14px] leading-[1.65] font-medium text-primary-900/43">
-              Model yang terlatih mengklasifikasikan sinyal sebagai Normal Rhythm
-              atau AF Detected dengan akurasi di atas 90%.
-            </p>
-          </article>
-        </div>
+        <RhythmCompare />
+        <AfFacts />
       </div>
     </section>
   );

@@ -1,84 +1,84 @@
 import Image from "next/image";
+import Link from "next/link";
 
+import { LivePulseMonitor } from "@/components/landing/LivePulseMonitor";
+import { ThreadPoint } from "@/components/landing/ThreadPoint";
 import { ArrowIcon } from "@/components/ui/ArrowIcon";
 
 export function HeroSection() {
   return (
     <section
       aria-labelledby="hero-title"
-      className="relative min-h-[calc(100svh-104px)] overflow-hidden px-5 pt-[clamp(3.5rem,7vh,6.5rem)]"
+      className="relative flex min-h-[calc(100svh-76px)] flex-col justify-between gap-12 pt-10 lg:pt-14"
     >
-      <div className="relative z-10 mx-auto flex max-w-[1120px] flex-col items-center text-center">
-        <h1
-          className="hero-stagger text-[clamp(3rem,4.4vw,5rem)] leading-[0.98] font-medium tracking-[-0.06em] text-primary-900"
-          id="hero-title"
+      <div className="mx-auto w-full max-w-[1440px] px-5 lg:px-10">
+        <p
+          className="hero-stagger flex items-center gap-3 text-[15px] font-medium text-primary-900/80"
           style={{ "--stagger": 0 } as React.CSSProperties}
         >
-          <span className="block">Deteksi Dini Risiko</span>
-          <span className="mt-2 block">
-            <span className="font-serif font-normal italic text-primary-300">
-              Stroke
-            </span>{" "}
-            dengan AI
-          </span>
-        </h1>
-
-        <p
-          className="hero-stagger mt-8 max-w-[820px] text-[clamp(0.875rem,1vw,1.0625rem)] leading-[1.65] font-medium tracking-[-0.02em] text-primary-900/45"
-          style={{ "--stagger": 1 } as React.CSSProperties}
-        >
-          Pemantauan Jantung Portabel cerdas melalui sinyal PPG dan wearable
-          device, dianalisis AI untuk memberikan peringatan dini risiko stroke.
+          <span aria-hidden="true" className="live-dot" />
+          Deteksi dini risiko stroke dengan AI
         </p>
 
+        <h1
+          className="hero-stagger mt-6 text-[clamp(3.1rem,7.6vw,8rem)] leading-[0.9] tracking-[-0.06em] text-primary-900"
+          id="hero-title"
+          style={{ "--stagger": 1 } as React.CSSProperties}
+        >
+          <span className="block font-extralight">Jantungmu bisa</span>
+          <span className="block font-bold">
+            berdetak <span className="text-af-500">kacau</span>
+          </span>
+          <span className="block font-extralight">tanpa terasa.</span>
+        </h1>
+
         <div
-          className="hero-stagger mt-8 flex flex-col items-center gap-3 sm:flex-row"
+          className="hero-stagger mt-10 grid gap-7 lg:grid-cols-12 lg:items-end"
           style={{ "--stagger": 2 } as React.CSSProperties}
         >
-          <a
-            className="inline-flex h-13 items-center justify-center gap-2.5 rounded-full bg-primary-500 px-8 text-[14px] font-semibold text-white shadow-[0_12px_30px_rgba(0,88,201,0.2)] transition-[transform,box-shadow,background-color] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[1.5px] hover:bg-primary-400 hover:shadow-[0_18px_38px_rgba(0,88,201,0.28)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary-400"
-            href="#cta"
-          >
-            Mulai Sekarang
-            <ArrowIcon />
-          </a>
-          <a
-            className="inline-flex h-13 items-center rounded-full px-4 text-[14px] font-semibold text-primary-400 transition-colors duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:text-primary-600 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary-400"
-            href="#tentang"
-          >
-            Pelajari Lebih Lanjut
-          </a>
+          <p className="max-w-[520px] text-[18px] leading-[1.55] text-primary-900/80 lg:col-span-5">
+            SiHEDAF memantau irama jantungmu dari pergelangan tangan dan memberi
+            tahu kamu lebih awal, sebelum berujung stroke.
+          </p>
+          <div className="flex flex-wrap items-center gap-x-7 gap-y-4 lg:col-span-5 lg:col-start-8 lg:justify-end">
+            <Link
+              className="btn-primary group inline-flex h-14 items-center gap-3 rounded-full bg-primary-900 pr-6 pl-7 text-[16px] font-semibold text-white"
+              href="/register"
+            >
+              Daftar sekarang
+              <ArrowIcon className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+            </Link>
+            <a
+              className="link-underline text-[16px] font-semibold text-primary-900"
+              href="#cara-kerja"
+            >
+              Lihat cara kerjanya
+            </a>
+          </div>
         </div>
       </div>
 
-      <div
-        className="hero-stagger relative mx-auto mt-5 h-[clamp(330px,39vh,430px)] max-w-[1280px]"
-        style={{ "--stagger": 3 } as React.CSSProperties}
-      >
-        <div className="absolute left-1/2 top-16 h-[340px] w-[min(72vw,720px)] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(176,210,254,0.52)_0%,rgba(217,233,251,0.26)_46%,rgba(255,255,255,0)_72%)] blur-xl" />
-
-        <svg
-          aria-hidden="true"
-          className="absolute left-1/2 top-[88px] w-[min(94vw,1200px)] -translate-x-1/2 text-primary-300"
-          fill="none"
-          viewBox="0 0 900 92"
+      <div className="relative">
+        <div
+          className="hero-stagger"
+          style={{ "--stagger": 3 } as React.CSSProperties}
         >
-          <path
-            d="M1 48h76l10-3 8 7 12-3 9 2 15-1 10-27 12 55 13-33 12 3 12-1 8 4 12-7 12 8 8-5 10 2 10-42 12 69 12-35 14 8 12-2 12 1 13-2h46m142 0h46l13 2 11-1 13 3 13-6 12 5 10-38 13 64 12-32 12 2 12-2 13 1 12-3 10 5 10-7 11 4 12-47 13 72 12-37 13 8 14-4 12 3 12-2 12 2h76"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2.1"
-          />
-        </svg>
-
-        <Image
-          alt="Jam tangan pintar SiHEDAF untuk pemantauan jantung portabel"
-          className="absolute left-1/2 top-5 h-auto w-[clamp(175px,12vw,230px)] -translate-x-1/2 drop-shadow-[0_28px_34px_rgba(0,49,113,0.2)]"
-          height={443}
-          priority
-          src="/watch.png"
-          width={277}
+          <LivePulseMonitor>
+            <Image
+              alt="Jam tangan pintar SiHEDAF untuk pemantauan jantung portabel"
+              className="watch-float h-auto w-[clamp(104px,10vw,160px)] drop-shadow-[0_26px_30px_rgba(0,39,88,0.22)]"
+              height={443}
+              preload
+              src="/watch.png"
+              width={277}
+            />
+          </LivePulseMonitor>
+        </div>
+        {/* The thread starts where the monitor strip ends. */}
+        <ThreadPoint className="bottom-0 left-[31px] lg:hidden" dir="down" />
+        <ThreadPoint
+          className="right-[12%] bottom-0 hidden lg:block"
+          dir="down"
         />
       </div>
     </section>

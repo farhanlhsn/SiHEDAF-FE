@@ -1,29 +1,82 @@
 import Link from "next/link";
 
+import { HeartDrawing } from "@/components/landing/LineArt";
+import { ThreadPoint } from "@/components/landing/ThreadPoint";
 import { ArrowIcon } from "@/components/ui/ArrowIcon";
+
+const startSteps = [
+  "Daftar akun",
+  "Hubungkan Device ID",
+  "Pantau dari dashboard",
+];
 
 export function CtaSection() {
   return (
     <section
-      className="section-reveal bg-[#fbfbfb] px-5 pb-24 pt-16 sm:px-8 lg:px-10 lg:pb-28"
+      aria-labelledby="cta-title"
+      className="relative pt-32 pb-28 lg:pt-40 lg:pb-32"
       id="cta"
     >
-      <div className="child-reveal mx-auto flex min-h-[320px] max-w-[1440px] items-center rounded-[36px] bg-primary-300 px-8 py-14 shadow-[0_24px_60px_rgba(0,84,190,0.14)] sm:px-14 lg:px-20">
-        <div>
-          <h2 className="max-w-[720px] text-[clamp(2.25rem,3.25vw,3.5rem)] leading-[1.06] font-medium tracking-[-0.05em] text-white">
-            Pantau Kesehatan Kamu dengan
-            <span className="block">
-              Mudah Bersama{" "}
-              <span className="font-serif font-normal italic">SiHEDAF</span>
-            </span>
-          </h2>
-          <Link
-            className="mt-9 inline-flex h-13 items-center gap-2.5 rounded-full bg-white px-8 text-[14px] font-semibold text-primary-500 shadow-[0_10px_24px_rgba(0,39,88,0.12)] transition-[transform,box-shadow] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[1.5px] hover:shadow-[0_18px_36px_rgba(0,39,88,0.18)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-            href="/register"
+      <div className="mx-auto max-w-[1440px] px-5 lg:px-10">
+        <div className="grid items-center gap-14 pl-10 lg:grid-cols-12 lg:gap-10 lg:pl-14">
+          <div
+            className="relative flex justify-center lg:col-span-5"
+            data-thread-for="heart"
           >
-            Daftar Sekarang
-            <ArrowIcon />
-          </Link>
+            <ThreadPoint className="top-0 left-1/2" target="heart" to="jump" />
+            <HeartDrawing className="h-auto w-[240px] lg:w-[330px]" />
+            <ThreadPoint
+              className="bottom-[1%] left-1/2"
+              lead={-180}
+              to="end"
+            />
+          </div>
+
+          <div className="lg:col-span-6 lg:col-start-7">
+            <h2
+              className="text-[clamp(2.6rem,5vw,5rem)] leading-[0.95] tracking-[-0.05em] text-primary-900"
+              id="cta-title"
+            >
+              <span className="block font-bold">
+                Jantungmu kerja tanpa henti.
+              </span>
+              <span className="block font-extralight">
+                Biar SiHEDAF yang berjaga.
+              </span>
+            </h2>
+
+            <ol className="mt-10 flex flex-wrap gap-x-3 gap-y-3 text-[16px] font-medium text-primary-900">
+              {startSteps.map((step, index) => (
+                <li className="flex items-center gap-3" key={step}>
+                  <span className="grid size-7 place-items-center rounded-full border-[1.5px] border-primary-300 text-[13px] font-semibold text-primary-500 tabular-nums">
+                    {index + 1}
+                  </span>
+                  {step}
+                  {index < startSteps.length - 1 ? (
+                    <span aria-hidden="true" className="text-primary-900/70">
+                      →
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+
+            <div className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-4">
+              <Link
+                className="btn-primary group inline-flex h-14 items-center gap-3 rounded-full bg-primary-900 pr-6 pl-7 text-[16px] font-semibold text-white"
+                href="/register"
+              >
+                Daftar sekarang
+                <ArrowIcon className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+              </Link>
+              <Link
+                className="link-underline text-[16px] font-semibold text-primary-900"
+                href="/login"
+              >
+                Sudah punya akun? Masuk
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </section>

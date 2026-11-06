@@ -17,7 +17,8 @@ const teamMembers = [
   {
     role: "Backend Developer",
     name: "Muhammad Rifki Anandita",
-    linkedInLabel: "https://www.linkedin.com/in/muhammad-rifki-anandita-32b481287/",
+    linkedInLabel:
+      "https://www.linkedin.com/in/muhammad-rifki-anandita-32b481287/",
     imageSrc: "/team/rifki.png",
   },
   {
@@ -32,7 +33,7 @@ export function TeamSection() {
   return (
     <section
       aria-labelledby="team-title"
-      className="section-reveal w-full bg-[#fbfbfb] pt-16 pb-24 lg:pt-20 lg:pb-32"
+      className="section-reveal w-full bg-paper pt-16 pb-24 lg:pt-20 lg:pb-32"
     >
       <div className="text-center">
         <SectionLabel>Tim Kami</SectionLabel>

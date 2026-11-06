@@ -17,13 +17,12 @@ test("uses fixed mobile navigation and sticky desktop navigation", async () => {
     readSource("components/sections/HeroSection.tsx"),
   ]);
 
-  assert.match(header, /h-\[104px\]/);
+  assert.match(header, /h-\[76px\]/);
   assert.match(header, /fixed inset-x-0 top-0/);
   assert.match(header, /md:static/);
   assert.match(header, /md:sticky md:top-0/);
-  assert.match(header, /h-\[(?:64|68|72)px\]/);
   assert.match(header, /max-w-\[1440px\]/);
-  assert.match(hero, /min-h-\[calc\(100svh-/);
+  assert.match(hero, /min-h-\[calc\(100svh-76px\)\]/);
   assert.doesNotMatch(hero, /min-h-\[680px\]/);
 });
 
@@ -35,7 +34,7 @@ test("floats the mobile menu without turning the public header into a client bou
   const navigationSource = `${header}\n${mobileNavigation}`;
 
   assert.match(navigationSource, /data-mobile-menu-overlay/);
-  assert.match(navigationSource, /absolute inset-x-0 top-\[96px\]/);
+  assert.match(navigationSource, /absolute inset-x-0 top-\[76px\]/);
   assert.doesNotMatch(header, /["']use client["']/);
   assert.match(mobileNavigation, /["']use client["']/);
 });

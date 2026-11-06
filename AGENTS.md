@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # SiHEDAF Project Guide
 
-Terakhir diperbarui: 2 Juli 2026.
+Terakhir diperbarui: 6 November 2026.
 
 ## Gambaran Project
 
@@ -37,13 +37,16 @@ Sebelum mengubah API, route, layout, metadata, atau convention Next.js, baca pan
 - Logo, gambar wearable utama, dan wearable dashboard tersedia di folder `public`.
 - Global selection color, smooth scroll, typography, motion dashboard, dan dukungan `prefers-reduced-motion` sudah disiapkan.
 
-### Landing page
+### Landing page — konsep "satu garis"
 
-- Header/navigation responsif.
-- Hero deteksi dini stroke dengan visual smartwatch dan garis sinyal.
-- Section ancaman stroke, fitur teknologi, cara kerja, CTA, dan footer.
-- Link navigasi menuju Tentang, Fitur, Cara Kerja, Tim Kami, Daftar, dan Masuk.
-- Setiap section dipisahkan ke komponen PascalCase di `src/components/sections`.
+- Satu garis PPG biru (`ScrollThread`) digambar mengikuti scroll dari hero sampai CTA, melewati "stasiun" bernomor di tiap section (01 Masalahnya, 02 Berjaga 24 jam, 03 Cara kerja).
+- Rute garis dibaca dari anchor `ThreadPoint` / `ThreadStation` di DOM; geometrinya dihitung oleh modul murni `ThreadPath.ts` (curve, line, jump, wave, loop) sehingga mengikuti layout di setiap breakpoint. Di bawah `lg` garis berjalan lurus di rail kiri.
+- Elemen yang diberi `data-thread-for="<target>"` menerima CSS variable `--thread-progress` (0–1) untuk animasi yang sinkron dengan garis: baris "Bisa bedakan?", jam 24 jam, line-art empat langkah, dan hati di CTA.
+- Hero memakai `LivePulseMonitor` (canvas, sweep seperti monitor pasien) dengan episode AF ilustratif; label "Ilustrasi sinyal PPG" wajib tetap ada.
+- Gelombang PPG normal/AF dibuat deterministik oleh `PulseWaveform.ts` (seed), jadi server dan client menghasilkan bentuk yang sama.
+- Komponen section tetap Server Component; logika client ada di hook `src/components/landing/hooks` (`UseScrollThread`, `UseLivePulse`, `UseInView`, `UseReducedMotion`).
+- Footer gelap memuat kepanjangan SiHEDAF dan disclaimer bahwa SiHEDAF bukan pengganti diagnosis dokter.
+- Setiap section dipisahkan ke komponen PascalCase di `src/components/sections`; elemen visual landing ada di `src/components/landing`.
 
 ### Tim Kami
 
@@ -114,9 +117,14 @@ Sebelum mengubah API, route, layout, metadata, atau convention Next.js, baca pan
 | `primary-800` | `#003171` | Heading biru gelap |
 | `primary-900` | `#002758` | Foreground utama dan logo text |
 
+Token permukaan halaman publik:
+
+- `paper` `#F5F3EE` (latar landing, tim, dan header) dan `paper-deep` `#EBE6DC` (aksen/area tidur di jam 24 jam).
+
 Semantic colors yang konsisten dipakai pada dashboard:
 
-- AF/error: `#FF4572` dengan background `#FFE8EE`.
+- AF/error: `#FF4572` (`af-500`) dengan background `#FFE8EE` (`af-50`); teks kecil AF memakai `#C8264F` (`af-700`) agar kontrasnya lolos AA.
+- Di visual landing, irama normal memakai biru `primary-300`, bukan hijau: pasangan hijau–pink gagal uji buta warna (deutan ΔE 2.7), sedangkan biru–pink lolos. Status selalu disertai ikon/label.
 - Normal/success: sekitar `#43B956`–`#4BC35A` dengan background `#E6F7E9`.
 - App background: `#F7F7F8`; card background: `#FFFFFF`.
 - Border netral: sekitar `#E1E5E9`–`#EDF0F3`.
@@ -131,7 +139,8 @@ Gunakan token `primary-*` untuk warna brand. Warna semantic health boleh memakai
 - Sidebar: transisi width/transform selama `300ms`.
 - Stagger list: jeda bertahap `50ms`.
 - Hover motion hanya digunakan pada kontrol interaktif; card informasi statis tidak memakai lift atau shadow hover.
-- Semua motion non-esensial harus tetap mengikuti `prefers-reduced-motion`.
+- Landing: garis scroll, line-art, dan jam 24 jam digerakkan oleh scroll (bukan timer). Monitor hero berhenti saat di luar layar atau tab tidak aktif.
+- Semua motion non-esensial harus tetap mengikuti `prefers-reduced-motion`; di landing, mode ini menampilkan semua ilustrasi dalam keadaan akhir yang lengkap.
 
 ## Route Map
 
