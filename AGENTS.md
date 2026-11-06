@@ -104,6 +104,7 @@ Sebelum mengubah API, route, layout, metadata, atau convention Next.js, baca pan
 - Komponen dashboard hanya memakai token warna (tanpa hex mentah), teks minimal 13px, dan teks navy minimal 70% opacity; ini dijaga oleh `DashboardRedesign.test.mjs`.
 - Page entry, sidebar, notification rail, chart draw, staggered rows, dan tombol menggunakan motion ringan.
 - Card dan information surface statis tidak memakai hover-lift agar tidak memberi affordance klik palsu; motion hover hanya dipakai pada kontrol yang benar-benar interaktif.
+- Rekaman tanpa label hasil AI tampil netral ("Belum ada hasil" / "Hasil analisis belum tersedia", tanpa StatusMark) dan tidak dianggap normal. `DashboardModal` memindahkan fokus ke dialog saat dibuka dan mengembalikannya ke elemen pembuka saat ditutup.
 
 ### Testing dan struktur
 
@@ -233,11 +234,11 @@ Sebelum menyatakan perubahan selesai, jalankan test, lint, dan production build.
 
 ## Batasan Saat Ini
 
-- Seluruh health data, history, notification, dan profile data masih mock; kontrol UI sudah aktif tetapi belum memanggil API.
+- Dashboard memanggil route proxy `src/app/api/v1/*` (auth, measurement, notification) yang meneruskan ke backend; data kesehatan, riwayat, notifikasi, dan profil berasal dari API tersebut, bukan mock.
 - Monitoring range, calendar filter, pagination, dan password menggunakan state React lokal.
 - Edit profile dan avatar menggunakan `localStorage` sebagai persistence simulasi; upload belum dikirim ke object storage/backend.
 - Logout baru mengarahkan ke `/login` dan belum menghapus session/token karena authentication backend belum tersedia.
-- Tidak ada proteksi route/session untuk dashboard.
+- `src/proxy.ts` mengalihkan `/dashboard`, `/riwayat`, dan `/profil` ke `/login` bila tidak ada cookie access/refresh token; ini hanya pemeriksaan keberadaan cookie, validasi token dilakukan backend.
 - Tidak ada database, API, device protocol, atau real-time PPG stream.
 - Avatar profil menggunakan placeholder dan dapat diganti setelah asset final tersedia.
 - Laporan dokter bergantung pada `summary` API yang menghormati filter tanggal.
