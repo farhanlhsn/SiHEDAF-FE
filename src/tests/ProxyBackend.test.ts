@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { PATCH as readNotification } from "../app/api/v1/notification/[id]/read/route";
+
 import type { SessionCookie } from "../features/auth/session/server/AuthCookies";
 import {
   BACKEND_UNAVAILABLE,
@@ -212,4 +214,29 @@ test("a 401 after the retry is an expired session with two calls", async () => {
   assert.equal(response.status, 401);
   assert.deepEqual(await response.json(), { code: 401, message: "Sesi berakhir." });
   assert.equal(calls.length, 2);
+});
+
+test("the notification read route answers 400 for a non-numeric id without calling the backend", async () => {
+  const originalFetch = globalThis.fetch;
+  let called = 0;
+  globalThis.fetch = (async () => {
+    called += 1;
+    return Response.json({});
+  }) as typeof fetch;
+  try {
+    for (const id of ["abc", "1/../2", "", "12a", "-1", "1.5"]) {
+      const response = await readNotification(
+        new Request(`http://localhost/api/v1/notification/x/read`, { method: "PATCH" }),
+        { params: Promise.resolve({ id }) },
+      );
+      assert.equal(response.status, 400, id);
+      assert.deepEqual(await response.json(), {
+        code: 400,
+        message: "Notifikasi tidak ditemukan.",
+      });
+    }
+    assert.equal(called, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

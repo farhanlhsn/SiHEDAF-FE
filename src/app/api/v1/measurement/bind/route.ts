@@ -1,4 +1,5 @@
 import { proxyBackend } from "@/features/auth/session/server/ProxyBackend";
+import { SESSION_EXPIRED } from "@/features/auth/session/server/SessionServiceError";
 import {
   DEVICE_ALREADY_BOUND,
   DEVICE_NOT_FOUND,
@@ -56,9 +57,9 @@ export async function POST(request: Request) {
     data?: { message?: unknown } | null;
   };
 
-  // Session failures keep the proxy's `{ code, message }` shape.
+  // The message is shown under the Device ID field: say what to do next.
   if (response.status === 401) {
-    return json({ success: false, message: String(result.message) }, 401);
+    return json({ success: false, message: SESSION_EXPIRED }, 401);
   }
 
   if (response.ok) {
