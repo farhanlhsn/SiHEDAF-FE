@@ -23,6 +23,7 @@ export function useHistoryView() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
 
   const [summaries, setSummaries] = useState([
     { label: "Total jumlah monitoring", value: 0 },
@@ -102,5 +103,7 @@ export function useHistoryView() {
     isLoading,
     error,
     summaries,
+    selectedItem,
+    setSelectedItem,
   };
 }

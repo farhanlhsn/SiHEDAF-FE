@@ -20,6 +20,7 @@ const viewFiles = [
   "components/dashboard/AiResultModal.tsx",
   "components/dashboard/DashboardModal.tsx",
   "components/dashboard/HistoryView.tsx",
+  "components/dashboard/HistoryDetailModal.tsx",
   "components/dashboard/DateRangePicker.tsx",
   "components/dashboard/ProfileView.tsx",
   "components/dashboard/EditProfileView.tsx",

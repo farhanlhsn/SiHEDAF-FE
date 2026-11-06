@@ -9,6 +9,7 @@ import {
   isNormalResult,
   shareOf,
 } from "@/components/dashboard/DashboardFormat";
+import { HistoryDetailModal } from "@/components/dashboard/HistoryDetailModal";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { Sparkline } from "@/components/dashboard/Sparkline";
 import { StatusMark } from "@/components/dashboard/StatusMark";
@@ -31,6 +32,8 @@ export function HistoryView() {
     isLoading,
     error,
     summaries,
+    selectedItem,
+    setSelectedItem,
   } = useHistoryView();
 
   function handleRangeChange(range: DateRange | undefined) {
@@ -171,19 +174,36 @@ export function HistoryView() {
                 ) : (
                   historyData.map((row) => {
                     const isNormal = isNormalResult(row.resultLabel) ?? true;
+                    const dateLabel = formatWib(row.requestedAt, "date");
+                    const timeLabel = formatWib(row.requestedAt, "time");
 
                     return (
                       <tr
-                        className="stagger-item border-b border-primary-900/[0.07] last:border-b-0"
+                        className="stagger-item cursor-pointer hover:bg-paper border-b border-primary-900/[0.07] last:border-b-0"
                         key={row.id}
+                        onClick={() => setSelectedItem(row)}
                       >
                         <td className="px-6 py-4">
-                          <p className="text-[15px] font-semibold text-primary-900">
-                            {formatWib(row.requestedAt, "date") ?? "—"}
-                          </p>
-                          <p className="mt-0.5 text-[14px] text-primary-900/75">
-                            {formatWib(row.requestedAt, "time") ?? ""}
-                          </p>
+                          <button
+                            aria-label={
+                              dateLabel
+                                ? `Lihat detail analisis ${dateLabel} ${timeLabel ?? ""}`.trim()
+                                : "Lihat detail analisis tanpa waktu"
+                            }
+                            className="block rounded-md text-left focus-visible:outline-2 focus-visible:outline-primary-300"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelectedItem(row);
+                            }}
+                            type="button"
+                          >
+                            <span className="block text-[15px] font-semibold text-primary-900">
+                              {dateLabel ?? "—"}
+                            </span>
+                            <span className="mt-0.5 block text-[14px] text-primary-900/75">
+                              {timeLabel ?? ""}
+                            </span>
+                          </button>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
@@ -379,6 +399,10 @@ export function HistoryView() {
           </div>
         </article>
       </div>
+      <HistoryDetailModal
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+      />
     </section>
   );
 }

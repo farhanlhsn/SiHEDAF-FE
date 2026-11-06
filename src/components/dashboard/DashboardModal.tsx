@@ -10,6 +10,7 @@ type DashboardModalProps = Readonly<{
   open: boolean;
   title: string;
   showCloseButton?: boolean;
+  size?: "default" | "wide";
 }>;
 
 export function DashboardModal({
@@ -19,6 +20,7 @@ export function DashboardModal({
   open,
   title,
   showCloseButton = false,
+  size = "default",
 }: DashboardModalProps) {
   const titleId = useId();
   const descriptionId = useId();
@@ -55,7 +57,7 @@ export function DashboardModal({
         aria-describedby={description ? descriptionId : undefined}
         aria-labelledby={titleId}
         aria-modal="true"
-        className="modal-enter relative z-10 w-full max-w-[480px] rounded-[28px] bg-white p-6 text-primary-900 shadow-[0_24px_64px_rgba(0,39,88,0.2)] sm:p-8"
+        className={`modal-enter relative z-10 w-full ${size === "wide" ? "max-w-[760px]" : "max-w-[480px]"} rounded-[28px] bg-white p-6 text-primary-900 shadow-[0_24px_64px_rgba(0,39,88,0.2)] sm:p-8`}
         role="dialog"
       >
         {showCloseButton ? (
