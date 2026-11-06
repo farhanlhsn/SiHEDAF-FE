@@ -1,44 +1,66 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
-import { AuthVisualPanel } from "@/components/auth/AuthVisualPanel";
+import type { JourneyStep } from "@/components/auth/AuthJourney";
+import {
+  AuthVisualPanel,
+  type AuthIllustration,
+  type AuthTitle,
+} from "@/components/auth/AuthVisualPanel";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 
 type AuthShellProps = {
-  titleLines: string[];
-  titleLabel: string;
-  accent: string;
+  title: AuthTitle;
   description: string;
+  journeyStep?: JourneyStep;
+  illustration: AuthIllustration;
   children: ReactNode;
 };
 
 export function AuthShell({
-  titleLines,
-  titleLabel,
-  accent,
+  title,
   description,
+  journeyStep,
+  illustration,
   children,
 }: AuthShellProps) {
   return (
-    <div className="page-enter flex min-h-dvh flex-col bg-white text-primary-900">
-      <main className="flex min-h-0 flex-1 flex-col lg:flex-row">
+    <div className="flex min-h-dvh flex-col bg-paper text-primary-900">
+      <header className="shrink-0 border-b border-primary-900/10">
+        <div className="mx-auto flex h-[76px] w-full max-w-[1600px] items-center justify-between px-5 lg:px-10">
+          <BrandLogo />
+          <Link
+            className="nav-pulse inline-flex items-center gap-2 text-[15px] font-semibold text-primary-900"
+            href="/"
+          >
+            <ArrowLeft
+              aria-hidden="true"
+              className="size-4"
+              strokeWidth={2.25}
+            />
+            Beranda
+          </Link>
+        </div>
+      </header>
+
+      <main className="page-enter flex min-h-0 flex-1 flex-col lg:flex-row">
         <AuthVisualPanel
-          accent={accent}
           description={description}
-          titleLabel={titleLabel}
-          titleLines={titleLines}
+          illustration={illustration}
+          journeyStep={journeyStep}
+          title={title}
         />
 
-        <section className="flex w-full items-center justify-center bg-white px-6 py-10 sm:px-10 lg:w-1/2 lg:py-14 xl:px-20 2xl:px-28">
-          <div className="w-full max-w-[580px]">{children}</div>
+        <section className="flex w-full flex-1 items-start justify-center px-5 py-10 sm:px-10 lg:items-center lg:py-14 xl:px-20">
+          <div className="w-full max-w-[560px]">{children}</div>
         </section>
       </main>
 
-      <footer className="h-[72px] shrink-0 border-t border-primary-900/[0.055] bg-white px-5 sm:px-8">
-        <div className="mx-auto flex h-full max-w-[1600px] items-center justify-between">
-          <BrandLogo compact />
-          <p className="text-[12px] font-medium text-primary-900/40">
-            Copyright © 2026. All Rights Reserved.
-          </p>
+      <footer className="shrink-0 border-t border-primary-900/10">
+        <div className="mx-auto flex min-h-[64px] w-full max-w-[1600px] flex-col justify-center gap-1 px-5 py-4 text-[13px] text-primary-900/75 sm:flex-row sm:items-center sm:justify-between lg:px-10">
+          <p>© 2026 SiHEDAF</p>
+          <p>Alat bantu deteksi dini, bukan pengganti diagnosis dokter.</p>
         </div>
       </footer>
     </div>

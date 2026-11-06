@@ -88,8 +88,8 @@ test("composes the shared split-screen shell and route-specific forms", async (c
     "Lupa Kata Sandi",
     "Buat Kata Sandi Baru",
     "Hubungkan Perangkat",
-    "Deteksi Dini Risiko",
-    "Langkah Awal Pencegahan",
+    "Selamat datang",
+    "Langkah awal pencegahan",
     "Masukkan Device ID",
   ]) {
     assert.ok(allSource.includes(copy), `missing auth reference copy: ${copy}`);
@@ -130,6 +130,37 @@ test("implements active form states, password toggles, and fixed navigation", as
   assert.match(registerSource, /disabled={!isValid \|\| isPending}/);
   assert.match(registerSource, /router\.replace\("\/login"\)/);
   assert.match(deviceSource, /Hubungkan perangkat/);
+});
+
+test("keeps auth screens readable and calm for older users", async () => {
+  const files = [
+    "components/auth/AuthShell.tsx",
+    "components/auth/AuthVisualPanel.tsx",
+    "components/auth/AuthJourney.tsx",
+    "components/auth/AuthInput.tsx",
+    "components/auth/LoginForm.tsx",
+    "components/auth/RegisterForm.tsx",
+    "components/auth/ForgotPasswordForm.tsx",
+    "components/auth/ResetPasswordForm.tsx",
+    "components/auth/ConnectDeviceForm.tsx",
+  ];
+  const sources = await Promise.all(
+    files.map((filePath) => readFile(path.join(sourceDirectory, filePath), "utf8")),
+  );
+  const allSource = sources.join("\n");
+  const inputSource = sources[3];
+
+  assert.doesNotMatch(allSource, /font-serif/, "no italic serif accent words");
+  assert.doesNotMatch(
+    allSource,
+    /(?<!placeholder:)text-primary-900\/(?:[1-6]\d|[1-9])\b/,
+    "navy text below 70% opacity fails WCAG AA on paper",
+  );
+  assert.doesNotMatch(allSource, /text-\[(?:[0-9]|1[0-2])px\]/, "auth type stays at 13px or larger");
+  assert.doesNotMatch(allSource, /opacity-50/, "disabled buttons stay readable instead of fading");
+  assert.match(inputSource, /text-\[16px\]/, "16px inputs avoid iOS zoom on focus");
+  assert.match(inputSource, /CircleAlert/, "errors pair colour with an icon");
+  assert.match(inputSource, /role="alert"/);
 });
 
 test("connects landing entry points to login and registration routes", async () => {

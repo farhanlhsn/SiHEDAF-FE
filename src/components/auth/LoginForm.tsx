@@ -53,7 +53,7 @@ export function LoginForm() {
     }
 
     toast.success("Berhasil masuk.");
-    
+
     if (result.hasDeviceBound) {
       router.replace("/dashboard");
     } else {
@@ -63,10 +63,10 @@ export function LoginForm() {
 
   return (
     <div>
-      <p className="text-[13px] font-semibold text-primary-300">
-        Selamat Datang Kembali
+      <p className="text-[15px] font-semibold text-primary-500">
+        Akun SiHEDAF
       </p>
-      <h1 className="mt-2.5 text-[36px] font-medium tracking-[-0.045em] text-primary-900">
+      <h1 className="mt-3 text-[clamp(2.1rem,3vw,2.75rem)] leading-[1.02] font-bold tracking-[-0.045em] text-primary-900">
         Masuk ke Akun
       </h1>
 
@@ -115,7 +115,7 @@ export function LoginForm() {
           />
           <div className="mt-3 text-right">
             <Link
-              className="text-[12px] font-semibold text-primary-300 transition-colors hover:text-primary-600"
+              className="text-[15px] font-semibold text-primary-500 underline-offset-4 hover:underline"
               href="/lupa-kata-sandi"
             >
               Lupa kata sandi?
@@ -124,10 +124,7 @@ export function LoginForm() {
         </div>
 
         <button
-          className={`h-14 w-full rounded-full text-[14px] font-semibold transition-[background-color,transform,box-shadow,opacity] duration-200 ${isValid && !isPending
-              ? "bg-primary-300 text-white shadow-[0_10px_24px_rgba(0,110,251,0.16)] hover:bg-primary-400"
-              : "cursor-not-allowed bg-primary-300 text-white opacity-50 disabled:hover:bg-primary-300"
-            }`}
+          className="btn-primary h-14 w-full rounded-full bg-primary-900 text-[16px] font-semibold text-white"
           disabled={!isValid || isPending}
           type="submit"
         >
@@ -135,9 +132,12 @@ export function LoginForm() {
         </button>
       </form>
 
-      <p className="mt-7 text-center text-[12px] font-medium text-primary-900/35">
+      <p className="mt-7 text-center text-[15px] text-primary-900/75">
         Belum punya akun?{" "}
-        <Link className="font-semibold text-primary-300" href="/register">
+        <Link
+          className="font-semibold text-primary-500 underline-offset-4 hover:underline"
+          href="/register"
+        >
           Daftar sekarang
         </Link>
       </p>

@@ -574,6 +574,34 @@ footer[id] {
   transform: scale(1);
 }
 
+/* Registered so it can be animated (auth line-art draws itself on load). */
+@property --thread-progress {
+  inherits: true;
+  initial-value: 1;
+  syntax: "<number>";
+}
+
+@keyframes autodraw {
+  from {
+    --thread-progress: 0;
+  }
+
+  to {
+    --thread-progress: 1;
+  }
+}
+
+.autodraw {
+  animation: autodraw 2.6s cubic-bezier(0.65, 0, 0.35, 1) 350ms both;
+}
+
+.btn-primary:disabled {
+  background-color: rgb(0 39 88 / 0.1);
+  box-shadow: none;
+  color: rgb(0 39 88 / 0.75);
+  transform: none;
+}
+
 /* Line-art drawn in sync with the thread: each stroke takes its turn. */
 .line-art .stroke {
   fill: none;

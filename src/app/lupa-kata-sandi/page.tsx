@@ -22,10 +22,9 @@ export default async function ForgotPasswordPage({
   if (token) {
     return (
       <AuthShell
-        accent="Aman"
         description="Buat kata sandi baru untuk menjaga akses dan data pemantauan kesehatanmu tetap terlindungi."
-        titleLabel="Keamanan Akun SiHEDAF"
-        titleLines={["Lindungi", "Akun"]}
+        illustration="lock"
+        title={{ strong: "Akunmu", light: "tetap terlindungi." }}
       >
         <ResetPasswordForm token={token} />
       </AuthShell>
@@ -34,10 +33,9 @@ export default async function ForgotPasswordPage({
 
   return (
     <AuthShell
-      accent="Akun"
       description="Pulihkan akses dengan tautan aman yang dikirim langsung ke email akun SiHEDAF kamu."
-      titleLabel="Pemulihan Akun SiHEDAF"
-      titleLines={["Pulihkan", "Akses"]}
+      illustration="lock"
+      title={{ strong: "Tenang,", light: "akunmu bisa dipulihkan." }}
     >
       <ForgotPasswordForm />
     </AuthShell>

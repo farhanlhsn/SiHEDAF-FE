@@ -35,23 +35,24 @@ export function TeamSection() {
       aria-labelledby="team-title"
       className="section-reveal w-full bg-paper pt-16 pb-24 lg:pt-20 lg:pb-32"
     >
-      <div className="text-center">
+      <div className="mx-auto w-[calc(100%-40px)] max-w-[1440px] sm:w-[calc(100%-64px)]">
         <SectionLabel>Tim Kami</SectionLabel>
-        <h1
-          className="mx-auto mt-6 max-w-[620px] text-[clamp(2.5rem,3.5vw,3.75rem)] leading-[1.04] font-medium tracking-[-0.055em] text-primary-900"
-          id="team-title"
-        >
-          Tim Pengembang
-          <span className="block">
-            dibalik{" "}
-            <span className="font-serif font-normal italic text-primary-300">
-              SiHEDAF
-            </span>
-          </span>
-        </h1>
+        <div className="mt-8 grid gap-6 lg:grid-cols-12 lg:items-end">
+          <h1
+            className="text-[clamp(2.6rem,5vw,5rem)] leading-[0.95] tracking-[-0.05em] text-primary-900 lg:col-span-8"
+            id="team-title"
+          >
+            <span className="font-bold">Tim pengembang</span>{" "}
+            <span className="font-extralight">di balik SiHEDAF.</span>
+          </h1>
+          <p className="max-w-[420px] text-[18px] leading-[1.6] text-primary-900/80 lg:col-span-4">
+            Empat orang yang merancang antarmuka, membangun sistem, dan melatih
+            model AI pendeteksi Atrial Fibrillation.
+          </p>
+        </div>
       </div>
 
-      <div className="mx-auto mt-14 grid w-[calc(100%-32px)] max-w-[1440px] grid-cols-1 gap-5 sm:w-[calc(100%-64px)] sm:grid-cols-2 md:grid-cols-4">
+      <div className="mx-auto mt-14 grid w-[calc(100%-40px)] max-w-[1440px] grid-cols-1 gap-5 sm:w-[calc(100%-64px)] sm:grid-cols-2 lg:grid-cols-4">
         {teamMembers.map((member) => (
           <TeamCard key={member.role} {...member} />
         ))}

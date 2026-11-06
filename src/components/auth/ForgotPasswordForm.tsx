@@ -25,11 +25,7 @@ export function ForgotPasswordForm() {
     formState: { isValid },
     handleSubmit,
     setError,
-  } = useForm<
-    ResetPasswordEmailInput,
-    unknown,
-    ResetPasswordEmailRequest
-  >({
+  } = useForm<ResetPasswordEmailInput, unknown, ResetPasswordEmailRequest>({
     defaultValues,
     mode: "onChange",
     resolver: zodResolver(ResetPasswordEmailSchema),
@@ -63,25 +59,25 @@ export function ForgotPasswordForm() {
         <div className="mx-auto grid size-14 place-items-center rounded-full bg-primary-50 text-primary-300 sm:mx-0">
           <MailCheck aria-hidden="true" className="size-7" />
         </div>
-        <p className="mt-6 text-[13px] font-semibold text-primary-300">
+        <p className="mt-6 text-[15px] font-semibold text-primary-500">
           Periksa Email
         </p>
-        <h1 className="mt-2.5 text-[34px] font-medium tracking-[-0.045em] text-primary-900 sm:text-[36px]">
+        <h1 className="mt-3 text-[clamp(2.1rem,3vw,2.75rem)] leading-[1.02] font-bold tracking-[-0.045em] text-primary-900">
           Tautan Reset Dikirim
         </h1>
-        <p className="mt-4 max-w-[500px] text-[14px] leading-6 font-medium text-primary-900/55">
+        <p className="mt-4 max-w-[500px] text-[17px] leading-[1.6] text-primary-900/80">
           Jika email terdaftar, tautan reset kata sandi telah dikirim. Periksa
           kotak masuk dan folder spam kamu.
         </p>
         <div className="mt-9 flex flex-col gap-3 sm:flex-row">
           <Link
-            className="inline-flex h-14 items-center justify-center rounded-full bg-primary-300 px-7 text-[14px] font-semibold text-white shadow-[0_10px_24px_rgba(0,110,251,0.16)] transition-colors hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400"
+            className="btn-primary inline-flex h-14 items-center justify-center rounded-full bg-primary-900 px-8 text-[16px] font-semibold text-white"
             href="/login"
           >
             Kembali ke Login
           </Link>
           <button
-            className="h-14 rounded-full border border-primary-200 px-7 text-[14px] font-semibold text-primary-700 transition-colors hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400"
+            className="h-14 rounded-full border-[1.5px] border-primary-900/20 px-7 text-[16px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
             onClick={() => setIsSubmitted(false)}
             type="button"
           >
@@ -94,13 +90,13 @@ export function ForgotPasswordForm() {
 
   return (
     <div>
-      <p className="text-[13px] font-semibold text-primary-300">
+      <p className="text-[15px] font-semibold text-primary-500">
         Pemulihan Akun
       </p>
-      <h1 className="mt-2.5 text-[34px] font-medium tracking-[-0.045em] text-primary-900 sm:text-[36px]">
+      <h1 className="mt-3 text-[clamp(2.1rem,3vw,2.75rem)] leading-[1.02] font-bold tracking-[-0.045em] text-primary-900">
         Lupa Kata Sandi
       </h1>
-      <p className="mt-3 max-w-[500px] text-[14px] leading-6 font-medium text-primary-900/50">
+      <p className="mt-3 max-w-[500px] text-[17px] leading-[1.6] text-primary-900/80">
         Masukkan email akunmu. Kami akan mengirimkan tautan untuk membuat kata
         sandi baru.
       </p>
@@ -131,11 +127,7 @@ export function ForgotPasswordForm() {
         />
 
         <button
-          className={`h-14 w-full rounded-full text-[14px] font-semibold transition-[background-color,box-shadow,opacity] duration-200 ${
-            isValid && !isPending
-              ? "bg-primary-300 text-white shadow-[0_10px_24px_rgba(0,110,251,0.16)] hover:bg-primary-400"
-              : "cursor-not-allowed bg-primary-300 text-white opacity-50"
-          }`}
+          className="btn-primary h-14 w-full rounded-full bg-primary-900 text-[16px] font-semibold text-white"
           disabled={!isValid || isPending}
           type="submit"
         >
@@ -143,9 +135,12 @@ export function ForgotPasswordForm() {
         </button>
       </form>
 
-      <p className="mt-7 text-center text-[12px] font-medium text-primary-900/40">
+      <p className="mt-7 text-center text-[15px] text-primary-900/75">
         Ingat kata sandimu?{" "}
-        <Link className="font-semibold text-primary-300" href="/login">
+        <Link
+          className="font-semibold text-primary-500 underline-offset-4 hover:underline"
+          href="/login"
+        >
           Kembali ke login
         </Link>
       </p>

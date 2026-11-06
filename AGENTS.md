@@ -57,8 +57,10 @@ Sebelum mengubah API, route, layout, metadata, atau convention Next.js, baca pan
 ### Authentication dan perangkat
 
 - Route `/login`, `/register`, dan `/hubungkan-perangkat`.
-- Split-screen auth layout yang responsif.
-- Visual panel auth memakai vertical flex flow; logo, copy, dan smartwatch tidak boleh kembali menggunakan absolute offsets yang dapat saling overlap.
+- Split-screen auth layout di atas latar `paper`, dengan header (logo + tautan Beranda) dan footer berisi disclaimer.
+- `AuthVisualPanel` menampilkan judul kontras tebal–tipis, `AuthJourney` (peta langkah Daftar → Masuk → Hubungkan perangkat → Dashboard dengan `aria-current="step"`), lalu ilustrasi: line-art yang menggambar diri (`autodraw`) atau foto jam untuk langkah perangkat. Di mobile journey menjadi progress bar ringkas.
+- Visual panel auth memakai vertical flex flow; copy, journey, dan ilustrasi tidak boleh kembali menggunakan absolute offsets yang dapat saling overlap.
+- `AuthInput`: label 15px, teks input 16px (mencegah zoom iOS), error dengan ikon + `role="alert"`, opsi `mono` dan `hint` untuk Device ID. Tombol utama memakai `btn-primary` navy; state disabled tetap terbaca.
 - Active/inactive form state, validasi kelengkapan sederhana, dan toggle password.
 - Login mengarahkan pengguna ke penyambungan perangkat.
 - Register mengarahkan pengguna kembali ke login.
