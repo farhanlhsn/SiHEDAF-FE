@@ -144,3 +144,70 @@ test("forwards method, body and content type", async () => {
     "application/json",
   );
 });
+
+test("times out only when timeoutMs is set", async () => {
+  const hanging = ((_url: string | URL | Request, init?: RequestInit) =>
+    new Promise<Response>((_, reject) => {
+      init?.signal?.addEventListener("abort", () =>
+        reject(new DOMException("aborted", "TimeoutError")),
+      );
+    })) as typeof fetch;
+  const { cookieStore } = setup([]);
+  const response = await proxyBackend(
+    "measurement/bind",
+    { timeoutMs: 20 },
+    { fetcher: hanging, cookieStore },
+  );
+  assert.equal(response.status, 502);
+  assert.deepEqual(await response.json(), {
+    code: 502,
+    message: BACKEND_UNAVAILABLE,
+  });
+});
+
+test("passes no signal without timeoutMs", async () => {
+  const { calls, fetcher, cookieStore } = setup([Response.json({ code: 200 })]);
+  await proxyBackend("measurement/start", { method: "POST" }, { fetcher, cookieStore });
+  assert.equal(calls[0].init.signal, undefined);
+});
+
+test("a refresh failure with status 502 still ends the session", async () => {
+  const { fetcher, cookieStore } = setup([
+    Response.json({ code: 401 }, { status: 401 }),
+  ]);
+  const response = await proxyBackend("notification", undefined, {
+    fetcher,
+    cookieStore,
+    refresher: async () => {
+      throw new SessionServiceError("down", 502);
+    },
+  });
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), { code: 401, message: "Sesi berakhir." });
+});
+
+test("no tokens at all is an expired session", async () => {
+  const { calls, fetcher } = setup([]);
+  const cookieStore = { get: () => undefined, set: () => undefined };
+  const response = await proxyBackend("notification", undefined, {
+    fetcher,
+    cookieStore,
+  });
+  assert.equal(response.status, 401);
+  assert.equal(calls.length, 0);
+});
+
+test("a 401 after the retry is an expired session with two calls", async () => {
+  const { calls, fetcher, cookieStore } = setup([
+    Response.json({ code: 401 }, { status: 401 }),
+    Response.json({ code: 401 }, { status: 401 }),
+  ]);
+  const response = await proxyBackend("notification", undefined, {
+    fetcher,
+    cookieStore,
+    refresher: async () => ({ accessToken: "new" }) as never,
+  });
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), { code: 401, message: "Sesi berakhir." });
+  assert.equal(calls.length, 2);
+});

@@ -44,11 +44,16 @@ export async function POST(request: Request) {
     method: "POST",
     body: JSON.stringify(parsed.data),
     contentType: "application/json",
+    timeoutMs: 10_000,
   });
-  const result = (await response.json()) as {
+  const raw: unknown = await response.json();
+  if (typeof raw !== "object" || raw === null) {
+    return json({ success: false, message: DEVICE_SERVICE_UNAVAILABLE }, 502);
+  }
+  const result = raw as {
     code?: unknown;
     message?: unknown;
-    data?: { message?: unknown };
+    data?: { message?: unknown } | null;
   };
 
   // Session failures keep the proxy's `{ code, message }` shape.

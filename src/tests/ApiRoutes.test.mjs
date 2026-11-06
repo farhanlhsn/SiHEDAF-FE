@@ -28,3 +28,12 @@ for (const route of routes) {
     assert.doesNotMatch(source, /buildBackendApiUrl\(/);
   });
 }
+
+test("bind route guards non-object backend bodies and sets its timeout", async () => {
+  const source = await readFile(
+    path.join(root, "app/api/v1/measurement/bind/route.ts"),
+    "utf8",
+  );
+  assert.match(source, /typeof raw !== "object" \|\| raw === null/);
+  assert.match(source, /timeoutMs: 10_000/);
+});

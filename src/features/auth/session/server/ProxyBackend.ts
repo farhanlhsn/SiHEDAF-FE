@@ -9,13 +9,13 @@ import {
 
 export const BACKEND_UNAVAILABLE = "Layanan SiHEDAF sedang bermasalah.";
 const SESSION_ENDED = "Sesi berakhir.";
-const REQUEST_TIMEOUT_MS = 10_000;
 
 type ProxyInit = {
   method?: string;
   body?: BodyInit | null;
   search?: string;
   contentType?: string;
+  timeoutMs?: number;
 };
 
 type ProxyOptions = {
@@ -47,7 +47,7 @@ async function callBackend(
     headers,
     body: init.body ?? undefined,
     cache: "no-store",
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    signal: init.timeoutMs ? AbortSignal.timeout(init.timeoutMs) : undefined,
   });
 
   if (response.status === 401) {
@@ -72,7 +72,9 @@ export async function proxyBackend(
     );
     return Response.json(result.body, { status: result.status });
   } catch (error) {
-    if (error instanceof SessionServiceError && error.status === 401) {
+    // Any SessionServiceError comes from the refresh step (the backend call
+    // only throws one for a 401); the cookies are already cleared then.
+    if (error instanceof SessionServiceError) {
       return failure(401, SESSION_ENDED);
     }
     return failure(502, BACKEND_UNAVAILABLE);
