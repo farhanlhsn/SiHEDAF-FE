@@ -186,7 +186,9 @@ export function HistoryView() {
                   </tr>
                 ) : (
                   historyData.map((row) => {
-                    const isNormal = isNormalResult(row.resultLabel) ?? true;
+                    const result = isNormalResult(row.resultLabel);
+                    const isUnknown = result === null;
+                    const isNormal = result === true;
                     const dateLabel = formatWib(row.requestedAt, "date");
                     const timeLabel = formatWib(row.requestedAt, "time");
 
@@ -220,23 +222,35 @@ export function HistoryView() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <StatusMark
-                              size="small"
-                              status={isNormal ? "normal" : "af"}
-                            />
+                            {isUnknown ? null : (
+                              <StatusMark
+                                size="small"
+                                status={isNormal ? "normal" : "af"}
+                              />
+                            )}
                             <div>
                               <p
                                 className={`text-[15px] font-semibold ${
-                                  isNormal ? "text-primary-500" : "text-af-700"
+                                  isUnknown
+                                    ? "text-primary-900/70"
+                                    : isNormal
+                                      ? "text-primary-500"
+                                      : "text-af-700"
                                 }`}
                               >
-                                {isNormal ? "Normal Rhythm" : "Terdeteksi AF"}
+                                {isUnknown
+                                  ? "Belum ada hasil"
+                                  : isNormal
+                                    ? "Normal Rhythm"
+                                    : "Terdeteksi AF"}
                               </p>
-                              <p className="mt-0.5 text-[14px] text-primary-900/75">
-                                {isNormal
-                                  ? "Tidak ditemukan pola AF"
-                                  : "Pola AF teridentifikasi"}
-                              </p>
+                              {isUnknown ? null : (
+                                <p className="mt-0.5 text-[14px] text-primary-900/75">
+                                  {isNormal
+                                    ? "Tidak ditemukan pola AF"
+                                    : "Pola AF teridentifikasi"}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -246,7 +260,7 @@ export function HistoryView() {
                         <td className="px-6 py-3">
                           <Sparkline
                             data={row.ppgResult?.rawPpgData}
-                            tone={isNormal ? "blue" : "pink"}
+                            tone={isNormal || isUnknown ? "blue" : "pink"}
                           />
                         </td>
                       </tr>
