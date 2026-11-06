@@ -114,3 +114,21 @@ test("the signal card explains a timed-out analysis", () => {
   );
   assert.match(overview, /href="\/riwayat"[\s\S]{0,200}Buka Riwayat/);
 });
+
+test("a slow first /latest still teaches the baseline before it is ignored", () => {
+  assert.match(
+    sessionHook,
+    /baselineRef\.current = rememberInitial\(baselineRef\.current, latest\);\s*(?:\/\/[^\n]*\n\s*)*if \(userActedRef\.current\) return false;/,
+  );
+});
+
+test("start/stop wait 30 s and re-read /latest after a timeout", () => {
+  assert.match(sessionHook, /requestSignal\(lifetime, TOGGLE_TIMEOUT_MS\)/);
+  assert.match(sessionHook, /isTimeoutError\(error\)/);
+  assert.match(sessionHook, /afterToggleTimeout\(action, latest\)/);
+  assert.match(sessionHook, /toast\.error\(TOGGLE_ERROR\)/);
+});
+
+test("a device that is still loading is not reported offline", () => {
+  assert.match(overviewHook, /deviceLoading: isDeviceLoading/);
+});

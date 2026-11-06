@@ -7,9 +7,13 @@ import {
   EMPTY_BASELINE,
   POLL_INTERVAL_MS,
   POLL_MAX_ATTEMPTS,
+  TOGGLE_TIMEOUT_MS,
+  afterToggleTimeout,
   formatElapsed,
   isFreshResult,
+  isTimeoutError,
   pollForFreshResult,
+  rememberInitial,
   rememberResult,
   requestSignal,
   sessionStartFrom,
@@ -27,31 +31,37 @@ type UseMonitoringSessionOptions = {
 
 type Envelope<T = unknown> = { code?: number; message?: string; data?: T };
 
+type ToggleAction = "start" | "stop";
+
 const TOGGLE_FAILED = "Gagal mengubah status monitoring.";
 const TOGGLE_ERROR =
   "Terjadi kesalahan saat mengubah status monitoring. Coba lagi.";
 
 /** Start or stop a session; throws on network errors and timeouts. */
 async function postMeasurement(
-  action: "start" | "stop",
+  action: ToggleAction,
   lifetime: AbortSignal,
 ): Promise<Envelope> {
   const res = await fetch(`/api/v1/measurement/${action}`, {
     method: "POST",
-    signal: requestSignal(lifetime),
+    signal: requestSignal(lifetime, TOGGLE_TIMEOUT_MS),
   });
 
   return res.json();
 }
 
-/** The latest record, or null when the API does not answer with one. */
+/** The latest record (null when there is none); throws when the read fails. */
 async function fetchLatest(signal: AbortSignal) {
   const res = await fetch("/api/v1/measurement/latest", {
     signal: requestSignal(signal),
   });
   const json: Envelope<MeasurementData> = await res.json();
 
-  return res.ok && json.code === 200 && json.data ? json.data : null;
+  if (!res.ok || json.code !== 200) {
+    throw new Error(json.message || "Gagal membaca data terakhir.");
+  }
+
+  return json.data ?? null;
 }
 
 /**
@@ -110,9 +120,9 @@ export function useMonitoringSession({
    * session. Returns false (ignored) once the user has started or stopped.
    */
   const adoptInitial = useCallback((latest: MeasurementData) => {
+    // Even when ignored, the shown result must not count as fresh after Stop.
+    baselineRef.current = rememberInitial(baselineRef.current, latest);
     if (userActedRef.current) return false;
-
-    baselineRef.current = rememberResult(baselineRef.current, latest);
 
     if (latest.status?.toUpperCase() === "IN_PROGRESS") {
       const current = Date.now();
@@ -161,62 +171,89 @@ export function useMonitoringSession({
     [cancelPolling],
   );
 
-  const startSession = useCallback(async () => {
-    const lifetime = lifetimeRef.current?.signal;
-    if (!lifetime || lifetime.aborted) return;
+  const beginRecording = useCallback(
+    (startedAtMs: number) => {
+      userActedRef.current = true;
+      cancelPolling();
+      setStartedAt(startedAtMs);
+      setNow(Date.now());
+      setPhase("recording");
+    },
+    [cancelPolling],
+  );
 
-    setIsTogglingAction(true);
-    try {
-      const json = await postMeasurement("start", lifetime);
+  const beginAnalysing = useCallback(
+    (lifetime: AbortSignal) => {
+      userActedRef.current = true;
+      setPhase("analysing");
+      setModalView("analysing");
+      setIsModalOpen(true);
+      void pollForResult(lifetime);
+    },
+    [pollForResult],
+  );
+
+  /** A start/stop timed out: read /latest once and adopt what it reports. */
+  const recoverFromTimeout = useCallback(
+    async (action: ToggleAction, lifetime: AbortSignal) => {
+      let latest: MeasurementData | null;
+      try {
+        latest = await fetchLatest(lifetime);
+      } catch {
+        if (!lifetime.aborted) toast.error(TOGGLE_ERROR);
+        return;
+      }
       if (lifetime.aborted) return;
 
-      if (json.code === 200) {
+      const { phase: next, tookEffect } = afterToggleTimeout(action, latest);
+      if (next === "recording" && latest) {
+        baselineRef.current = rememberResult(baselineRef.current, latest);
+        beginRecording(sessionStartFrom(latest) ?? Date.now());
+      } else if (next === "analysing") {
+        beginAnalysing(lifetime);
+      } else {
         userActedRef.current = true;
         cancelPolling();
-        const current = Date.now();
-        setStartedAt(current);
-        setNow(current);
-        setPhase("recording");
-      } else {
-        toast.error(json.message || TOGGLE_FAILED);
+        setPhase("idle");
       }
-    } catch {
-      if (!lifetime.aborted) toast.error(TOGGLE_ERROR);
-    } finally {
-      if (!lifetime.aborted) setIsTogglingAction(false);
-    }
-  }, [cancelPolling]);
+      if (!tookEffect) toast.error(TOGGLE_ERROR);
+    },
+    [beginAnalysing, beginRecording, cancelPolling],
+  );
 
-  const stopSession = useCallback(async () => {
-    const lifetime = lifetimeRef.current?.signal;
-    if (!lifetime || lifetime.aborted) return;
+  const toggle = useCallback(
+    async (action: ToggleAction) => {
+      const lifetime = lifetimeRef.current?.signal;
+      if (!lifetime || lifetime.aborted) return;
 
-    setIsTogglingAction(true);
-    try {
-      const json = await postMeasurement("stop", lifetime);
-      if (lifetime.aborted) return;
+      setIsTogglingAction(true);
+      try {
+        const json = await postMeasurement(action, lifetime);
+        if (lifetime.aborted) return;
 
-      if (json.code === 200) {
-        userActedRef.current = true;
-        setPhase("analysing");
-        setModalView("analysing");
-        setIsModalOpen(true);
-        void pollForResult(lifetime);
-      } else {
-        toast.error(json.message || TOGGLE_FAILED);
+        if (json.code !== 200) {
+          toast.error(json.message || TOGGLE_FAILED);
+        } else if (action === "start") {
+          beginRecording(Date.now());
+        } else {
+          beginAnalysing(lifetime);
+        }
+      } catch (error) {
+        if (lifetime.aborted) return;
+        // A slow backend may still have done it: look before reporting.
+        if (isTimeoutError(error)) await recoverFromTimeout(action, lifetime);
+        else toast.error(TOGGLE_ERROR);
+      } finally {
+        if (!lifetime.aborted) setIsTogglingAction(false);
       }
-    } catch {
-      if (!lifetime.aborted) toast.error(TOGGLE_ERROR);
-    } finally {
-      if (!lifetime.aborted) setIsTogglingAction(false);
-    }
-  }, [pollForResult]);
+    },
+    [beginAnalysing, beginRecording, recoverFromTimeout],
+  );
 
   const handleToggleMonitoring = useCallback(async () => {
     if (isTogglingAction || phase === "analysing") return;
-    if (phase === "recording") await stopSession();
-    else await startSession();
-  }, [isTogglingAction, phase, startSession, stopSession]);
+    await toggle(phase === "recording" ? "stop" : "start");
+  }, [isTogglingAction, phase, toggle]);
 
   /** "Mulai monitoring lagi": only once no session is running. */
   const restart = useCallback(async () => {
@@ -224,8 +261,8 @@ export function useMonitoringSession({
       return;
     }
     setIsModalOpen(false);
-    await startSession();
-  }, [isTogglingAction, phase, startSession]);
+    await toggle("start");
+  }, [isTogglingAction, phase, toggle]);
 
   /** "Detail Hasil AI": the current result, or the analysing view while analysing. */
   const openResult = useCallback(() => {

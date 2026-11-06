@@ -131,6 +131,7 @@ export function useDashboardOverview() {
     restartMonitoring: session.restart,
     restartState: restartAction(session.phase, {
       deviceOnline: isDeviceOnline,
+      deviceLoading: isDeviceLoading,
       busy: session.isTogglingAction,
     }),
   };
