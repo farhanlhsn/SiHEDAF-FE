@@ -68,13 +68,14 @@ export function useDashboardOverview() {
         const res = await apiFetch("/api/v1/measurement/latest");
         // 404 means "no measurement yet", which is the first-run state.
         if (!res.ok && res.status !== 404) throw new HttpError(res.status);
-        const json = await res.json();
+        const json = res.ok ? await res.json() : null;
         if (cancelled) return;
         // Ignored once the user started or stopped while this was loading.
-        if (json.code === 200 && json.data && adoptInitial(json.data)) {
+        if (json?.code === 200 && json.data && adoptInitial(json.data)) {
           setLatestData(json.data);
         }
       } catch (e) {
+        // Navigating to /login: never reveal the first-run guide meanwhile.
         if (e instanceof SessionExpiredError) return;
         console.error("Gagal memuat data terakhir:", e);
         if (!cancelled) {
@@ -85,9 +86,8 @@ export function useDashboardOverview() {
             ),
           );
         }
-      } finally {
-        if (!cancelled) setHasLoadedLatest(true);
       }
+      if (!cancelled) setHasLoadedLatest(true);
     }
     fetchLatest();
 

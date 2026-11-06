@@ -149,7 +149,11 @@ test("first-run guide shows only after the latest data loaded and is empty", asy
   const guide = await read("components/dashboard/FirstRunGuide.tsx");
 
   assert.match(hook, /hasLoadedLatest/);
-  assert.match(hook, /finally\s*\{\s*if \(!cancelled\) setHasLoadedLatest\(true\)/);
+  assert.match(
+    hook,
+    /instanceof SessionExpiredError\) return;[\s\S]*?if \(!cancelled\) setHasLoadedLatest\(true\)/,
+  );
+  assert.doesNotMatch(hook, /finally\s*\{\s*if \(!cancelled\) setHasLoadedLatest/);
   assert.match(overview, /showFirstRun\s*\?\s*\(\s*<FirstRunGuide/);
   assert.match(hook, /showFirstRun =\s*hasLoadedLatest && !isDeviceLoading && !latestData/);
   assert.match(overview, /<article[^>]*id="monitor"/);
