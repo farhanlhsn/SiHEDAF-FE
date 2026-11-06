@@ -16,13 +16,14 @@ Bahasa utama antarmuka adalah Bahasa Indonesia. Implementasi saat ini berfokus p
 
 ## Tech Stack
 
-- Next.js `16.2.10` dengan App Router dan Turbopack.
-- React dan React DOM `19.2.4`.
-- TypeScript 5.
+- Next.js `16.4.5` dengan App Router dan Turbopack.
+- React dan React DOM `19.3.1`.
+- TypeScript 6 (`~6.0.3`). TypeScript 7 belum dipakai karena `typescript-eslint` baru mendukung `<6.1` dan TS 7 tidak lagi menyediakan API compiler lama.
 - Tailwind CSS 4 melalui `@tailwindcss/postcss`.
 - Lucide React untuk ikon kontrol panel yang semantic dan konsisten.
 - `@daypicker/react` untuk calendar range picker yang terkontrol dan mudah dipetakan ke parameter API.
-- ESLint 9 dengan `eslint-config-next`.
+- ESLint 9 dengan `eslint-config-next`. ESLint 10 belum dipakai karena `eslint-plugin-react` (dependensi `eslint-config-next`) masih membatasi peer ke ESLint 9.
+- `date-fns` 4 sebagai dependensi eksplisit (dipakai langsung oleh panel notifikasi).
 - Node.js native test runner untuk source-contract tests.
 - Tidak menggunakan UI kit atau chart library eksternal; ikon dan grafik dibuat dengan SVG lokal.
 
