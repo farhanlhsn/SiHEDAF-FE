@@ -77,7 +77,7 @@ Kriteria sukses:
   - Kalau localStorage tidak tersedia (mode privat), pilihan tetap berlaku sampai halaman ditutup.
 - UI di Profil, bagian baru **"Tampilan"**:
   - Judul "Ukuran teks" dengan grup radio berisi tiga pilihan: "Normal", "Besar", "Sangat besar". Berupa `<input type="radio">` asli yang ditata sebagai pil, tinggi minimal 48px, dengan focus ring.
-  - Kalimat contoh "Irama terakhirmu normal." yang langsung berubah ukuran.
+  - Contoh teks netral yang langsung berubah ukuran: "Contoh teks:" lalu "Hasil pemantauan dan riwayatmu akan tampil dengan ukuran ini." (bukan kalimat hasil kesehatan).
   - Tidak perlu tombol simpan; perubahan langsung berlaku.
 - Pilihan berlaku di semua halaman (landing, login, dashboard).
 
@@ -160,9 +160,9 @@ Di 125% dan lebar 390px, halaman `/dashboard`, `/riwayat`, `/riwayat/laporan`, `
     { kind: "offline" | "server" | "session"; title: string; message: string }
   ```
 
-  - `online === false` atau error jaringan (`TypeError`) → `offline`: "Koneksi internet terputus" / "Periksa koneksi internet HP atau laptopmu, lalu coba lagi."
+  - `online === false` atau `NetworkError` (dilempar `apiFetch` bila fetch tidak mendapat jawaban; abort/timeout tidak dibungkus) → `offline`: "Koneksi internet terputus" / "Periksa koneksi internet HP atau laptopmu, lalu coba lagi."
   - `status === 401` atau `SessionExpiredError` → `session` (UI tidak menampilkannya karena pengguna sedang dialihkan).
-  - Selain itu → `server`: "Server SiHEDAF sedang bermasalah" / "Ini bukan masalah di perangkatmu. Coba lagi beberapa saat lagi."
+  - Selain itu (termasuk `TypeError` biasa) → `server`: "Server SiHEDAF sedang bermasalah" / "Ini bukan masalah di HP atau laptopmu. Coba lagi beberapa saat lagi."
 - Komponen bersama `src/components/ui/DataErrorState.tsx`:
   - props: `{ title, message, onRetry?, compact? }`;
   - visual: garis sinyal terputus versi kecil, sebahasa dengan `SignalLost`;
@@ -204,13 +204,13 @@ Di 125% dan lebar 390px, halaman `/dashboard`, `/riwayat`, `/riwayat/laporan`, `
     - Tombol "Periksa lagi" memanggil `reload()` baru di `useMyDevice`.
   - **Tidak ada perangkat:** judul "Belum ada perangkat terhubung", tautan "Hubungkan perangkat".
   - **Gagal memuat `/my-device`:** `DataErrorState`. Jangan mengklaim wristband offline.
-- Kartu "Status Perangkat" yang ada tidak diubah.
+- Kartu "Status Perangkat" mengikuti `deviceState` yang sama (keputusan review akhir: kejujuran didahulukan): Memuat... / Terhubung / Terputus / Belum ada perangkat / Tidak diketahui. Saat status gagal dimuat, Mulai Monitoring dan "Mulai monitoring lagi" nonaktif dengan "Status perangkat belum bisa dimuat.".
 
 ## Pengujian
 
 - **Unit test** dengan nilai harapan ditulis manual:
   - `parseTextSize` (nilai valid, tidak dikenal, null);
-  - `describeFetchError` (offline, `TypeError`, 401, 500, 502);
+  - `describeFetchError` (offline, `NetworkError`, `TypeError` biasa saat online → server, 401, 500, 502) dan `latestOutcome`;
   - `proxyBackend` dengan `fetcher` dan `refresher` palsu: 200 diteruskan, 401 → refresh → retry, refresh gagal → 401 dengan pesan, bukan-JSON → 502, error jaringan → 502;
   - `restartAction` dengan masukan koneksi.
 - **Test kontrak:**
