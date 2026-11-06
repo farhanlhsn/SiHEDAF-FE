@@ -126,7 +126,7 @@ export function DashboardShell({ children, initialUser }: DashboardShellProps) {
                 hasUnread={hasUnread}
               />
             </header>
-            <OfflineBanner />
+            <OfflineBanner besideNotificationButton={isDashboardRoute} />
 
             <div className="relative flex min-w-0 flex-1 flex-col xl:flex-row print:block">
               {isDashboardRoute ? (

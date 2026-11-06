@@ -19,6 +19,13 @@ test("the shell shows the offline banner under the topbar", async () => {
   );
 });
 
+test("the banner text stays clear of the floating notification button", async () => {
+  const shell = await read("components/dashboard/DashboardShell.tsx");
+  assert.match(shell, /<OfflineBanner besideNotificationButton=\{isDashboardRoute\} \/>/);
+  const banner = await read("components/dashboard/OfflineBanner.tsx");
+  assert.match(banner, /besideNotificationButton \? "pr-20 sm:pr-24" : "pr-4 sm:pr-7"/);
+});
+
 test("the banner carries the spec copy and live-region attributes", async () => {
   const banner = await read("components/dashboard/OfflineBanner.tsx");
   assert.ok(
