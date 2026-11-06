@@ -32,7 +32,8 @@ export function DateRangePicker({ onChange, value }: DateRangePickerProps) {
     if (!isOpen) return;
 
     function handlePointerDown(event: PointerEvent) {
-      if (!containerRef.current?.contains(event.target as Node)) setIsOpen(false);
+      if (!containerRef.current?.contains(event.target as Node))
+        setIsOpen(false);
     }
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -64,18 +65,18 @@ export function DateRangePicker({ onChange, value }: DateRangePickerProps) {
       <button
         aria-expanded={isOpen}
         aria-haspopup="dialog"
-        className="flex h-11 items-center gap-3 rounded-full border border-[#e1e5e9] bg-white px-5 text-[12px] text-[#252b31] transition-colors hover:border-primary-200 hover:bg-primary-50/50 focus-visible:outline-2 focus-visible:outline-primary-300"
+        className="flex h-12 items-center gap-3 rounded-full border-[1.5px] border-primary-900/20 bg-white px-5 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
         onClick={toggleCalendar}
         type="button"
       >
         {formatRange(value)}
-        <CalendarDays aria-hidden="true" size={16} strokeWidth={1.7} />
+        <CalendarDays aria-hidden="true" size={18} strokeWidth={2} />
       </button>
 
       {isOpen ? (
         <div
           aria-label="Pilih rentang tanggal"
-          className="page-enter absolute right-0 top-[calc(100%+12px)] z-40 w-[min(340px,calc(100vw-2rem))] rounded-[24px] border border-[#e0e5ea] bg-white p-4 shadow-[0_22px_60px_rgba(0,39,88,0.14)]"
+          className="page-enter absolute top-[calc(100%+12px)] right-0 z-40 w-[min(340px,calc(100vw-2rem))] rounded-[24px] border border-primary-900/10 bg-white p-4 shadow-[0_22px_60px_rgba(0,39,88,0.16)]"
           role="dialog"
         >
           <DayPicker
@@ -85,9 +86,9 @@ export function DateRangePicker({ onChange, value }: DateRangePickerProps) {
             onSelect={setDraftRange}
             selected={draftRange}
           />
-          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[#edf0f3] pt-4">
+          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-primary-900/10 pt-4">
             <button
-              className="h-10 rounded-full border border-[#dfe4e8] text-[12px] text-[#707781] transition-colors hover:bg-[#f6f8fa]"
+              className="h-11 rounded-full border-[1.5px] border-primary-900/20 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep"
               onClick={() => {
                 setDraftRange(undefined);
                 onChange(undefined);
@@ -98,7 +99,7 @@ export function DateRangePicker({ onChange, value }: DateRangePickerProps) {
               Reset Filter
             </button>
             <button
-              className="h-10 rounded-full bg-primary-300 text-[12px] font-medium text-white transition-colors hover:bg-primary-400 disabled:cursor-not-allowed disabled:bg-[#dfe3e7]"
+              className="btn-primary h-11 rounded-full bg-primary-900 text-[15px] font-semibold text-white"
               disabled={!draftRange?.from || !draftRange.to}
               onClick={applyRange}
               type="button"
@@ -111,4 +112,3 @@ export function DateRangePicker({ onChange, value }: DateRangePickerProps) {
     </div>
   );
 }
-

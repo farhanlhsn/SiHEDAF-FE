@@ -83,6 +83,10 @@ Sebelum mengubah API, route, layout, metadata, atau convention Next.js, baca pan
 - Edit profil memiliki field terkontrol, upload/preview foto maksimal 2 MB, Device ID disabled, cancel navigation, serta modal sukses setelah penyimpanan.
 - Nama, email, dan avatar edit profil disimpan sementara melalui adapter `ProfileStorage.ts` berbasis `localStorage`; adapter ini adalah batas yang perlu diganti dengan query/mutation backend.
 - Primitive `DashboardModal.tsx` dipakai bersama untuk dialog akun dan hasil aksi; modal dapat ditutup melalui backdrop, tombol close, atau tombol Escape.
+- Tampilan dashboard memakai bahasa visual landing: latar `paper`, sidebar berupa rel dengan "stasiun" (halaman aktif = lingkaran navy terisi), ringkasan dibuka dengan kalimat status besar ("Irama terakhirmu normal/tidak teratur.") plus saran konsultasi dokter saat AF, grafik PPG bergaya monitor dengan sweep saat monitoring aktif, notifikasi sebagai timeline per hari, dan riwayat dengan angka besar + bar proporsi Normal/AF.
+- Format data lewat `DashboardFormat.ts` (`formatConfidence`, `formatWib`, `isNormalResult`, `shareOf`); fungsi ini mengembalikan `null` alih-alih mengarang nilai, jadi UI menampilkan "—" bila API tidak mengirim data (tidak ada lagi fallback keyakinan 95%, baterai 92%, atau ID perangkat `PPG001`).
+- `UseMyDevice.ts` adalah satu-satunya sumber data perangkat (`/api/v1/measurement/my-device`) untuk ringkasan, profil, dan edit profil.
+- Komponen dashboard hanya memakai token warna (tanpa hex mentah), teks minimal 13px, dan teks navy minimal 70% opacity; ini dijaga oleh `DashboardRedesign.test.mjs`.
 - Page entry, sidebar, notification rail, chart draw, staggered rows, dan tombol menggunakan motion ringan.
 - Card dan information surface statis tidak memakai hover-lift agar tidak memberi affordance klik palsu; motion hover hanya dipakai pada kontrol yang benar-benar interaktif.
 

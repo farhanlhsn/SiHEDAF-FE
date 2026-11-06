@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
+import {
+  useMyDevice,
+  type MeasurementDevice,
+} from "@/components/dashboard/hooks/UseMyDevice";
+import { isNormalResult } from "@/components/dashboard/DashboardFormat";
 import { useProfile } from "@/features/profile/client/ProfileProvider";
 
-export type MeasurementDevice = {
-  status?: string;
-  deviceNumber?: string;
-  lastSeen?: string;
-};
+export type { MeasurementDevice };
 
 export type MeasurementData = {
   id?: number;
@@ -30,23 +32,12 @@ export function useDashboardOverview() {
   const [monitoringRange, setMonitoringRange] = useState("12");
   const [isTogglingAction, setIsTogglingAction] = useState(false);
 
-  const [deviceData, setDeviceData] = useState<MeasurementDevice | null>(null);
+  const { device: deviceData } = useMyDevice();
   const [latestData, setLatestData] = useState<MeasurementData | null>(null);
   const [signalsData, setSignalsData] = useState<number[]>([]);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   useEffect(() => {
-    async function fetchDevice() {
-      try {
-        const res = await fetch("/api/v1/measurement/my-device");
-        const json = await res.json();
-        if (json.code === 200 && json.data) {
-          setDeviceData(json.data);
-        }
-      } catch (e) {
-        console.error("Gagal memuat status perangkat:", e);
-      }
-    }
     async function fetchLatest() {
       try {
         const res = await fetch("/api/v1/measurement/latest");
@@ -61,14 +52,15 @@ export function useDashboardOverview() {
         console.error("Gagal memuat data terakhir:", e);
       }
     }
-    fetchDevice();
     fetchLatest();
   }, []);
 
   useEffect(() => {
     async function fetchSignals() {
       try {
-        const res = await fetch(`/api/v1/measurement/signals?minutes=${monitoringRange}`);
+        const res = await fetch(
+          `/api/v1/measurement/signals?minutes=${monitoringRange}`,
+        );
         const json = await res.json();
         if (json.code === 200 && json.data) {
           setSignalsData(json.data.rawPpgData || []);
@@ -93,7 +85,9 @@ export function useDashboardOverview() {
   async function handleToggleMonitoring() {
     setIsTogglingAction(true);
     try {
-      const endpoint = isMonitoringActive ? "/api/v1/measurement/stop" : "/api/v1/measurement/start";
+      const endpoint = isMonitoringActive
+        ? "/api/v1/measurement/stop"
+        : "/api/v1/measurement/start";
       const res = await fetch(endpoint, { method: "POST" });
       const json = await res.json();
       if (json.code === 200) {
@@ -119,8 +113,7 @@ export function useDashboardOverview() {
   }
 
   const firstName = user?.fullname ? user.fullname.split(" ")[0] : "Pengguna";
-  const confidenceVal = latestData?.confidenceLevel ?? 95;
-  const isNormal = latestData?.resultLabel?.toLowerCase().includes("normal") ?? true;
+  const isNormal = isNormalResult(latestData?.resultLabel);
 
   return {
     user,
@@ -128,7 +121,6 @@ export function useDashboardOverview() {
     deviceData,
     latestData,
     signalsData,
-    confidenceVal,
     isNormal,
     isMonitoringActive,
     monitoringRange,

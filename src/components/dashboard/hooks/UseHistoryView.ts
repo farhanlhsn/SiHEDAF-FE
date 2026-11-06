@@ -41,15 +41,22 @@ export function useHistoryView() {
         });
 
         if (dateRange?.from) {
-          const fromDate = new Date(dateRange.from.getTime() - dateRange.from.getTimezoneOffset() * 60000);
+          const fromDate = new Date(
+            dateRange.from.getTime() -
+              dateRange.from.getTimezoneOffset() * 60000,
+          );
           params.append("startDate", fromDate.toISOString().split("T")[0]);
         }
         if (dateRange?.to) {
-          const toDate = new Date(dateRange.to.getTime() - dateRange.to.getTimezoneOffset() * 60000);
+          const toDate = new Date(
+            dateRange.to.getTime() - dateRange.to.getTimezoneOffset() * 60000,
+          );
           params.append("endDate", toDate.toISOString().split("T")[0]);
         }
 
-        const res = await fetch(`/api/v1/measurement/history?${params.toString()}`);
+        const res = await fetch(
+          `/api/v1/measurement/history?${params.toString()}`,
+        );
         if (!res.ok) throw new Error("Gagal mengambil data");
         const json = await res.json();
 
@@ -57,13 +64,23 @@ export function useHistoryView() {
           setHistoryData(json.data.data || []);
           setTotalPages(json.data.metadata?.totalPages || 1);
           setSummaries([
-            { label: "Total jumlah monitoring", value: json.data.summary?.totalData || 0 },
-            { label: "Terdeteksi AF", value: json.data.summary?.totalAfib || 0 },
-            { label: "Ritme Normal", value: json.data.summary?.totalNormal || 0 },
+            {
+              label: "Total jumlah monitoring",
+              value: json.data.summary?.totalData || 0,
+            },
+            {
+              label: "Terdeteksi AF",
+              value: json.data.summary?.totalAfib || 0,
+            },
+            {
+              label: "Ritme Normal",
+              value: json.data.summary?.totalNormal || 0,
+            },
           ]);
         }
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Terjadi kesalahan";
+        const message =
+          err instanceof Error ? err.message : "Terjadi kesalahan";
         setError(message);
       } finally {
         setIsLoading(false);

@@ -103,7 +103,7 @@ footer[id] {
 }
 
 .rdp-root {
-  --rdp-accent-color: #006efb;
+  --rdp-accent-color: #002758;
   --rdp-accent-background-color: #e8f1ff;
   --rdp-day-height: 36px;
   --rdp-day-width: 36px;
@@ -112,12 +112,12 @@ footer[id] {
   --rdp-day_button-border-radius: 999px;
   --rdp-range_middle-background-color: #e8f1ff;
   --rdp-range_middle-color: #003171;
-  --rdp-range_start-background: #006efb;
-  --rdp-range_end-background: #006efb;
+  --rdp-range_start-background: #002758;
+  --rdp-range_end-background: #002758;
   margin: 0;
-  color: #252b31;
+  color: #002758;
   font-family: var(--font-switzer), Arial, Helvetica, sans-serif;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .rdp-months {
@@ -125,15 +125,15 @@ footer[id] {
 }
 
 .rdp-month_caption {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .rdp-button_previous,
 .rdp-button_next {
-  border: 1px solid #e1e5e9;
+  border: 1.5px solid rgb(0 39 88 / 0.2);
   border-radius: 999px;
-  color: #003171;
+  color: #002758;
 }
 
 .rdp-range_start>.rdp-day_button,
@@ -634,6 +634,32 @@ footer[id] {
   box-shadow: inset 0 0 0 1px rgb(255 69 114 / 0.6);
 }
 
+/* Dashboard monitor: a sweep head passes over the live PPG trace. */
+.monitor-sweep {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(
+    to right,
+    transparent calc(100% - 96px),
+    rgb(0 110 251 / 0.12) calc(100% - 2px),
+    #006efb calc(100% - 2px)
+  );
+  pointer-events: none;
+  animation: monitor-sweep 3.2s linear infinite;
+}
+
+@keyframes monitor-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
 /* In-view reveals. `InView` sets data-play once the block scrolls in. */
 .reveal {
   transition:
@@ -691,6 +717,10 @@ footer[id] {
   .watch-float,
   .header-bar {
     animation: none !important;
+  }
+
+  .monitor-sweep {
+    display: none;
   }
 
   [data-play="false"] .reveal,

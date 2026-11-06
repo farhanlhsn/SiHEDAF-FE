@@ -15,7 +15,10 @@ type DashboardIconProps = {
   name: DashboardIconName;
 };
 
-export function DashboardIcon({ className = "h-5 w-5", name }: DashboardIconProps) {
+export function DashboardIcon({
+  className = "h-5 w-5",
+  name,
+}: DashboardIconProps) {
   const commonProps = {
     className,
     fill: "none",
