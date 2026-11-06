@@ -1,5 +1,6 @@
 "use client";
 
+import type { DateRange } from "@daypicker/react";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -11,7 +12,9 @@ import {
   type ReportData,
 } from "@/components/dashboard/ReportData";
 import {
+  defaultReportRange,
   parseReportRange,
+  rangeFromDateRange,
   reportHref,
   type ReportRange,
 } from "@/components/dashboard/ReportRange";
@@ -92,11 +95,25 @@ export function useDoctorReport(initialParams: InitialParams) {
     [router],
   );
 
+  /** Picker change: undefined = reset to default, partial range = ignore. */
+  const changeRange = useCallback(
+    (next: DateRange | undefined) => {
+      if (next === undefined) {
+        setRange(defaultReportRange(new Date()));
+        return;
+      }
+      const parsed = rangeFromDateRange(next);
+      if (parsed) setRange(parsed);
+    },
+    [setRange],
+  );
+
   const reload = useCallback(() => setReloadKey((key) => key + 1), []);
 
   return {
     range,
     setRange,
+    changeRange,
     report,
     isLoading,
     error,

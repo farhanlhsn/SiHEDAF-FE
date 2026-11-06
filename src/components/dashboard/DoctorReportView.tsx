@@ -1,6 +1,5 @@
 "use client";
 
-import type { DateRange } from "@daypicker/react";
 import { Printer } from "lucide-react";
 
 import {
@@ -12,10 +11,7 @@ import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { PpgTrace } from "@/components/dashboard/PpgTrace";
 import { StatusMark } from "@/components/dashboard/StatusMark";
 import { useDoctorReport } from "@/components/dashboard/hooks/UseDoctorReport";
-import {
-  rangeFromDateRange,
-  toDateRange,
-} from "@/components/dashboard/ReportRange";
+import { toDateRange } from "@/components/dashboard/ReportRange";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { PulseLoader } from "@/components/ui/PulseLoader";
 
@@ -29,7 +25,7 @@ const dayLabel = (day: string) =>
 export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
   const {
     range,
-    setRange,
+    changeRange,
     report,
     isLoading,
     error,
@@ -38,11 +34,6 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
     device,
     generatedAt,
   } = useDoctorReport(initialParams);
-
-  function handleRangeChange(next: DateRange | undefined) {
-    const parsed = rangeFromDateRange(next);
-    if (parsed) setRange(parsed);
-  }
 
   const summary = report?.summary;
   const total = summary?.totalData ?? 0;
@@ -54,7 +45,7 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
       <div className="mx-auto max-w-[900px]">
         <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
           <DateRangePicker
-            onChange={handleRangeChange}
+            onChange={changeRange}
             value={toDateRange(range)}
           />
           <button
@@ -78,11 +69,11 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
             <dl className="text-[14px] text-primary-900/80">
               <div className="flex gap-2">
                 <dt className="font-semibold">Dibuat</dt>
-                <dd>{formatWib(generatedAt.toISOString()) ?? "—"}</dd>
+                <dd suppressHydrationWarning>{formatWib(generatedAt.toISOString()) ?? "—"}</dd>
               </div>
               <div className="mt-1 flex gap-2">
                 <dt className="font-semibold">Periode</dt>
-                <dd>
+                <dd suppressHydrationWarning>
                   {dayLabel(range.from)} – {dayLabel(range.to)}
                 </dd>
               </div>
@@ -166,7 +157,9 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                   </p>
                 ) : report.afEvents.length === 0 ? (
                   <p className="mt-3 text-[15px] text-primary-900/80">
-                    Tidak ada AF terdeteksi pada periode ini.
+                    {report.summary.totalAfib === 0
+                      ? "Tidak ada AF terdeteksi pada periode ini."
+                      : `Ringkasan mencatat ${report.summary.totalAfib} kejadian AF, tetapi kejadian tersebut berada di luar ${report.scanned} rekaman pertama yang ditampilkan. Persempit periode laporan untuk melihatnya.`}
                   </p>
                 ) : (
                   <table className="mt-3 w-full border-collapse text-left">
