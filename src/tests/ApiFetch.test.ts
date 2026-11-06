@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  NetworkError,
   SESSION_EXPIRED_PATH,
   SessionExpiredError,
   createApiFetch,
@@ -36,7 +37,7 @@ test("redirects once and throws on 401", async () => {
   assert.equal(SESSION_EXPIRED_PATH, "/login?sesi=berakhir");
 });
 
-test("lets network errors through", async () => {
+test("wraps a failed fetch in NetworkError", async () => {
   const navigated: string[] = [];
   const failure = new TypeError("Failed to fetch");
   const apiFetch = createApiFetch({
@@ -48,7 +49,24 @@ test("lets network errors through", async () => {
 
   await assert.rejects(
     () => apiFetch("/api/v1/x"),
-    (error) => error === failure,
+    (error) => error instanceof NetworkError && error.cause === failure,
   );
   assert.deepEqual(navigated, []);
+});
+
+test("lets aborts and timeouts through untouched", async () => {
+  for (const name of ["AbortError", "TimeoutError"]) {
+    const failure = new DOMException("stopped", name);
+    const apiFetch = createApiFetch({
+      fetcher: async () => {
+        throw failure;
+      },
+      navigate: () => {},
+    });
+
+    await assert.rejects(
+      () => apiFetch("/api/v1/x"),
+      (error) => error === failure,
+    );
+  }
 });

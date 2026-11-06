@@ -8,6 +8,25 @@ export class SessionExpiredError extends Error {
   }
 }
 
+/**
+ * The request got no answer at all (no connection, DNS, blocked): the only
+ * failure that means "check your internet". Aborts and timeouts are not
+ * wrapped; callers tell those apart themselves.
+ */
+export class NetworkError extends Error {
+  constructor(cause: unknown) {
+    super("Permintaan tidak mendapat jawaban.", { cause });
+    this.name = "NetworkError";
+  }
+}
+
+function isAbort(error: unknown) {
+  return (
+    error instanceof DOMException &&
+    (error.name === "AbortError" || error.name === "TimeoutError")
+  );
+}
+
 type ApiFetchDeps = {
   fetcher: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
   navigate: (url: string) => void;
@@ -15,7 +34,8 @@ type ApiFetchDeps = {
 
 /**
  * fetch for same-origin API calls: HTTP 401 means the session is over, so
- * send the reader to /login once and reject with SessionExpiredError.
+ * send the reader to /login once and reject with SessionExpiredError. A fetch
+ * that gets no answer rejects with NetworkError.
  */
 export function createApiFetch({ fetcher, navigate }: ApiFetchDeps) {
   let hasNavigated = false;
@@ -24,7 +44,13 @@ export function createApiFetch({ fetcher, navigate }: ApiFetchDeps) {
     input: RequestInfo | URL,
     init?: RequestInit,
   ): Promise<Response> {
-    const response = await fetcher(input, init);
+    let response: Response;
+    try {
+      response = await fetcher(input, init);
+    } catch (error) {
+      if (init?.signal?.aborted || isAbort(error)) throw error;
+      throw new NetworkError(error);
+    }
 
     if (response.status === 401) {
       if (!hasNavigated) {

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import {
   describeCaughtError,
+  latestOutcome,
   type DataError,
 } from "@/components/ui/FetchError";
 
@@ -81,12 +82,14 @@ export function useDashboardOverview() {
       setLatestError(null);
       try {
         const res = await apiFetch("/api/v1/measurement/latest");
-        // 404 means "no measurement yet", which is the first-run state.
-        if (!res.ok && res.status !== 404) throw new HttpError(res.status);
         const json = res.ok ? await res.json() : null;
         if (cancelled) return;
+        // 404 or 200 with data null is "no measurement yet" (first run); any
+        // other answer without data is a failure, never the first-run state.
+        const outcome = latestOutcome({ status: res.status, json });
+        if (outcome === "error") throw new HttpError(res.status);
         // Ignored once the user started or stopped while this was loading.
-        if (json?.code === 200 && json.data && adoptInitial(json.data)) {
+        if (outcome === "data" && adoptInitial(json.data)) {
           setLatestData(json.data);
         }
       } catch (e) {

@@ -111,3 +111,10 @@ test("a failed device request says the wristband status could not be loaded", as
   assert.ok(card.includes('title="Status wristband belum bisa dimuat"'));
   assert.match(card, /message=\{`\$\{error\.title\}\. \$\{error\.message\}`\}/);
 });
+
+test("the overview reads /latest through latestOutcome", async () => {
+  const hook = await read("components/dashboard/hooks/UseDashboardOverview.ts");
+  assert.match(hook, /const outcome = latestOutcome\(\{ status: res\.status, json \}\);/);
+  assert.match(hook, /if \(outcome === "error"\) throw new HttpError\(res\.status\);/);
+  assert.match(hook, /outcome === "data" && adoptInitial\(json\.data\)/);
+});
