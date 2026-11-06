@@ -6,6 +6,7 @@ import {
   formatWib,
   isNormalResult,
   shareOf,
+  tracePath,
 } from "../components/dashboard/DashboardFormat";
 
 test("reads the AI label as normal, AF, or unknown", () => {
@@ -45,4 +46,19 @@ test("turns counts into whole-number shares of a total", () => {
   assert.equal(shareOf(20, 23), 87);
   assert.equal(shareOf(0, 0), 0);
   assert.equal(shareOf(5, 0), 0);
+});
+
+test("draws a PPG trace with the highest value at the top", () => {
+  assert.equal(tracePath([0, 10, 5], 100, 40), "M0 40L50 0L100 20");
+  assert.equal(tracePath([0, 10, 5], 100, 40, 4), "M0 36L50 4L100 20");
+});
+
+test("refuses to draw a trace from missing or single-sample data", () => {
+  assert.equal(tracePath(undefined, 100, 40), null);
+  assert.equal(tracePath([], 100, 40), null);
+  assert.equal(tracePath([7], 100, 40), null);
+});
+
+test("centres a flat signal instead of dividing by zero", () => {
+  assert.equal(tracePath([3, 3, 3], 100, 40), "M0 20L50 20L100 20");
 });

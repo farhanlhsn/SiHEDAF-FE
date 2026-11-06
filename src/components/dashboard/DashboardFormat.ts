@@ -78,3 +78,38 @@ export function shareOf(part: number, total: number) {
 
   return Math.round((part / total) * 100);
 }
+
+const formatCoordinate = (value: number) =>
+  String(Number(value.toFixed(1)));
+
+/**
+ * SVG path for a PPG trace: x spread evenly over 0…width, highest sample at
+ * `padding`, lowest at `height − padding`. Returns null when there is not
+ * enough data to draw a line.
+ */
+export function tracePath(
+  data: ReadonlyArray<number> | undefined,
+  width: number,
+  height: number,
+  padding = 0,
+) {
+  if (!data || data.length < 2) return null;
+
+  let max = -Infinity;
+  let min = Infinity;
+  for (const value of data) {
+    if (value > max) max = value;
+    if (value < min) min = value;
+  }
+  const range = max - min;
+  const drawable = height - padding * 2;
+
+  return data
+    .map((value, index) => {
+      const x = (index / (data.length - 1)) * width;
+      const y =
+        range === 0 ? height / 2 : height - padding - ((value - min) / range) * drawable;
+      return `${index === 0 ? "M" : "L"}${formatCoordinate(x)} ${formatCoordinate(y)}`;
+    })
+    .join("");
+}

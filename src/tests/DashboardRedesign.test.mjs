@@ -13,6 +13,7 @@ const viewFiles = [
   "components/dashboard/DashboardTopbar.tsx",
   "components/dashboard/DashboardOverview.tsx",
   "components/dashboard/SignalChart.tsx",
+  "components/dashboard/PpgTrace.tsx",
   "components/dashboard/Sparkline.tsx",
   "components/dashboard/StatusMark.tsx",
   "components/dashboard/NotificationPanel.tsx",
@@ -118,4 +119,19 @@ test("draws the sidebar as a rail of stops with the current page marked", async 
 
   assert.match(sidebar, /aria-current=\{isActive \? "page" : undefined\}/);
   assert.match(sidebar, /data-rail/);
+});
+
+test("draws every PPG trace through the shared tracePath helper", async () => {
+  const [trace, sparkline, chart] = await Promise.all([
+    readSource("components/dashboard/PpgTrace.tsx"),
+    readSource("components/dashboard/Sparkline.tsx"),
+    readSource("components/dashboard/SignalChart.tsx"),
+  ]);
+
+  assert.match(trace, /tracePath/);
+  assert.match(trace, /Grafik tidak tersedia/);
+  for (const source of [sparkline, chart]) {
+    assert.match(source, /tracePath\(/);
+    assert.doesNotMatch(source, /maxVal/);
+  }
 });
