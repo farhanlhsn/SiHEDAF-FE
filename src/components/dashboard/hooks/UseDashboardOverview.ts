@@ -34,7 +34,7 @@ export function useDashboardOverview() {
   const [monitoringRange, setMonitoringRange] = useState("12");
   const [isTogglingAction, setIsTogglingAction] = useState(false);
 
-  const { device: deviceData } = useMyDevice();
+  const { device: deviceData, isLoading: isDeviceLoading } = useMyDevice();
   const [latestData, setLatestData] = useState<MeasurementData | null>(null);
   const [hasLoadedLatest, setHasLoadedLatest] = useState(false);
   const [signalsData, setSignalsData] = useState<number[]>([]);
@@ -127,12 +127,16 @@ export function useDashboardOverview() {
     hasResult: Boolean(latestData),
   });
 
+  // Wait for the device request too, or step 1 flashes "current" while loading.
+  const showFirstRun = hasLoadedLatest && !isDeviceLoading && !latestData;
+
   return {
     user,
     firstName,
     deviceData,
     latestData,
     hasLoadedLatest,
+    showFirstRun,
     signalsData,
     isNormal,
     firstRunGuideSteps,

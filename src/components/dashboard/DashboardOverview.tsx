@@ -31,6 +31,7 @@ export function DashboardOverview() {
     deviceData,
     latestData,
     hasLoadedLatest,
+    showFirstRun,
     firstRunGuideSteps,
     signalsData,
     isNormal,
@@ -75,7 +76,7 @@ export function DashboardOverview() {
           )}
         </h1>
 
-        {hasLoadedLatest && !latestData ? (
+        {showFirstRun ? (
           <FirstRunGuide steps={firstRunGuideSteps} />
         ) : null}
 

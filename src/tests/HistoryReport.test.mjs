@@ -150,7 +150,8 @@ test("first-run guide shows only after the latest data loaded and is empty", asy
 
   assert.match(hook, /hasLoadedLatest/);
   assert.match(hook, /finally\s*\{\s*setHasLoadedLatest\(true\)/);
-  assert.match(overview, /hasLoadedLatest && !latestData\s*\?\s*\(\s*<FirstRunGuide/);
+  assert.match(overview, /showFirstRun\s*\?\s*\(\s*<FirstRunGuide/);
+  assert.match(hook, /showFirstRun = hasLoadedLatest && !isDeviceLoading && !latestData/);
   assert.match(overview, /<article[^>]*id="monitor"/);
   assert.match(overview, /!hasLoadedLatest[\s\S]*?Memuat hasil terakhir/);
   assert.match(guide, /<a[\s\S]*?href="#monitor"/);
