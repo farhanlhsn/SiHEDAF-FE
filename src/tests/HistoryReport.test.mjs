@@ -168,3 +168,24 @@ test("dashboard modal renders through a portal to the document body", async () =
   assert.ok(modal.includes("createPortal("));
   assert.ok(modal.includes("document.body,"));
 });
+
+test("records without a result label get a neutral unknown state, not normal", async () => {
+  const modal = await read("components/dashboard/HistoryDetailModal.tsx");
+  const view = await read("components/dashboard/HistoryView.tsx");
+
+  assert.ok(modal.includes("Hasil analisis belum tersedia"));
+  assert.ok(modal.includes("Rekaman ini belum memiliki hasil analisis AI."));
+  assert.match(modal, /isUnknown/);
+  assert.doesNotMatch(modal, /\?\? true/);
+  assert.ok(view.includes("Belum ada hasil"));
+  assert.match(view, /isUnknown/);
+  assert.doesNotMatch(view, /\?\? true/);
+});
+
+test("dashboard modal moves focus into the dialog and restores it on close", async () => {
+  const modal = await read("components/dashboard/DashboardModal.tsx");
+  assert.match(modal, /document\.activeElement/);
+  assert.match(modal, /\.focus\(/);
+  assert.ok(modal.includes("tabIndex={-1}"));
+  assert.match(modal, /isConnected/);
+});
