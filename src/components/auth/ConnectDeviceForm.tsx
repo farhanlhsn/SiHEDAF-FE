@@ -49,11 +49,11 @@ export function ConnectDeviceForm() {
 
   return (
     <div>
-      <p className="text-[15px] font-semibold text-primary-500">Perangkat</p>
+      <p className="text-[0.9375rem] font-semibold text-primary-500">Perangkat</p>
       <h1 className="mt-3 text-[clamp(2.1rem,3vw,2.75rem)] leading-[1.02] font-bold tracking-[-0.045em] text-primary-900">
         Hubungkan Perangkat
       </h1>
-      <p className="mt-3 max-w-[500px] text-[17px] leading-[1.6] text-primary-900/80">
+      <p className="mt-3 max-w-[500px] text-[1.0625rem] leading-[1.6] text-primary-900/80">
         Setelah terhubung, hasil pemantauan langsung muncul di dashboard.
       </p>
 
@@ -74,7 +74,7 @@ export function ConnectDeviceForm() {
           error={error}
         />
         <button
-          className="btn-primary h-14 w-full rounded-full bg-primary-900 text-[16px] font-semibold text-white"
+          className="btn-primary h-14 w-full rounded-full bg-primary-900 text-[1rem] font-semibold text-white"
           disabled={!isComplete}
           type="submit"
         >

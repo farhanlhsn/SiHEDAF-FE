@@ -51,7 +51,7 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
             value={toDateRange(range)}
           />
           <button
-            className="inline-flex h-11 items-center gap-2 rounded-full bg-primary-900 px-6 text-[15px] font-semibold text-white transition-colors hover:bg-primary-800 focus-visible:outline-2 focus-visible:outline-primary-300"
+            className="inline-flex h-11 items-center gap-2 rounded-full bg-primary-900 px-6 text-[0.9375rem] font-semibold text-white transition-colors hover:bg-primary-800 focus-visible:outline-2 focus-visible:outline-primary-300"
             onClick={() => window.print()}
             type="button"
           >
@@ -68,7 +68,7 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                 Laporan Pemantauan Irama Jantung
               </h1>
             </div>
-            <dl className="text-[14px] text-primary-900/80">
+            <dl className="text-[0.875rem] text-primary-900/80">
               <div className="flex gap-2">
                 <dt className="font-semibold">Dibuat</dt>
                 <dd suppressHydrationWarning>{formatWib(generatedAt.toISOString()) ?? "—"}</dd>
@@ -83,18 +83,18 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
           </header>
 
           <section aria-label="Identitas" className="print-avoid-break mt-6">
-            <h2 className="text-[17px] font-bold text-primary-900">Identitas</h2>
-            <dl className="mt-3 grid gap-3 text-[15px] sm:grid-cols-3">
+            <h2 className="text-[1.0625rem] font-bold text-primary-900">Identitas</h2>
+            <dl className="mt-3 grid gap-3 text-[0.9375rem] sm:grid-cols-3">
               <div>
-                <dt className="text-[13px] font-semibold text-primary-900/70">Nama</dt>
+                <dt className="text-[0.8125rem] font-semibold text-primary-900/70">Nama</dt>
                 <dd className="text-primary-900">{user?.fullname || "—"}</dd>
               </div>
               <div>
-                <dt className="text-[13px] font-semibold text-primary-900/70">Email</dt>
+                <dt className="text-[0.8125rem] font-semibold text-primary-900/70">Email</dt>
                 <dd className="break-all text-primary-900">{user?.email || "—"}</dd>
               </div>
               <div>
-                <dt className="text-[13px] font-semibold text-primary-900/70">Device ID</dt>
+                <dt className="text-[0.8125rem] font-semibold text-primary-900/70">Device ID</dt>
                 <dd className="text-primary-900">{device?.deviceNumber || "—"}</dd>
               </div>
             </dl>
@@ -104,9 +104,9 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
             <PulseLoader className="py-16" label="Menyusun laporan..." />
           ) : error ? (
             <div className="py-12 text-center" role="alert">
-              <p className="text-[15px] font-medium text-af-700">{error}</p>
+              <p className="text-[0.9375rem] font-medium text-af-700">{error}</p>
               <button
-                className="mt-4 h-11 rounded-full border-[1.5px] border-primary-900/20 px-6 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300 print:hidden"
+                className="mt-4 h-11 rounded-full border-[1.5px] border-primary-900/20 px-6 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300 print:hidden"
                 onClick={reload}
                 type="button"
               >
@@ -116,7 +116,7 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
           ) : report ? (
             <>
               <section aria-label="Ringkasan" className="print-avoid-break mt-8">
-                <h2 className="text-[17px] font-bold text-primary-900">Ringkasan</h2>
+                <h2 className="text-[1.0625rem] font-bold text-primary-900">Ringkasan</h2>
                 <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
                   <Stat label="Total rekaman" value={String(report.summary.totalData)} />
                   <Stat
@@ -143,22 +143,22 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                     </>
                   ) : null}
                 </div>
-                <p className="mt-2 flex flex-wrap gap-x-6 text-[14px] font-medium text-primary-900/80">
+                <p className="mt-2 flex flex-wrap gap-x-6 text-[0.875rem] font-medium text-primary-900/80">
                   <span>Ritme normal {normalShare}%</span>
                   <span>Terdeteksi AF {afShare}%</span>
                 </p>
               </section>
 
               <section aria-label="Kejadian AF" className="mt-8">
-                <h2 className="text-[17px] font-bold text-primary-900">
+                <h2 className="text-[1.0625rem] font-bold text-primary-900">
                   Kejadian AF terdeteksi
                 </h2>
                 {report.summary.totalData === 0 && report.scanned === 0 ? (
-                  <p className="mt-3 text-[15px] text-primary-900/80">
+                  <p className="mt-3 text-[0.9375rem] text-primary-900/80">
                     Belum ada rekaman pada periode ini.
                   </p>
                 ) : report.afEvents.length === 0 ? (
-                  <p className="mt-3 text-[15px] text-primary-900/80">
+                  <p className="mt-3 text-[0.9375rem] text-primary-900/80">
                     {report.summary.totalAfib === 0
                       ? "Tidak ada AF terdeteksi pada periode ini."
                       : report.truncated
@@ -168,7 +168,7 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                 ) : (
                   <table className="mt-3 w-full border-collapse text-left">
                     <thead>
-                      <tr className="border-b border-primary-900/10 text-[14px] font-semibold text-primary-900/75">
+                      <tr className="border-b border-primary-900/10 text-[0.875rem] font-semibold text-primary-900/75">
                         <th className="w-12 pb-2 font-semibold">No</th>
                         <th className="pb-2 font-semibold">Waktu</th>
                         <th className="pb-2 font-semibold">Keyakinan AI</th>
@@ -181,16 +181,16 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                           className="print-avoid-break border-b border-primary-900/[0.07]"
                           key={item.id}
                         >
-                          <td className="py-3 text-[15px] tabular-nums text-primary-900">
+                          <td className="py-3 text-[0.9375rem] tabular-nums text-primary-900">
                             {index + 1}
                           </td>
-                          <td className="py-3 text-[15px] text-primary-900">
+                          <td className="py-3 text-[0.9375rem] text-primary-900">
                             <span className="flex items-center gap-2">
                               <StatusMark size="small" status="af" />
                               {formatWib(item.requestedAt) ?? "—"}
                             </span>
                           </td>
-                          <td className="py-3 text-[15px] text-primary-900">
+                          <td className="py-3 text-[0.9375rem] text-primary-900">
                             {formatConfidence(item.confidenceLevel) ?? "—"}
                           </td>
                           <td className="py-3">
@@ -207,7 +207,7 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                   </table>
                 )}
                 {report.truncated ? (
-                  <p className="mt-3 text-[14px] text-primary-900/80">
+                  <p className="mt-3 text-[0.875rem] text-primary-900/80">
                     Menampilkan kejadian AF dari {report.scanned} rekaman pertama pada periode ini.
                   </p>
                 ) : null}
@@ -215,7 +215,7 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
             </>
           ) : null}
 
-          <p className="print-avoid-break mt-8 rounded-[16px] bg-paper p-4 text-[14px] leading-[1.55] text-primary-900/80">
+          <p className="print-avoid-break mt-8 rounded-[16px] bg-paper p-4 text-[0.875rem] leading-[1.55] text-primary-900/80">
             Hasil berasal dari klasifikasi AI atas sinyal PPG wearable dan bukan diagnosis. Mohon dievaluasi oleh tenaga kesehatan. Grafik ditampilkan tanpa skala waktu.
           </p>
         </article>
@@ -238,7 +238,7 @@ function Stat({
       <p className={`text-[2rem] leading-none font-bold tracking-[-0.04em] tabular-nums ${tone}`}>
         {value}
       </p>
-      <p className="mt-1 text-[14px] font-medium text-primary-900/80">{label}</p>
+      <p className="mt-1 text-[0.875rem] font-medium text-primary-900/80">{label}</p>
     </div>
   );
 }

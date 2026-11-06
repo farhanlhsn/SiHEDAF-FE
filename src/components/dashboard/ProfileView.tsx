@@ -30,13 +30,13 @@ const passwordDefaults: UpdatePasswordRequest = {
 };
 
 const passwordInputClassName =
-  "mt-2 h-13 w-full rounded-[14px] border-[1.5px] border-primary-900/15 bg-white px-4 text-[16px] font-medium text-primary-900 outline-none transition-[border-color,box-shadow] focus:border-primary-300 focus:ring-4 focus:ring-primary-100";
+  "mt-2 h-13 w-full rounded-[14px] border-[1.5px] border-primary-900/15 bg-white px-4 text-[1rem] font-medium text-primary-900 outline-none transition-[border-color,box-shadow] focus:border-primary-300 focus:ring-4 focus:ring-primary-100";
 const passwordLabelClassName =
-  "block text-[15px] font-semibold text-primary-900";
+  "block text-[0.9375rem] font-semibold text-primary-900";
 const fieldErrorClassName =
-  "mt-2 flex items-center gap-1.5 text-[14px] font-medium text-af-700";
+  "mt-2 flex items-center gap-1.5 text-[0.875rem] font-medium text-af-700";
 const secondaryButtonClassName =
-  "h-12 rounded-full border-[1.5px] border-primary-900/20 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300";
+  "h-12 rounded-full border-[1.5px] border-primary-900/20 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300";
 
 export function ProfileView() {
   const router = useRouter();
@@ -126,14 +126,14 @@ export function ProfileView() {
     return (
       <section className="px-4 py-8 sm:px-7 lg:px-10 lg:py-10">
         <div className="max-w-[760px] rounded-[24px] border border-af-500/30 bg-white p-7">
-          <h1 className="text-[28px] font-bold tracking-[-0.04em] text-primary-900">
+          <h1 className="text-[1.75rem] font-bold tracking-[-0.04em] text-primary-900">
             Profil Akun
           </h1>
-          <p className="mt-3 text-[16px] font-medium text-af-700">
+          <p className="mt-3 text-[1rem] font-medium text-af-700">
             {profileError ?? "Data profil tidak tersedia."}
           </p>
           <button
-            className="btn-primary mt-5 h-12 rounded-full bg-primary-900 px-6 text-[15px] font-semibold text-white"
+            className="btn-primary mt-5 h-12 rounded-full bg-primary-900 px-6 text-[0.9375rem] font-semibold text-white"
             onClick={() => void reload()}
             type="button"
           >
@@ -150,7 +150,7 @@ export function ProfileView() {
         <h1 className="text-[clamp(2.2rem,3.8vw,3.4rem)] leading-[1] font-bold tracking-[-0.05em] text-primary-900">
           Profil Akun
         </h1>
-        <p className="mt-3 text-[17px] text-primary-900/80">
+        <p className="mt-3 text-[1.0625rem] text-primary-900/80">
           Kelola profil kamu di sini.
         </p>
 
@@ -160,10 +160,10 @@ export function ProfileView() {
             profileImage={user.profileImage}
           />
           <div className="min-w-0">
-            <h2 className="truncate text-[26px] font-bold tracking-[-0.035em] text-primary-900">
+            <h2 className="truncate text-[1.625rem] font-bold tracking-[-0.035em] text-primary-900">
               {user.fullname}
             </h2>
-            <p className="mt-1 truncate text-[16px] text-primary-900/80">
+            <p className="mt-1 truncate text-[1rem] text-primary-900/80">
               {user.email}
             </p>
           </div>
@@ -171,11 +171,11 @@ export function ProfileView() {
 
         <article className="mt-8 overflow-hidden rounded-[24px] border border-primary-900/10 bg-white">
           <div className="flex items-center justify-between gap-3 px-6 py-5 sm:px-7">
-            <h2 className="text-[20px] font-bold tracking-[-0.03em] text-primary-900">
+            <h2 className="text-[1.25rem] font-bold tracking-[-0.03em] text-primary-900">
               Informasi Profil
             </h2>
             <Link
-              className="flex h-11 items-center gap-2 rounded-full border-[1.5px] border-primary-900/20 px-5 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
+              className="flex h-11 items-center gap-2 rounded-full border-[1.5px] border-primary-900/20 px-5 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
               href="/profil/ubah"
             >
               <DashboardIcon className="h-4 w-4" name="edit" />
@@ -184,19 +184,19 @@ export function ProfileView() {
           </div>
 
           <dl className="divide-y divide-primary-900/[0.07] border-t border-primary-900/10">
-            <div className="grid grid-cols-[1fr_1.4fr] gap-5 px-6 py-5 text-[16px] sm:px-7">
+            <div className="grid grid-cols-[1fr_1.4fr] gap-5 px-6 py-5 text-[1rem] sm:px-7">
               <dt className="text-primary-900/75">Nama Lengkap</dt>
               <dd className="text-right font-semibold text-primary-900">
                 {user.fullname}
               </dd>
             </div>
-            <div className="grid grid-cols-[1fr_1.4fr] gap-5 px-6 py-5 text-[16px] sm:px-7">
+            <div className="grid grid-cols-[1fr_1.4fr] gap-5 px-6 py-5 text-[1rem] sm:px-7">
               <dt className="text-primary-900/75">Email</dt>
               <dd className="text-right font-semibold break-all text-primary-900">
                 {user.email}
               </dd>
             </div>
-            <div className="grid grid-cols-[1fr_1.4fr] gap-5 px-6 py-5 text-[16px] sm:px-7">
+            <div className="grid grid-cols-[1fr_1.4fr] gap-5 px-6 py-5 text-[1rem] sm:px-7">
               <dt className="text-primary-900/75">Perangkat Terdaftar</dt>
               <dd className="text-right font-semibold text-primary-900">
                 {isDeviceLoading ? (
@@ -220,7 +220,7 @@ export function ProfileView() {
 
         <div className="mt-6 space-y-3">
           <button
-            className="group flex h-16 w-full items-center rounded-[18px] border border-primary-900/10 bg-white px-6 text-[16px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
+            className="group flex h-16 w-full items-center rounded-[18px] border border-primary-900/10 bg-white px-6 text-[1rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
             onClick={openPasswordModal}
             type="button"
           >
@@ -235,7 +235,7 @@ export function ProfileView() {
             />
           </button>
           <button
-            className="group flex h-16 w-full items-center rounded-[18px] border border-primary-900/10 bg-white px-6 text-[16px] font-semibold text-af-700 transition-colors hover:bg-af-50 focus-visible:outline-2 focus-visible:outline-primary-300"
+            className="group flex h-16 w-full items-center rounded-[18px] border border-primary-900/10 bg-white px-6 text-[1rem] font-semibold text-af-700 transition-colors hover:bg-af-50 focus-visible:outline-2 focus-visible:outline-primary-300"
             onClick={() => setActiveModal("logout")}
             type="button"
           >
@@ -267,7 +267,7 @@ export function ProfileView() {
               <CheckCircle2 aria-hidden="true" size={32} strokeWidth={1.9} />
             </span>
             <button
-              className="btn-primary mt-7 h-12 w-full rounded-full bg-primary-900 text-[15px] font-semibold text-white"
+              className="btn-primary mt-7 h-12 w-full rounded-full bg-primary-900 text-[0.9375rem] font-semibold text-white"
               onClick={closeModal}
               type="button"
             >
@@ -331,7 +331,7 @@ export function ProfileView() {
             {passwordMutationError ? (
               <p
                 aria-live="polite"
-                className="text-[15px] leading-[1.5] font-medium text-af-700"
+                className="text-[0.9375rem] leading-[1.5] font-medium text-af-700"
               >
                 {passwordMutationError.message}
               </p>
@@ -346,7 +346,7 @@ export function ProfileView() {
                 Batal
               </button>
               <button
-                className="btn-primary h-12 rounded-full bg-primary-900 text-[15px] font-semibold text-white"
+                className="btn-primary h-12 rounded-full bg-primary-900 text-[0.9375rem] font-semibold text-white"
                 disabled={!isValid || isPasswordPending}
                 type="submit"
               >
@@ -369,7 +369,7 @@ export function ProfileView() {
           </span>
           {logoutError ? (
             <p
-              className="mt-5 text-[15px] font-medium text-af-700"
+              className="mt-5 text-[0.9375rem] font-medium text-af-700"
               role="alert"
             >
               {logoutError.message}
@@ -385,7 +385,7 @@ export function ProfileView() {
               Batal
             </button>
             <button
-              className="h-12 rounded-full bg-af-700 text-[15px] font-semibold text-white transition-colors hover:bg-af-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-700 disabled:cursor-not-allowed disabled:bg-af-50 disabled:text-af-700"
+              className="h-12 rounded-full bg-af-700 text-[0.9375rem] font-semibold text-white transition-colors hover:bg-af-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-af-700 disabled:cursor-not-allowed disabled:bg-af-50 disabled:text-af-700"
               disabled={isLogoutPending}
               onClick={() => void handleLogout()}
               type="button"

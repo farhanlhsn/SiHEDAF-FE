@@ -45,7 +45,7 @@ export function TeamSection() {
             <span className="font-bold">Tim pengembang</span>{" "}
             <span className="font-extralight">di balik SiHEDAF.</span>
           </h1>
-          <p className="max-w-[420px] text-[18px] leading-[1.6] text-primary-900/80 lg:col-span-4">
+          <p className="max-w-[420px] text-[1.125rem] leading-[1.6] text-primary-900/80 lg:col-span-4">
             Empat orang yang merancang antarmuka, membangun sistem, dan melatih
             model AI pendeteksi Atrial Fibrillation.
           </p>

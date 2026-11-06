@@ -25,7 +25,7 @@ export function BrandLogo({ compact = false, tone = "dark" }: BrandLogoProps) {
       />
       <span
         className={`${
-          compact ? "text-[14px]" : "text-[19px]"
+          compact ? "text-[0.875rem]" : "text-[1.1875rem]"
         } font-bold tracking-[-0.035em] ${textColor}`}
       >
         SiHEDAF

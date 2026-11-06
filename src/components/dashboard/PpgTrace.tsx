@@ -19,7 +19,7 @@ export function PpgTrace({
   if (d === null) {
     return (
       <p
-        className={`grid place-items-center text-[13px] text-primary-900/70 ${className}`}
+        className={`grid place-items-center text-[0.8125rem] text-primary-900/70 ${className}`}
       >
         Grafik tidak tersedia
       </p>

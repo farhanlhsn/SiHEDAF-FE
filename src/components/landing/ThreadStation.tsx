@@ -26,7 +26,7 @@ export function ThreadStation({
       >
         <span className="thread-station-dot size-2 rounded-full bg-primary-300" />
       </span>
-      <span className="text-[13px] font-semibold tracking-[0.08em] text-primary-700 uppercase">
+      <span className="text-[0.8125rem] font-semibold tracking-[0.08em] text-primary-700 uppercase">
         <span className="tabular-nums text-primary-500">{index}</span>
         <span aria-hidden="true" className="mx-2 text-primary-900/70">
           /

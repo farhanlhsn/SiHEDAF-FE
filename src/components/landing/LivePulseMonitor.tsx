@@ -16,22 +16,22 @@ export function LivePulseMonitor({ children }: LivePulseMonitorProps) {
   return (
     <figure className="relative">
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-end justify-between gap-3 px-5 pb-3 lg:px-10">
-        <p className="text-[12px] font-semibold tracking-[0.08em] text-primary-900/70 uppercase">
+        <p className="text-[0.75rem] font-semibold tracking-[0.08em] text-primary-900/70 uppercase">
           Ilustrasi sinyal PPG
         </p>
-        <div aria-hidden="true" className="flex items-center gap-3 text-[13px]">
+        <div aria-hidden="true" className="flex items-center gap-3 text-[0.8125rem]">
           <span className="inline-flex items-baseline gap-1.5 font-medium text-primary-900/75">
             <HeartPulse
               className="heartbeat size-4 self-center text-af-500"
               strokeWidth={2.25}
             />
-            <span className="w-[3ch] text-right text-[20px] font-semibold tabular-nums tracking-[-0.03em] text-primary-900">
+            <span className="w-[3ch] text-right text-[1.25rem] font-semibold tabular-nums tracking-[-0.03em] text-primary-900">
               {readout.bpm}
             </span>
             bpm
           </span>
           <span
-            className={`inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold transition-colors duration-300 ${
+            className={`inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-[0.75rem] font-semibold transition-colors duration-300 ${
               isIrregular
                 ? "bg-af-50 text-af-700"
                 : "bg-primary-50 text-primary-500"
@@ -64,7 +64,7 @@ export function LivePulseMonitor({ children }: LivePulseMonitorProps) {
             key={Math.round(readout.afStart * 1000)}
             style={{ left: `${readout.afStart * 100}%` }}
           >
-            <span className="flex items-center gap-1.5 rounded-md bg-af-700 px-2.5 py-1.5 text-[12px] font-semibold whitespace-nowrap text-white shadow-[0_8px_20px_rgba(200,38,79,0.25)]">
+            <span className="flex items-center gap-1.5 rounded-md bg-af-700 px-2.5 py-1.5 text-[0.75rem] font-semibold whitespace-nowrap text-white shadow-[0_8px_20px_rgba(200,38,79,0.25)]">
               <TriangleAlert className="size-3.5" strokeWidth={2.25} />
               AF? Jarak detak acak
             </span>

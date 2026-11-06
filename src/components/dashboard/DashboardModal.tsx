@@ -134,14 +134,14 @@ export function DashboardModal({
         ) : null}
 
         <h2
-          className="pr-12 text-[24px] leading-[1.15] font-bold tracking-[-0.035em]"
+          className="pr-12 text-[1.5rem] leading-[1.15] font-bold tracking-[-0.035em]"
           id={titleId}
         >
           {title}
         </h2>
         {description ? (
           <p
-            className="mt-2 pr-10 text-[16px] leading-[1.55] text-primary-900/80"
+            className="mt-2 pr-10 text-[1rem] leading-[1.55] text-primary-900/80"
             id={descriptionId}
           >
             {description}

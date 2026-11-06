@@ -158,7 +158,7 @@ test("keeps auth screens readable and calm for older users", async () => {
   );
   assert.doesNotMatch(allSource, /text-\[(?:[0-9]|1[0-2])px\]/, "auth type stays at 13px or larger");
   assert.doesNotMatch(allSource, /opacity-50/, "disabled buttons stay readable instead of fading");
-  assert.match(inputSource, /text-\[16px\]/, "16px inputs avoid iOS zoom on focus");
+  assert.match(inputSource, /text-\[1rem\]/, "16px inputs avoid iOS zoom on focus");
   assert.match(inputSource, /CircleAlert/, "errors pair colour with an icon");
   assert.match(inputSource, /role="alert"/);
 });

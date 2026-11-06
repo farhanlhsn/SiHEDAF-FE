@@ -25,7 +25,7 @@ export function PulseLoader({
         <path className="pulse-loader-track" d={pulsePath} pathLength={1} />
         <path className="pulse-loader-line" d={pulsePath} pathLength={1} />
       </svg>
-      <span className="text-[15px] font-medium text-primary-900/80">
+      <span className="text-[0.9375rem] font-medium text-primary-900/80">
         {label}
       </span>
     </div>

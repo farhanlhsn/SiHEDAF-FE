@@ -105,7 +105,7 @@ export function ProcessSection() {
                     <h3 className="mt-4 text-[clamp(1.6rem,2.3vw,2.2rem)] leading-[1.1] font-bold tracking-[-0.035em] text-primary-900">
                       {step.title}
                     </h3>
-                    <p className="mt-3 max-w-[460px] text-[18px] leading-[1.6] text-primary-900/80">
+                    <p className="mt-3 max-w-[460px] text-[1.125rem] leading-[1.6] text-primary-900/80">
                       {step.description}
                     </p>
                   </div>

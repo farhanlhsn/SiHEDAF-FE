@@ -45,10 +45,10 @@ export function CtaSection() {
               </span>
             </h2>
 
-            <ol className="mt-10 flex flex-wrap gap-x-3 gap-y-3 text-[16px] font-medium text-primary-900">
+            <ol className="mt-10 flex flex-wrap gap-x-3 gap-y-3 text-[1rem] font-medium text-primary-900">
               {startSteps.map((step, index) => (
                 <li className="flex items-center gap-3" key={step}>
-                  <span className="grid size-7 place-items-center rounded-full border-[1.5px] border-primary-300 text-[13px] font-semibold text-primary-500 tabular-nums">
+                  <span className="grid size-7 place-items-center rounded-full border-[1.5px] border-primary-300 text-[0.8125rem] font-semibold text-primary-500 tabular-nums">
                     {index + 1}
                   </span>
                   {step}
@@ -63,14 +63,14 @@ export function CtaSection() {
 
             <div className="mt-10 flex flex-wrap items-center gap-x-7 gap-y-4">
               <Link
-                className="btn-primary group inline-flex h-14 items-center gap-3 rounded-full bg-primary-900 pr-6 pl-7 text-[16px] font-semibold text-white"
+                className="btn-primary group inline-flex h-14 items-center gap-3 rounded-full bg-primary-900 pr-6 pl-7 text-[1rem] font-semibold text-white"
                 href="/register"
               >
                 Daftar sekarang
                 <ArrowIcon className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
               </Link>
               <Link
-                className="link-underline text-[16px] font-semibold text-primary-900"
+                className="link-underline text-[1rem] font-semibold text-primary-900"
                 href="/login"
               >
                 Sudah punya akun? Masuk

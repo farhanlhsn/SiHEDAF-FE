@@ -120,7 +120,7 @@ export function DayDial() {
           return (
             <span
               aria-hidden="true"
-              className="absolute -translate-x-1/2 -translate-y-1/2 text-[13px] font-semibold tabular-nums text-primary-900/75"
+              className="absolute -translate-x-1/2 -translate-y-1/2 text-[0.8125rem] font-semibold tabular-nums text-primary-900/75"
               key={hour.label}
               style={{ left: `${position.x / 4}%`, top: `${position.y / 4}%` }}
             >
@@ -133,14 +133,14 @@ export function DayDial() {
           <p className="text-[clamp(2.25rem,13cqw,4.25rem)] leading-none font-bold tracking-[-0.055em] text-primary-900 tabular-nums">
             {readingsPerDay}×
           </p>
-          <p className="mt-2 max-w-[11ch] text-[15px] leading-[1.35] font-medium text-primary-900/80">
+          <p className="mt-2 max-w-[11ch] text-[0.9375rem] leading-[1.35] font-medium text-primary-900/80">
             rekaman sinyal setiap hari
           </p>
         </div>
 
         <span
           aria-hidden="true"
-          className="appear-at absolute hidden -translate-x-full rounded-full @min-[440px]:block bg-af-700 px-3 py-1.5 text-[12px] font-semibold whitespace-nowrap text-white shadow-[0_10px_24px_rgba(200,38,79,0.25)]"
+          className="appear-at absolute hidden -translate-x-full rounded-full @min-[440px]:block bg-af-700 px-3 py-1.5 text-[0.75rem] font-semibold whitespace-nowrap text-white shadow-[0_10px_24px_rgba(200,38,79,0.25)]"
           style={
             {
               left: `${afDot.x / 4 - 3}%`,
@@ -156,7 +156,7 @@ export function DayDial() {
         <ThreadPoint className="top-1/2 left-[calc(100%+14px)]" dir="down" />
       </div>
 
-      <figcaption className="mt-12 flex flex-wrap justify-center gap-x-6 gap-y-2 px-6 text-[14px] font-medium text-primary-900/80 lg:px-0">
+      <figcaption className="mt-12 flex flex-wrap justify-center gap-x-6 gap-y-2 px-6 text-[0.875rem] font-medium text-primary-900/80 lg:px-0">
         <span className="inline-flex items-center gap-2">
           <span
             aria-hidden="true"

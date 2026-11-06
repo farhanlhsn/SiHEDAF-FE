@@ -75,7 +75,7 @@ function IntervalBrackets({ strip, tone }: StripProps) {
               }`}
             />
             <span
-              className={`mt-1 hidden text-[12px] font-semibold tabular-nums sm:block ${
+              className={`mt-1 hidden text-[0.75rem] font-semibold tabular-nums sm:block ${
                 tone === "af" ? "text-af-700" : "text-primary-500"
               }`}
             >
@@ -105,14 +105,14 @@ export function RhythmCompare() {
         <h3 className="text-[clamp(1.75rem,2.6vw,2.5rem)] font-bold tracking-[-0.04em] text-primary-900">
           Bisa bedakan?
         </h3>
-        <p className="max-w-[480px] text-[17px] leading-[1.55] text-primary-900/80">
+        <p className="max-w-[480px] text-[1.0625rem] leading-[1.55] text-primary-900/80">
           Dua rekaman PPG sekitar 6 detik. Perhatikan jarak antar puncaknya;
           angka di bawah garis adalah jarak antar detak dalam detik.
         </p>
       </div>
 
       <div className="mt-12">
-        <p className="flex flex-wrap items-center gap-x-2 text-[17px] font-semibold text-primary-900">
+        <p className="flex flex-wrap items-center gap-x-2 text-[1.0625rem] font-semibold text-primary-900">
           <span
             aria-hidden="true"
             className="size-2.5 rounded-full bg-primary-300"
@@ -160,7 +160,7 @@ export function RhythmCompare() {
       </div>
 
       <div className="mt-10">
-        <p className="flex flex-wrap items-center gap-x-2 text-[17px] font-semibold text-primary-900">
+        <p className="flex flex-wrap items-center gap-x-2 text-[1.0625rem] font-semibold text-primary-900">
           <TriangleAlert
             aria-hidden="true"
             className="size-4 text-af-700"
@@ -192,7 +192,7 @@ export function RhythmCompare() {
         <IntervalBrackets strip={irregular} tone="af" />
       </div>
 
-      <figcaption className="mt-6 max-w-[640px] text-[17px] leading-[1.55] text-primary-900/80">
+      <figcaption className="mt-6 max-w-[640px] text-[1.0625rem] leading-[1.55] text-primary-900/80">
         Pola acak seperti ini yang dicari AI SiHEDAF di setiap rekaman, bahkan
         ketika kamu sama sekali tidak merasakan apa-apa.
       </figcaption>

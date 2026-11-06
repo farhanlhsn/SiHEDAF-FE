@@ -59,25 +59,25 @@ export function ForgotPasswordForm() {
         <div className="mx-auto grid size-14 place-items-center rounded-full bg-primary-50 text-primary-300 sm:mx-0">
           <MailCheck aria-hidden="true" className="size-7" />
         </div>
-        <p className="mt-6 text-[15px] font-semibold text-primary-500">
+        <p className="mt-6 text-[0.9375rem] font-semibold text-primary-500">
           Periksa Email
         </p>
         <h1 className="mt-3 text-[clamp(2.1rem,3vw,2.75rem)] leading-[1.02] font-bold tracking-[-0.045em] text-primary-900">
           Tautan Reset Dikirim
         </h1>
-        <p className="mt-4 max-w-[500px] text-[17px] leading-[1.6] text-primary-900/80">
+        <p className="mt-4 max-w-[500px] text-[1.0625rem] leading-[1.6] text-primary-900/80">
           Jika email terdaftar, tautan reset kata sandi telah dikirim. Periksa
           kotak masuk dan folder spam kamu.
         </p>
         <div className="mt-9 flex flex-col gap-3 sm:flex-row">
           <Link
-            className="btn-primary inline-flex h-14 items-center justify-center rounded-full bg-primary-900 px-8 text-[16px] font-semibold text-white"
+            className="btn-primary inline-flex h-14 items-center justify-center rounded-full bg-primary-900 px-8 text-[1rem] font-semibold text-white"
             href="/login"
           >
             Kembali ke Login
           </Link>
           <button
-            className="h-14 rounded-full border-[1.5px] border-primary-900/20 px-7 text-[16px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
+            className="h-14 rounded-full border-[1.5px] border-primary-900/20 px-7 text-[1rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
             onClick={() => setIsSubmitted(false)}
             type="button"
           >
@@ -90,13 +90,13 @@ export function ForgotPasswordForm() {
 
   return (
     <div>
-      <p className="text-[15px] font-semibold text-primary-500">
+      <p className="text-[0.9375rem] font-semibold text-primary-500">
         Pemulihan Akun
       </p>
       <h1 className="mt-3 text-[clamp(2.1rem,3vw,2.75rem)] leading-[1.02] font-bold tracking-[-0.045em] text-primary-900">
         Lupa Kata Sandi
       </h1>
-      <p className="mt-3 max-w-[500px] text-[17px] leading-[1.6] text-primary-900/80">
+      <p className="mt-3 max-w-[500px] text-[1.0625rem] leading-[1.6] text-primary-900/80">
         Masukkan email akunmu. Kami akan mengirimkan tautan untuk membuat kata
         sandi baru.
       </p>
@@ -127,7 +127,7 @@ export function ForgotPasswordForm() {
         />
 
         <button
-          className="btn-primary h-14 w-full rounded-full bg-primary-900 text-[16px] font-semibold text-white"
+          className="btn-primary h-14 w-full rounded-full bg-primary-900 text-[1rem] font-semibold text-white"
           disabled={!isValid || isPending}
           type="submit"
         >
@@ -135,7 +135,7 @@ export function ForgotPasswordForm() {
         </button>
       </form>
 
-      <p className="mt-7 text-center text-[15px] text-primary-900/75">
+      <p className="mt-7 text-center text-[0.9375rem] text-primary-900/75">
         Ingat kata sandimu?{" "}
         <Link
           className="font-semibold text-primary-500 underline-offset-4 hover:underline"

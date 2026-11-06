@@ -45,11 +45,9 @@ test("styles the dashboard with design tokens and readable type only", async () 
       /\b(?:text|bg|border|ring|from|via|to|fill|stroke|outline)-\[#/,
       `${file} uses a raw hex colour instead of a token`,
     );
-    assert.doesNotMatch(
-      source,
-      /text-\[(?:[0-9]|1[0-2])px\]/,
-      `${file} has type below 13px`,
-    );
+    for (const [, size] of source.matchAll(/text-\[([\d.]+)rem\]/g)) {
+      assert.ok(Number(size) >= 0.8125, `${file} has type below 13px (${size}rem)`);
+    }
     assert.doesNotMatch(
       source,
       /(?<!placeholder:)text-primary-900\/(?:[1-6]\d|[1-9])\b/,

@@ -24,7 +24,7 @@ export function AboutSection() {
               asal AF ketahuan lebih awal.
             </span>
           </h2>
-          <p className="max-w-[460px] self-end text-[18px] leading-[1.6] text-primary-900/80 lg:col-span-4">
+          <p className="max-w-[460px] self-end text-[1.125rem] leading-[1.6] text-primary-900/80 lg:col-span-4">
             Atrial Fibrillation (AF) adalah gangguan irama jantung yang menjadi
             faktor risiko utama stroke. SiHEDAF, Sistem Hemat Energi Detektor
             Atrial Fibrilasi, memantaunya untukmu dari pergelangan tangan.

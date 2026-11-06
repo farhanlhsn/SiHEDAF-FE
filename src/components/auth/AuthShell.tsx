@@ -31,7 +31,7 @@ export function AuthShell({
         <div className="mx-auto flex h-[76px] w-full max-w-[1600px] items-center justify-between px-5 lg:px-10">
           <BrandLogo />
           <Link
-            className="nav-pulse inline-flex items-center gap-2 text-[15px] font-semibold text-primary-900"
+            className="nav-pulse inline-flex items-center gap-2 text-[0.9375rem] font-semibold text-primary-900"
             href="/"
           >
             <ArrowLeft
@@ -58,7 +58,7 @@ export function AuthShell({
       </main>
 
       <footer className="shrink-0 border-t border-primary-900/10">
-        <div className="mx-auto flex min-h-[64px] w-full max-w-[1600px] flex-col justify-center gap-1 px-5 py-4 text-[13px] text-primary-900/75 sm:flex-row sm:items-center sm:justify-between lg:px-10">
+        <div className="mx-auto flex min-h-[64px] w-full max-w-[1600px] flex-col justify-center gap-1 px-5 py-4 text-[0.8125rem] text-primary-900/75 sm:flex-row sm:items-center sm:justify-between lg:px-10">
           <p>© 2026 SiHEDAF</p>
           <p>Alat bantu deteksi dini, bukan pengganti diagnosis dokter.</p>
         </div>

@@ -8,7 +8,7 @@ type SectionLabelProps = {
 export function SectionLabel({ children, className = "" }: SectionLabelProps) {
   return (
     <p
-      className={`inline-flex items-center gap-3 text-[13px] font-semibold tracking-[0.08em] text-primary-700 uppercase ${className}`}
+      className={`inline-flex items-center gap-3 text-[0.8125rem] font-semibold tracking-[0.08em] text-primary-700 uppercase ${className}`}
     >
       <span
         aria-hidden="true"

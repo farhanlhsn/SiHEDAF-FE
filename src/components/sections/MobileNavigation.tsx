@@ -52,7 +52,7 @@ export function MobileNavigation({ activePage }: MobileNavigationProps) {
               return (
                 <Link
                   aria-current={isActive ? "page" : undefined}
-                  className={`px-5 py-3.5 text-[22px] font-semibold tracking-[-0.03em] transition-colors duration-200 hover:bg-paper-deep ${
+                  className={`px-5 py-3.5 text-[1.375rem] font-semibold tracking-[-0.03em] transition-colors duration-200 hover:bg-paper-deep ${
                     isActive ? "text-primary-300" : "text-primary-900"
                   }`}
                   href={item.href}
@@ -66,14 +66,14 @@ export function MobileNavigation({ activePage }: MobileNavigationProps) {
           </nav>
           <div className="flex flex-col gap-3 border-t border-primary-900/10 px-5 py-5">
             <Link
-              className="flex h-12 items-center justify-center rounded-full bg-primary-900 text-[15px] font-semibold text-white transition-colors duration-300 hover:bg-primary-800"
+              className="flex h-12 items-center justify-center rounded-full bg-primary-900 text-[0.9375rem] font-semibold text-white transition-colors duration-300 hover:bg-primary-800"
               href="/register"
               onClick={() => setIsMenuOpen(false)}
             >
               Daftar
             </Link>
             <Link
-              className="flex h-12 items-center justify-center rounded-full border border-primary-900/20 text-[15px] font-semibold text-primary-900 transition-colors duration-300 hover:bg-paper-deep"
+              className="flex h-12 items-center justify-center rounded-full border border-primary-900/20 text-[0.9375rem] font-semibold text-primary-900 transition-colors duration-300 hover:bg-paper-deep"
               href="/login"
               onClick={() => setIsMenuOpen(false)}
             >

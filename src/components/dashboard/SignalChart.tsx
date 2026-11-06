@@ -64,12 +64,12 @@ export function SignalChart({
           <span aria-hidden="true" className="monitor-sweep" />
         ) : null}
         {!hasData ? (
-          <p className="absolute inset-0 grid place-items-center text-[15px] font-medium text-primary-900/75">
+          <p className="absolute inset-0 grid place-items-center text-[0.9375rem] font-medium text-primary-900/75">
             Belum ada sinyal pada rentang ini.
           </p>
         ) : null}
       </div>
-      <div className="mt-2 flex justify-between text-[13px] font-medium tabular-nums text-primary-900/70">
+      <div className="mt-2 flex justify-between text-[0.8125rem] font-medium tabular-nums text-primary-900/70">
         <span>{minutesLabel(rangeMinutes)}</span>
         <span>{minutesLabel(rangeMinutes / 2)}</span>
         <span>Sekarang</span>

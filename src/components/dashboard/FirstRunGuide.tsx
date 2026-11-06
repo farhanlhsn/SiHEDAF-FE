@@ -69,7 +69,7 @@ export function FirstRunGuide({ steps }: FirstRunGuideProps) {
             </span>
             <div className="min-w-0">
               <p
-                className={`text-[17px] ${
+                className={`text-[1.0625rem] ${
                   isCurrent
                     ? "font-bold text-primary-900"
                     : "font-semibold text-primary-900/80"
@@ -78,12 +78,12 @@ export function FirstRunGuide({ steps }: FirstRunGuideProps) {
                 {copy[step.id].title}
                 <span className="sr-only"> ({statusText[step.status]})</span>
               </p>
-              <p className="mt-1 text-[15px] leading-[1.55] text-primary-900/80">
+              <p className="mt-1 text-[0.9375rem] leading-[1.55] text-primary-900/80">
                 {copy[step.id].body}
               </p>
               {step.id === "monitor" ? (
                 <a
-                  className="mt-1.5 inline-block rounded-sm text-[15px] font-semibold text-primary-500 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
+                  className="mt-1.5 inline-block rounded-sm text-[0.9375rem] font-semibold text-primary-500 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
                   href="#monitor"
                 >
                   Ke kartu sinyal PPG

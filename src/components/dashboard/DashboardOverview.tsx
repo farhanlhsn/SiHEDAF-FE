@@ -24,8 +24,8 @@ import { StatusMark } from "@/components/dashboard/StatusMark";
 import { useDashboardOverview } from "@/components/dashboard/hooks/UseDashboardOverview";
 
 const panelClassName = "rounded-[24px] border border-primary-900/10 bg-white";
-const labelClassName = "text-[14px] font-medium text-primary-900/75";
-const valueClassName = "mt-1 text-[16px] font-semibold text-primary-900";
+const labelClassName = "text-[0.875rem] font-medium text-primary-900/75";
+const valueClassName = "mt-1 text-[1rem] font-semibold text-primary-900";
 
 export function DashboardOverview() {
   const {
@@ -64,7 +64,7 @@ export function DashboardOverview() {
   return (
     <section className="min-h-[calc(100dvh-72px)] min-w-0 px-4 py-8 sm:px-7 lg:px-10 lg:py-10">
       <div className="mx-auto max-w-[1180px]">
-        <p className="text-[16px] font-semibold text-primary-500">
+        <p className="text-[1rem] font-semibold text-primary-500">
           Selamat Datang, {firstName}
         </p>
 
@@ -93,7 +93,7 @@ export function DashboardOverview() {
 
         {latestData ? (
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
-            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-primary-900/80">
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.9375rem] text-primary-900/80">
               {result === "unknown" ? null : (
                 <StatusMark size="small" status={result} />
               )}
@@ -116,7 +116,7 @@ export function DashboardOverview() {
               ) : null}
             </p>
             <button
-              className="inline-flex h-11 items-center gap-2 rounded-full border-[1.5px] border-primary-900/20 bg-white px-5 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
+              className="inline-flex h-11 items-center gap-2 rounded-full border-[1.5px] border-primary-900/20 bg-white px-5 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
               onClick={openAiResult}
               type="button"
             >
@@ -132,7 +132,7 @@ export function DashboardOverview() {
 
         {result === "af" ? (
           <div
-            className="mt-6 flex max-w-[760px] gap-3 rounded-[18px] bg-af-50 p-5 text-[16px] leading-[1.55] text-primary-900"
+            className="mt-6 flex max-w-[760px] gap-3 rounded-[18px] bg-af-50 p-5 text-[1rem] leading-[1.55] text-primary-900"
             role="note"
           >
             <TriangleAlert
@@ -154,10 +154,10 @@ export function DashboardOverview() {
         >
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 className="text-[22px] font-bold tracking-[-0.03em] text-primary-900">
+              <h2 className="text-[1.375rem] font-bold tracking-[-0.03em] text-primary-900">
                 Sinyal PPG Terbaru
               </h2>
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px]">
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.9375rem]">
                 <span className="flex items-center gap-2 font-semibold text-primary-900">
                   {isMonitoringActive ? (
                     <span
@@ -203,7 +203,7 @@ export function DashboardOverview() {
               <label className="relative block">
                 <span className="sr-only">Rentang waktu monitoring</span>
                 <select
-                  className="h-11 appearance-none rounded-full border-[1.5px] border-primary-900/20 bg-white pr-10 pl-5 text-[15px] font-medium text-primary-900 outline-none transition-colors hover:border-primary-900/40 focus:border-primary-300 focus-visible:ring-4 focus-visible:ring-primary-100"
+                  className="h-11 appearance-none rounded-full border-[1.5px] border-primary-900/20 bg-white pr-10 pl-5 text-[0.9375rem] font-medium text-primary-900 outline-none transition-colors hover:border-primary-900/40 focus:border-primary-300 focus-visible:ring-4 focus-visible:ring-primary-100"
                   onChange={(event) => setMonitoringRange(event.target.value)}
                   value={monitoringRange}
                 >
@@ -221,7 +221,7 @@ export function DashboardOverview() {
               </label>
               <button
                 aria-pressed={isMonitoringActive}
-                className={`flex h-11 items-center gap-2 rounded-full px-5 text-[15px] font-semibold transition-[color,background-color,border-color,transform] duration-200 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300 ${
+                className={`flex h-11 items-center gap-2 rounded-full px-5 text-[0.9375rem] font-semibold transition-[color,background-color,border-color,transform] duration-200 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300 ${
                   isMonitoringActive
                     ? "border-[1.5px] border-primary-900/20 bg-white text-primary-900 hover:bg-paper-deep"
                     : "btn-primary bg-primary-900 text-white"
@@ -257,7 +257,7 @@ export function DashboardOverview() {
           </div>
           {isMonitoringActive ? (
             <div
-              className="mt-4 flex max-w-[760px] gap-3 rounded-[18px] bg-primary-50 p-4 text-[15px] leading-[1.55] text-primary-900"
+              className="mt-4 flex max-w-[760px] gap-3 rounded-[18px] bg-primary-50 p-4 text-[0.9375rem] leading-[1.55] text-primary-900"
               role="note"
             >
               <Hand
@@ -272,7 +272,7 @@ export function DashboardOverview() {
           ) : null}
           {phase === "timeout" ? (
             <div
-              className="mt-4 flex max-w-[760px] gap-3 rounded-[18px] bg-paper p-4 text-[15px] leading-[1.55] text-primary-900"
+              className="mt-4 flex max-w-[760px] gap-3 rounded-[18px] bg-paper p-4 text-[0.9375rem] leading-[1.55] text-primary-900"
               role="note"
             >
               <Clock
@@ -292,7 +292,7 @@ export function DashboardOverview() {
             </div>
           ) : null}
           {deviceData && !isDeviceOnline ? (
-            <p className="mt-3 text-[14px] text-primary-900/75">
+            <p className="mt-3 text-[0.875rem] text-primary-900/75">
               Monitoring bisa dimulai setelah perangkat terhubung kembali.
             </p>
           ) : null}
@@ -307,7 +307,7 @@ export function DashboardOverview() {
           <article
             className={`flex h-full flex-col p-6 sm:p-7 ${panelClassName}`}
           >
-            <h2 className="text-[20px] font-bold tracking-[-0.03em] text-primary-900">
+            <h2 className="text-[1.25rem] font-bold tracking-[-0.03em] text-primary-900">
               Monitoring Terakhir
             </h2>
             {latestData ? (
@@ -317,7 +317,7 @@ export function DashboardOverview() {
                     <StatusMark size="small" status={result} />
                   )}
                   <span
-                    className={`text-[15px] font-semibold ${
+                    className={`text-[0.9375rem] font-semibold ${
                       result === "unknown"
                         ? "text-primary-900/70"
                         : result === "normal"
@@ -332,7 +332,7 @@ export function DashboardOverview() {
                         : "Terdeteksi Potensi AF"}
                   </span>
                 </p>
-                <h3 className="mt-3 text-[19px] font-semibold text-primary-900">
+                <h3 className="mt-3 text-[1.1875rem] font-semibold text-primary-900">
                   {result === "unknown"
                     ? "Hasil analisis belum tersedia"
                     : result === "normal"
@@ -360,12 +360,12 @@ export function DashboardOverview() {
                 </dl>
               </div>
             ) : (
-              <p className="flex-1 py-8 text-center text-[15px] text-primary-900/75">
+              <p className="flex-1 py-8 text-center text-[0.9375rem] text-primary-900/75">
                 Belum ada riwayat terbaru.
               </p>
             )}
             <Link
-              className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-full border-[1.5px] border-primary-900/20 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
+              className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-full border-[1.5px] border-primary-900/20 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
               href="/riwayat"
             >
               Lihat semua riwayat
@@ -380,7 +380,7 @@ export function DashboardOverview() {
           <article
             className={`flex h-full flex-col p-6 sm:p-7 ${panelClassName}`}
           >
-            <h2 className="text-[20px] font-bold tracking-[-0.03em] text-primary-900">
+            <h2 className="text-[1.25rem] font-bold tracking-[-0.03em] text-primary-900">
               Status Perangkat
             </h2>
             <div className="mt-5 flex flex-1 items-center gap-6">
@@ -392,7 +392,7 @@ export function DashboardOverview() {
                 width={63}
               />
               <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-2 text-[15px] font-semibold text-primary-900">
+                <p className="flex items-center gap-2 text-[0.9375rem] font-semibold text-primary-900">
                   {isDeviceOnline ? (
                     <span
                       aria-hidden="true"
@@ -410,7 +410,7 @@ export function DashboardOverview() {
                       ? "Terputus"
                       : "Memuat..."}
                 </p>
-                <h3 className="mt-2 text-[19px] font-semibold text-primary-900">
+                <h3 className="mt-2 text-[1.1875rem] font-semibold text-primary-900">
                   SiHEDAF Wristband
                 </h3>
                 <dl className="mt-5 grid gap-4">

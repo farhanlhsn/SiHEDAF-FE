@@ -39,7 +39,7 @@ type AiResultModalProps = Readonly<{
 const actionsClassName =
   "grid gap-3 sm:grid-cols-2 sm:[&>:first-child:nth-last-child(odd)]:col-span-2";
 const actionClassName =
-  "flex h-12 items-center justify-center whitespace-nowrap rounded-full px-5 text-center text-[15px] font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300";
+  "flex h-12 items-center justify-center whitespace-nowrap rounded-full px-5 text-center text-[0.9375rem] font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300";
 const primaryActionClassName = `btn-primary ${actionClassName} bg-primary-900 text-white`;
 const secondaryActionClassName = `${actionClassName} border-[1.5px] border-primary-900/20 text-primary-900 transition-colors hover:bg-paper-deep disabled:cursor-not-allowed disabled:border-primary-900/15 disabled:text-primary-900/70 disabled:hover:bg-transparent`;
 
@@ -104,7 +104,7 @@ function AnalysingBody({ onClose }: Readonly<{ onClose: () => void }>) {
   return (
     <div className="flex flex-col items-center text-center">
       <PulseLoader className="mt-2" label="Sedang dianalisis…" />
-      <p className="mt-5 max-w-[520px] text-[16px] leading-[1.55] text-primary-900/80">
+      <p className="mt-5 max-w-[520px] text-[1rem] leading-[1.55] text-primary-900/80">
         AI sedang membaca sinyal PPG dari sesi ini. Kamu boleh menutup jendela
         ini; hasilnya akan muncul di dashboard dan Riwayat.
       </p>
@@ -124,7 +124,7 @@ function AnalysingBody({ onClose }: Readonly<{ onClose: () => void }>) {
 function TimeoutBody({ onClose }: Readonly<{ onClose: () => void }>) {
   return (
     <>
-      <p className="text-[16px] leading-[1.55] text-primary-900/80">
+      <p className="text-[1rem] leading-[1.55] text-primary-900/80">
         Analisis mungkin masih berjalan. Cek Riwayat beberapa saat lagi.
       </p>
       <div className={`mt-7 ${actionsClassName}`}>
@@ -207,7 +207,7 @@ function ResultBody({
             <StatusMark size="large" status={status} />
           </div>
         )}
-        <p className="text-[16px] leading-[1.55] text-primary-900/80">
+        <p className="text-[1rem] leading-[1.55] text-primary-900/80">
           {copy[status]}
         </p>
       </div>
@@ -219,7 +219,7 @@ function ResultBody({
         tone={status === "af" ? "pink" : "blue"}
       />
 
-      <dl className="grid gap-4 rounded-[18px] bg-paper p-5 text-[15px] sm:grid-cols-3">
+      <dl className="grid gap-4 rounded-[18px] bg-paper p-5 text-[0.9375rem] sm:grid-cols-3">
         <div>
           <dt className="text-primary-900/75">Waktu</dt>
           <dd className="mt-1 font-semibold text-primary-900">
@@ -271,7 +271,7 @@ function ResultBody({
       </div>
       {offersRestart && restart === "offline" ? (
         <p
-          className="-mt-2 text-[14px] text-primary-900/75"
+          className="-mt-2 text-[0.875rem] text-primary-900/75"
           id={restartHintId}
         >
           Perangkat belum terhubung.

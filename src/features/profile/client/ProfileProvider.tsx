@@ -114,17 +114,17 @@ export function ProfileProvider({
     return (
       <main className="grid min-h-dvh place-items-center bg-paper px-6">
         <div className="w-full max-w-md rounded-[24px] border border-primary-900/10 bg-white p-8 text-center">
-          <h1 className="text-[24px] font-bold tracking-[-0.035em] text-primary-900">
+          <h1 className="text-[1.5rem] font-bold tracking-[-0.035em] text-primary-900">
             Sesi belum dapat diverifikasi
           </h1>
-          <p className="mt-3 text-[16px] leading-[1.55] text-primary-900/80">
+          <p className="mt-3 text-[1rem] leading-[1.55] text-primary-900/80">
             {error ?? "Konten dashboard belum dapat ditampilkan."}
           </p>
-          <p className="mt-2 text-[15px] text-primary-900/75">
+          <p className="mt-2 text-[0.9375rem] text-primary-900/75">
             Konten dashboard belum dapat ditampilkan sebelum sesi terverifikasi.
           </p>
           <button
-            className="btn-primary mt-6 h-12 rounded-full bg-primary-900 px-7 text-[15px] font-semibold text-white"
+            className="btn-primary mt-6 h-12 rounded-full bg-primary-900 px-7 text-[0.9375rem] font-semibold text-white"
             onClick={() => void reload()}
             type="button"
           >

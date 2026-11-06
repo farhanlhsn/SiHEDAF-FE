@@ -20,7 +20,7 @@ type AuthJourneyProps = {
 export function AuthJourney({ current }: AuthJourneyProps) {
   return (
     <nav aria-label="Langkah memulai SiHEDAF">
-      <p className="text-[14px] font-semibold text-primary-900/80 lg:hidden">
+      <p className="text-[0.875rem] font-semibold text-primary-900/80 lg:hidden">
         Langkah {current + 1} dari {journeySteps.length}:{" "}
         <span className="text-primary-900">{journeySteps[current]}</span>
       </p>
@@ -72,7 +72,7 @@ export function AuthJourney({ current }: AuthJourneyProps) {
                 ) : null}
               </span>
               <span
-                className={`text-[16px] ${
+                className={`text-[1rem] ${
                   isCurrent
                     ? "font-bold text-primary-900"
                     : "font-medium text-primary-900/75"
