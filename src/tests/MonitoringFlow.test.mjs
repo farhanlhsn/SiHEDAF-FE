@@ -8,6 +8,7 @@ const modal = read("components/dashboard/AiResultModal.tsx");
 const sessionHook = read("components/dashboard/hooks/UseMonitoringSession.ts");
 const overview = read("components/dashboard/DashboardOverview.tsx");
 const overviewHook = read("components/dashboard/hooks/UseDashboardOverview.ts");
+const dashboardModal = read("components/dashboard/DashboardModal.tsx");
 
 test("AI result modal follows phases and never invents a result", () => {
   assert.doesNotMatch(modal, /\?\? true/);
@@ -61,7 +62,7 @@ test("a slow first /latest cannot overwrite a session the user started", () => {
 test("the modal view is its own state; Detail Hasil AI shows analysing only while analysing", () => {
   assert.match(sessionHook, /useState<ResultModalView>/);
   assert.match(sessionHook, /setModalView\(phase === "analysing" \? "analysing" : "result"\)/);
-  assert.match(modal, /<DashboardModal\s+key=\{view\}/);
+  assert.match(modal, /<DashboardModal\s+contentKey=\{view\}/);
 });
 
 test("restart is offered only after a session ends", () => {
@@ -131,4 +132,14 @@ test("start/stop wait 30 s and re-read /latest after a timeout", () => {
 
 test("a device that is still loading is not reported offline", () => {
   assert.match(overviewHook, /deviceLoading: isDeviceLoading/);
+});
+
+test("a view swap replaces only the dialog, keeping the backdrop and the opener", () => {
+  assert.doesNotMatch(modal, /\bkey=\{view\}/);
+  assert.match(dashboardModal, /contentKey\?: string/);
+  assert.match(dashboardModal, /<section[^>]*\bkey=\{contentKey\}/);
+  // The opener is captured only when the modal opens…
+  assert.match(dashboardModal, /const opener = document\.activeElement;[\s\S]*?\}, \[isShown\]\);/);
+  // …while a content swap moves focus into the new dialog.
+  assert.match(dashboardModal, /dialogRef\.current\?\.focus\(\);\s*\}, \[contentKey, isShown\]\);/);
 });

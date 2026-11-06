@@ -72,11 +72,12 @@ export function AiResultModal({
         ? "Hasil belum tersedia"
         : titles[status];
 
-  // A new key per view mounts a fresh dialog, so focus moves into it and the
-  // new title is announced when the result arrives in an open modal.
+  // Each view is a fresh dialog element (contentKey), so focus moves into it
+  // and the new title is announced when the result arrives in an open modal;
+  // the backdrop stays and focus still returns to the original opener.
   return (
     <DashboardModal
-      key={view}
+      contentKey={view}
       onClose={onClose}
       open={open}
       showCloseButton={false}
