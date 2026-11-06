@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 import {
   useMyDevice,
@@ -9,6 +8,7 @@ import {
 } from "@/components/dashboard/hooks/UseMyDevice";
 import { firstRunSteps } from "@/components/dashboard/FirstRun";
 import { resultStatus } from "@/components/dashboard/DashboardFormat";
+import { useMonitoringSession } from "@/components/dashboard/hooks/UseMonitoringSession";
 import { useProfile } from "@/features/profile/client/ProfileProvider";
 
 export type { MeasurementDevice };
@@ -30,35 +30,41 @@ export type MeasurementData = {
 
 export function useDashboardOverview() {
   const { user } = useProfile();
-  const [isMonitoringActive, setIsMonitoringActive] = useState(false);
   const [monitoringRange, setMonitoringRange] = useState("12");
-  const [isTogglingAction, setIsTogglingAction] = useState(false);
 
   const { device: deviceData, isLoading: isDeviceLoading } = useMyDevice();
   const [latestData, setLatestData] = useState<MeasurementData | null>(null);
   const [hasLoadedLatest, setHasLoadedLatest] = useState(false);
   const [signalsData, setSignalsData] = useState<number[]>([]);
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+
+  const session = useMonitoringSession({ onFreshResult: setLatestData });
+  const { adoptInitial } = session;
+  const isMonitoringActive = session.phase === "recording";
 
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchLatest() {
       try {
         const res = await fetch("/api/v1/measurement/latest");
         const json = await res.json();
+        if (cancelled) return;
         if (json.code === 200 && json.data) {
           setLatestData(json.data);
-          if (json.data.status === "IN_PROGRESS") {
-            setIsMonitoringActive(true);
-          }
+          adoptInitial(json.data);
         }
       } catch (e) {
         console.error("Gagal memuat data terakhir:", e);
       } finally {
-        setHasLoadedLatest(true);
+        if (!cancelled) setHasLoadedLatest(true);
       }
     }
     fetchLatest();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [adoptInitial]);
 
   useEffect(() => {
     async function fetchSignals() {
@@ -87,38 +93,6 @@ export function useDashboardOverview() {
     };
   }, [monitoringRange, isMonitoringActive]);
 
-  async function handleToggleMonitoring() {
-    setIsTogglingAction(true);
-    try {
-      const endpoint = isMonitoringActive
-        ? "/api/v1/measurement/stop"
-        : "/api/v1/measurement/start";
-      const res = await fetch(endpoint, { method: "POST" });
-      const json = await res.json();
-      if (json.code === 200) {
-        const nextActiveState = !isMonitoringActive;
-        setIsMonitoringActive(nextActiveState);
-
-        if (!nextActiveState) {
-          const latestRes = await fetch("/api/v1/measurement/latest");
-          const latestJson = await latestRes.json();
-          if (latestJson.code === 200 && latestJson.data) {
-            setLatestData(latestJson.data);
-            setIsAiModalOpen(true);
-          }
-        }
-      } else {
-        toast.error(json.message || "Gagal mengubah status monitoring.");
-      }
-    } catch {
-      toast.error(
-        "Terjadi kesalahan saat mengubah status monitoring. Coba lagi.",
-      );
-    } finally {
-      setIsTogglingAction(false);
-    }
-  }
-
   const firstName = user?.fullname ? user.fullname.split(" ")[0] : "Pengguna";
   const result = resultStatus(latestData?.resultLabel);
   const firstRunGuideSteps = firstRunSteps({
@@ -141,11 +115,17 @@ export function useDashboardOverview() {
     result,
     firstRunGuideSteps,
     isMonitoringActive,
+    phase: session.phase,
+    elapsed: session.elapsed,
     monitoringRange,
     setMonitoringRange,
-    isTogglingAction,
-    handleToggleMonitoring,
-    isAiModalOpen,
-    setIsAiModalOpen,
+    isTogglingAction: session.isTogglingAction,
+    handleToggleMonitoring: session.handleToggleMonitoring,
+    isAiModalOpen: session.isModalOpen,
+    modalPhase: session.modalPhase,
+    openAiResult: session.openResult,
+    closeAiModal: session.closeModal,
+    restartMonitoring: session.restart,
+    canRestart: deviceData?.status === "ONLINE" && !session.isTogglingAction,
   };
 }

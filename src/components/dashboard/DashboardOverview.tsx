@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   ChevronDown,
+  Hand,
   Pause,
   Play,
   TriangleAlert,
@@ -36,13 +37,21 @@ export function DashboardOverview() {
     signalsData,
     result,
     isMonitoringActive,
+    phase,
+    elapsed,
     monitoringRange,
     setMonitoringRange,
     isTogglingAction,
     handleToggleMonitoring,
     isAiModalOpen,
-    setIsAiModalOpen,
+    modalPhase,
+    openAiResult,
+    closeAiModal,
+    restartMonitoring,
+    canRestart,
   } = useDashboardOverview();
+
+  const isAnalysing = phase === "analysing";
 
   const confidence = formatConfidence(latestData?.confidenceLevel);
   const analysedAt = formatWib(
@@ -61,6 +70,8 @@ export function DashboardOverview() {
         <h1 className="mt-3 max-w-[900px] text-[clamp(2.3rem,4.4vw,4rem)] leading-[0.98] tracking-[-0.05em] text-primary-900">
           {!hasLoadedLatest ? (
             <span className="font-bold">Memuat hasil terakhir</span>
+          ) : result === "unknown" && isMonitoringActive ? (
+            <span className="font-bold">Monitoring sedang berjalan.</span>
           ) : result === "unknown" ? (
             <span className="font-bold">Belum ada hasil analisis.</span>
           ) : (
@@ -105,7 +116,7 @@ export function DashboardOverview() {
             </p>
             <button
               className="inline-flex h-11 items-center gap-2 rounded-full border-[1.5px] border-primary-900/20 bg-white px-5 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
-              onClick={() => setIsAiModalOpen(true)}
+              onClick={openAiResult}
               type="button"
             >
               Detail Hasil AI
@@ -162,8 +173,22 @@ export function DashboardOverview() {
                     />
                   )}
                   {isMonitoringActive
-                    ? "Monitoring aktif"
-                    : "Monitoring dijeda"}
+                    ? "Merekam"
+                    : isAnalysing
+                      ? "Menganalisis rekaman…"
+                      : "Monitoring dijeda"}
+                  {isMonitoringActive ? (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span
+                        className="tabular-nums"
+                        role="timer"
+                        aria-label={`Lama perekaman ${elapsed}`}
+                      >
+                        {elapsed}
+                      </span>
+                    </>
+                  ) : null}
                 </span>
                 <span className="text-primary-900/75">
                   {isMonitoringActive
@@ -201,13 +226,14 @@ export function DashboardOverview() {
                 }`}
                 disabled={
                   isTogglingAction ||
+                  isAnalysing ||
                   !deviceData ||
                   deviceData?.status !== "ONLINE"
                 }
                 onClick={handleToggleMonitoring}
                 type="button"
               >
-                {isTogglingAction ? (
+                {isTogglingAction || isAnalysing ? (
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                 ) : isMonitoringActive ? (
                   <Pause aria-hidden="true" size={16} strokeWidth={2.25} />
@@ -219,12 +245,29 @@ export function DashboardOverview() {
                     strokeWidth={2}
                   />
                 )}
-                {isMonitoringActive
-                  ? "Hentikan Monitoring"
-                  : "Mulai Monitoring"}
+                {isAnalysing
+                  ? "Menganalisis…"
+                  : isMonitoringActive
+                    ? "Hentikan Monitoring"
+                    : "Mulai Monitoring"}
               </button>
             </div>
           </div>
+          {isMonitoringActive ? (
+            <div
+              className="mt-4 flex max-w-[760px] gap-3 rounded-[18px] bg-primary-50 p-4 text-[15px] leading-[1.55] text-primary-900"
+              role="note"
+            >
+              <Hand
+                aria-hidden="true"
+                className="mt-0.5 size-5 shrink-0 text-primary-500"
+                strokeWidth={2}
+              />
+              <p>
+                {"Biarkan wristband tetap terpasang dan usahakan tangan tidak banyak bergerak selama perekaman."}
+              </p>
+            </div>
+          ) : null}
           {deviceData && !isDeviceOnline ? (
             <p className="mt-3 text-[14px] text-primary-900/75">
               Monitoring bisa dimulai setelah perangkat terhubung kembali.
@@ -370,9 +413,12 @@ export function DashboardOverview() {
       </div>
 
       <AiResultModal
+        canRestart={canRestart}
         data={latestData}
-        onClose={() => setIsAiModalOpen(false)}
+        onClose={closeAiModal}
+        onRestart={restartMonitoring}
         open={isAiModalOpen}
+        phase={modalPhase}
       />
     </section>
   );
