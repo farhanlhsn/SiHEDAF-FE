@@ -8,6 +8,7 @@ import {
 } from "@/components/dashboard/hooks/UseMyDevice";
 import { firstRunSteps } from "@/components/dashboard/FirstRun";
 import { resultStatus } from "@/components/dashboard/DashboardFormat";
+import { restartAction } from "@/components/dashboard/MonitoringSession";
 import { useMonitoringSession } from "@/components/dashboard/hooks/UseMonitoringSession";
 import { useProfile } from "@/features/profile/client/ProfileProvider";
 
@@ -49,9 +50,9 @@ export function useDashboardOverview() {
         const res = await fetch("/api/v1/measurement/latest");
         const json = await res.json();
         if (cancelled) return;
-        if (json.code === 200 && json.data) {
+        // Ignored once the user started or stopped while this was loading.
+        if (json.code === 200 && json.data && adoptInitial(json.data)) {
           setLatestData(json.data);
-          adoptInitial(json.data);
         }
       } catch (e) {
         console.error("Gagal memuat data terakhir:", e);
@@ -95,9 +96,11 @@ export function useDashboardOverview() {
 
   const firstName = user?.fullname ? user.fullname.split(" ")[0] : "Pengguna";
   const result = resultStatus(latestData?.resultLabel);
+  const isDeviceOnline = deviceData?.status === "ONLINE";
   const firstRunGuideSteps = firstRunSteps({
-    deviceOnline: deviceData?.status === "ONLINE",
-    monitoringActive: isMonitoringActive,
+    deviceOnline: isDeviceOnline,
+    monitoringActive:
+      session.phase === "recording" || session.phase === "analysing",
     hasResult: Boolean(latestData),
   });
 
@@ -122,10 +125,13 @@ export function useDashboardOverview() {
     isTogglingAction: session.isTogglingAction,
     handleToggleMonitoring: session.handleToggleMonitoring,
     isAiModalOpen: session.isModalOpen,
-    modalPhase: session.modalPhase,
+    modalView: session.modalView,
     openAiResult: session.openResult,
     closeAiModal: session.closeModal,
     restartMonitoring: session.restart,
-    canRestart: deviceData?.status === "ONLINE" && !session.isTogglingAction,
+    restartState: restartAction(session.phase, {
+      deviceOnline: isDeviceOnline,
+      busy: session.isTogglingAction,
+    }),
   };
 }

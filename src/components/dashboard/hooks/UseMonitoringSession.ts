@@ -3,14 +3,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { resultStatus } from "@/components/dashboard/DashboardFormat";
 import {
+  EMPTY_BASELINE,
   POLL_INTERVAL_MS,
   POLL_MAX_ATTEMPTS,
   formatElapsed,
   isFreshResult,
+  pollForFreshResult,
+  rememberResult,
+  requestSignal,
   sessionStartFrom,
+  waitFor,
   type MonitoringPhase,
+  type ResultBaseline,
+  type ResultModalView,
 } from "@/components/dashboard/MonitoringSession";
 import type { MeasurementData } from "@/components/dashboard/hooks/UseDashboardOverview";
 
@@ -18,6 +24,35 @@ type UseMonitoringSessionOptions = {
   /** Called with a freshly analysed result so the overview can show it. */
   onFreshResult: (data: MeasurementData) => void;
 };
+
+type Envelope<T = unknown> = { code?: number; message?: string; data?: T };
+
+const TOGGLE_FAILED = "Gagal mengubah status monitoring.";
+const TOGGLE_ERROR =
+  "Terjadi kesalahan saat mengubah status monitoring. Coba lagi.";
+
+/** Start or stop a session; throws on network errors and timeouts. */
+async function postMeasurement(
+  action: "start" | "stop",
+  lifetime: AbortSignal,
+): Promise<Envelope> {
+  const res = await fetch(`/api/v1/measurement/${action}`, {
+    method: "POST",
+    signal: requestSignal(lifetime),
+  });
+
+  return res.json();
+}
+
+/** The latest record, or null when the API does not answer with one. */
+async function fetchLatest(signal: AbortSignal) {
+  const res = await fetch("/api/v1/measurement/latest", {
+    signal: requestSignal(signal),
+  });
+  const json: Envelope<MeasurementData> = await res.json();
+
+  return res.ok && json.code === 200 && json.data ? json.data : null;
+}
 
 /**
  * Owns the monitoring moment: recording (wall-clock elapsed), analysing
@@ -27,15 +62,18 @@ export function useMonitoringSession({
   onFreshResult,
 }: UseMonitoringSessionOptions) {
   const [phase, setPhase] = useState<MonitoringPhase>("idle");
+  const [modalView, setModalView] = useState<ResultModalView>("result");
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [now, setNow] = useState<number | null>(null);
   const [isTogglingAction, setIsTogglingAction] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const previousResultIdRef = useRef<number | null>(null);
-  // Bumped to cancel a running poll loop; a loop only acts while its id is current.
-  const pollRunRef = useRef(0);
-  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const baselineRef = useRef<ResultBaseline>(EMPTY_BASELINE);
+  // Once the user started or stopped, a slow first /latest is out of date.
+  const userActedRef = useRef(false);
+  // Aborted when the component unmounts; every request and loop follows it.
+  const lifetimeRef = useRef<AbortController | null>(null);
+  const pollRef = useRef<AbortController | null>(null);
   const onFreshResultRef = useRef(onFreshResult);
 
   useEffect(() => {
@@ -43,15 +81,20 @@ export function useMonitoringSession({
   }, [onFreshResult]);
 
   const cancelPolling = useCallback(() => {
-    pollRunRef.current += 1;
-    if (pollTimerRef.current !== null) {
-      clearTimeout(pollTimerRef.current);
-      pollTimerRef.current = null;
-    }
+    pollRef.current?.abort();
+    pollRef.current = null;
   }, []);
 
-  // Unmount: no pending poll may survive or set state afterwards.
-  useEffect(() => cancelPolling, [cancelPolling]);
+  // Created in the effect body so a StrictMode remount gets a live one again.
+  useEffect(() => {
+    const lifetime = new AbortController();
+    lifetimeRef.current = lifetime;
+
+    return () => {
+      lifetime.abort();
+      cancelPolling();
+    };
+  }, [cancelPolling]);
 
   // One-second tick for the elapsed time, only while recording.
   useEffect(() => {
@@ -62,108 +105,112 @@ export function useMonitoringSession({
     return () => clearInterval(intervalId);
   }, [phase]);
 
-  /** Called with the first /latest: remember its result and resume a running session. */
+  /**
+   * Called with the first /latest: remember its result and resume a running
+   * session. Returns false (ignored) once the user has started or stopped.
+   */
   const adoptInitial = useCallback((latest: MeasurementData) => {
-    if (resultStatus(latest.resultLabel) !== "unknown" && latest.id != null) {
-      previousResultIdRef.current = latest.id;
-    }
+    if (userActedRef.current) return false;
 
-    const resumedAt = sessionStartFrom(latest);
+    baselineRef.current = rememberResult(baselineRef.current, latest);
 
     if (latest.status?.toUpperCase() === "IN_PROGRESS") {
       const current = Date.now();
-      setStartedAt(resumedAt ?? current);
+      setStartedAt(sessionStartFrom(latest) ?? current);
       setNow(current);
       setPhase("recording");
     }
+
+    return true;
   }, []);
 
-  const startPolling = useCallback(() => {
-    cancelPolling();
-    const run = pollRunRef.current;
-    let attempts = 0;
+  const pollForResult = useCallback(
+    async (lifetime: AbortSignal) => {
+      cancelPolling();
+      const run = new AbortController();
+      pollRef.current = run;
+      const isCancelled = () => run.signal.aborted || lifetime.aborted;
 
-    async function tick() {
-      attempts += 1;
-      let fresh: MeasurementData | null = null;
+      const outcome = await pollForFreshResult({
+        fetchLatest: () => fetchLatest(run.signal),
+        isFresh: (data) =>
+          isFreshResult(
+            data,
+            baselineRef.current.previousResultId,
+            baselineRef.current,
+          ),
+        wait: (ms) => waitFor(ms, run.signal),
+        isCancelled,
+        maxAttempts: POLL_MAX_ATTEMPTS,
+        intervalMs: POLL_INTERVAL_MS,
+      });
 
-      try {
-        const res = await fetch("/api/v1/measurement/latest");
-        const json = await res.json();
-        if (
-          res.ok &&
-          json.code === 200 &&
-          isFreshResult(json.data, previousResultIdRef.current)
-        ) {
-          fresh = json.data as MeasurementData;
-        }
-      } catch {
-        // A failed request counts as an attempt; try again until the cap.
-      }
+      if (outcome.kind === "cancelled" || isCancelled()) return;
+      pollRef.current = null;
 
-      if (pollRunRef.current !== run) return;
-
-      if (fresh) {
-        if (fresh.id != null) previousResultIdRef.current = fresh.id;
-        onFreshResultRef.current(fresh);
+      if (outcome.kind === "fresh") {
+        baselineRef.current = rememberResult(baselineRef.current, outcome.data);
+        onFreshResultRef.current(outcome.data);
         setPhase("result");
-        return;
-      }
-
-      if (attempts >= POLL_MAX_ATTEMPTS) {
+        setModalView("result");
+      } else {
         setPhase("timeout");
-        return;
+        setModalView("timeout");
       }
-
-      pollTimerRef.current = setTimeout(tick, POLL_INTERVAL_MS);
-    }
-
-    void tick();
-  }, [cancelPolling]);
+    },
+    [cancelPolling],
+  );
 
   const startSession = useCallback(async () => {
+    const lifetime = lifetimeRef.current?.signal;
+    if (!lifetime || lifetime.aborted) return;
+
     setIsTogglingAction(true);
     try {
-      const res = await fetch("/api/v1/measurement/start", { method: "POST" });
-      const json = await res.json();
+      const json = await postMeasurement("start", lifetime);
+      if (lifetime.aborted) return;
+
       if (json.code === 200) {
+        userActedRef.current = true;
         cancelPolling();
         const current = Date.now();
         setStartedAt(current);
         setNow(current);
         setPhase("recording");
       } else {
-        toast.error(json.message || "Gagal mengubah status monitoring.");
+        toast.error(json.message || TOGGLE_FAILED);
       }
     } catch {
-      toast.error(
-        "Terjadi kesalahan saat mengubah status monitoring. Coba lagi.",
-      );
+      if (!lifetime.aborted) toast.error(TOGGLE_ERROR);
     } finally {
-      setIsTogglingAction(false);
+      if (!lifetime.aborted) setIsTogglingAction(false);
     }
   }, [cancelPolling]);
 
   const stopSession = useCallback(async () => {
+    const lifetime = lifetimeRef.current?.signal;
+    if (!lifetime || lifetime.aborted) return;
+
     setIsTogglingAction(true);
     try {
-      const res = await fetch("/api/v1/measurement/stop", { method: "POST" });
-      const json = await res.json();
+      const json = await postMeasurement("stop", lifetime);
+      if (lifetime.aborted) return;
+
       if (json.code === 200) {
+        userActedRef.current = true;
         setPhase("analysing");
+        setModalView("analysing");
         setIsModalOpen(true);
-        startPolling();
+        void pollForResult(lifetime);
       } else {
-        toast.error(json.message || "Gagal mengubah status monitoring.");
+        toast.error(json.message || TOGGLE_FAILED);
       }
     } catch {
-      toast.error(
-        "Terjadi kesalahan saat mengubah status monitoring. Coba lagi.",
-      );
+      if (!lifetime.aborted) toast.error(TOGGLE_ERROR);
     } finally {
-      setIsTogglingAction(false);
+      if (!lifetime.aborted) setIsTogglingAction(false);
     }
-  }, [startPolling]);
+  }, [pollForResult]);
 
   const handleToggleMonitoring = useCallback(async () => {
     if (isTogglingAction || phase === "analysing") return;
@@ -171,13 +218,21 @@ export function useMonitoringSession({
     else await startSession();
   }, [isTogglingAction, phase, startSession, stopSession]);
 
+  /** "Mulai monitoring lagi": only once no session is running. */
   const restart = useCallback(async () => {
-    if (isTogglingAction) return;
+    if (isTogglingAction || phase === "recording" || phase === "analysing") {
+      return;
+    }
     setIsModalOpen(false);
     await startSession();
-  }, [isTogglingAction, startSession]);
+  }, [isTogglingAction, phase, startSession]);
 
-  const openResult = useCallback(() => setIsModalOpen(true), []);
+  /** "Detail Hasil AI": the current result, or the analysing view while analysing. */
+  const openResult = useCallback(() => {
+    setModalView(phase === "analysing" ? "analysing" : "result");
+    setIsModalOpen(true);
+  }, [phase]);
+
   const closeModal = useCallback(() => setIsModalOpen(false), []);
 
   const elapsed =
@@ -190,10 +245,7 @@ export function useMonitoringSession({
     elapsed,
     isTogglingAction,
     isModalOpen,
-    modalPhase:
-      phase === "analysing" || phase === "timeout"
-        ? (phase as "analysing" | "timeout")
-        : ("result" as const),
+    modalView,
     adoptInitial,
     handleToggleMonitoring,
     restart,

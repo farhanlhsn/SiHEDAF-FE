@@ -44,11 +44,11 @@ export function DashboardOverview() {
     isTogglingAction,
     handleToggleMonitoring,
     isAiModalOpen,
-    modalPhase,
+    modalView,
     openAiResult,
     closeAiModal,
     restartMonitoring,
-    canRestart,
+    restartState,
   } = useDashboardOverview();
 
   const isAnalysing = phase === "analysing";
@@ -413,12 +413,12 @@ export function DashboardOverview() {
       </div>
 
       <AiResultModal
-        canRestart={canRestart}
         data={latestData}
         onClose={closeAiModal}
         onRestart={restartMonitoring}
         open={isAiModalOpen}
-        phase={modalPhase}
+        restart={restartState}
+        view={modalView}
       />
     </section>
   );

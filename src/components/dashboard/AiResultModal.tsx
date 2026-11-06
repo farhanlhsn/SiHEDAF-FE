@@ -9,7 +9,11 @@ import {
 } from "@/components/dashboard/DashboardFormat";
 import { DashboardModal } from "@/components/dashboard/DashboardModal";
 import type { MeasurementData } from "@/components/dashboard/hooks/UseDashboardOverview";
-import { analysisStatusLabel } from "@/components/dashboard/MonitoringSession";
+import {
+  analysisStatusLabel,
+  type RestartAction,
+  type ResultModalView,
+} from "@/components/dashboard/MonitoringSession";
 import { PpgTrace } from "@/components/dashboard/PpgTrace";
 import {
   rangeEndingOn,
@@ -19,12 +23,13 @@ import { StatusMark } from "@/components/dashboard/StatusMark";
 import { PulseLoader } from "@/components/ui/PulseLoader";
 
 type AiResultModalProps = Readonly<{
-  canRestart: boolean;
   data: MeasurementData | null;
   onClose: () => void;
   onRestart: () => void;
   open: boolean;
-  phase: "analysing" | "result" | "timeout";
+  /** "Mulai monitoring lagi": hidden while a session runs, disabled when busy or offline. */
+  restart: RestartAction;
+  view: ResultModalView;
 }>;
 
 const primaryActionClassName =
@@ -46,74 +51,106 @@ const copy = {
 } as const;
 
 export function AiResultModal({
-  canRestart,
   data,
   onClose,
   onRestart,
   open,
-  phase,
+  restart,
+  view,
 }: AiResultModalProps) {
-  if (phase === "analysing") {
-    return (
-      <DashboardModal
-        onClose={onClose}
-        open={open}
-        showCloseButton={false}
-        size="wide"
-        title="Menganalisis rekaman"
-      >
-        <div className="flex flex-col items-center text-center">
-          <PulseLoader className="mt-2" label="Sedang dianalisis…" />
-          <p className="mt-5 max-w-[520px] text-[16px] leading-[1.55] text-primary-900/80">
-            AI sedang membaca sinyal PPG dari sesi ini. Kamu boleh menutup
-            jendela ini; hasilnya akan muncul di dashboard dan Riwayat.
-          </p>
-          <div className="mt-7 flex w-full">
-            <button
-              className={secondaryActionClassName}
-              onClick={onClose}
-              type="button"
-            >
-              Tutup
-            </button>
-          </div>
-        </div>
-      </DashboardModal>
-    );
-  }
+  const status = resultStatus(data?.resultLabel);
+  const title =
+    view === "analysing"
+      ? "Menganalisis rekaman"
+      : view === "timeout"
+        ? "Hasil belum tersedia"
+        : titles[status];
 
-  if (phase === "timeout") {
-    return (
-      <DashboardModal
-        onClose={onClose}
-        open={open}
-        showCloseButton={false}
-        size="wide"
-        title="Hasil belum tersedia"
-      >
-        <p className="text-[16px] leading-[1.55] text-primary-900/80">
-          Analisis mungkin masih berjalan. Cek Riwayat beberapa saat lagi.
-        </p>
-        <div className="mt-7 flex w-full flex-col gap-3 sm:flex-row">
-          <Link
-            className={primaryActionClassName}
-            href="/riwayat"
-            onClick={onClose}
-          >
-            Buka Riwayat
-          </Link>
-          <button
-            className={secondaryActionClassName}
-            onClick={onClose}
-            type="button"
-          >
-            Tutup
-          </button>
-        </div>
-      </DashboardModal>
-    );
-  }
+  // A new key per view mounts a fresh dialog, so focus moves into it and the
+  // new title is announced when the result arrives in an open modal.
+  return (
+    <DashboardModal
+      key={view}
+      onClose={onClose}
+      open={open}
+      showCloseButton={false}
+      size="wide"
+      title={title}
+    >
+      {view === "analysing" ? (
+        <AnalysingBody onClose={onClose} />
+      ) : view === "timeout" ? (
+        <TimeoutBody onClose={onClose} />
+      ) : (
+        <ResultBody
+          data={data}
+          onClose={onClose}
+          onRestart={onRestart}
+          restart={restart}
+        />
+      )}
+    </DashboardModal>
+  );
+}
 
+function AnalysingBody({ onClose }: Readonly<{ onClose: () => void }>) {
+  return (
+    <div className="flex flex-col items-center text-center">
+      <PulseLoader className="mt-2" label="Sedang dianalisis…" />
+      <p className="mt-5 max-w-[520px] text-[16px] leading-[1.55] text-primary-900/80">
+        AI sedang membaca sinyal PPG dari sesi ini. Kamu boleh menutup jendela
+        ini; hasilnya akan muncul di dashboard dan Riwayat.
+      </p>
+      <div className="mt-7 flex w-full">
+        <button
+          className={secondaryActionClassName}
+          onClick={onClose}
+          type="button"
+        >
+          Tutup
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TimeoutBody({ onClose }: Readonly<{ onClose: () => void }>) {
+  return (
+    <>
+      <p className="text-[16px] leading-[1.55] text-primary-900/80">
+        Analisis mungkin masih berjalan. Cek Riwayat beberapa saat lagi.
+      </p>
+      <div className="mt-7 flex w-full flex-col gap-3 sm:flex-row">
+        <Link
+          className={primaryActionClassName}
+          href="/riwayat"
+          onClick={onClose}
+        >
+          Buka Riwayat
+        </Link>
+        <button
+          className={secondaryActionClassName}
+          onClick={onClose}
+          type="button"
+        >
+          Tutup
+        </button>
+      </div>
+    </>
+  );
+}
+
+function ResultBody({
+  data,
+  onClose,
+  onRestart,
+  restart,
+}: Readonly<{
+  data: MeasurementData | null;
+  onClose: () => void;
+  onRestart: () => void;
+  restart: RestartAction;
+}>) {
   const status = resultStatus(data?.resultLabel);
   const confidence = formatConfidence(data?.confidenceLevel);
   const measuredAt = formatWib(
@@ -129,19 +166,23 @@ export function AiResultModal({
       Lihat Riwayat
     </Link>
   );
-  const restartButton = (
-    <button
-      className={secondaryActionClassName}
-      disabled={!canRestart}
-      onClick={onRestart}
-      type="button"
-    >
-      Mulai monitoring lagi
-    </button>
-  );
+  // Offered only after a session ended, never while one is recording.
+  const restartButton =
+    restart === "hidden" ? null : (
+      <button
+        className={secondaryActionClassName}
+        disabled={restart !== "ready"}
+        onClick={onRestart}
+        type="button"
+      >
+        Mulai monitoring lagi
+      </button>
+    );
   const closeButton = (
     <button
-      className={status === "normal" ? primaryActionClassName : secondaryActionClassName}
+      className={
+        status === "normal" ? primaryActionClassName : secondaryActionClassName
+      }
       onClick={onClose}
       type="button"
     >
@@ -150,83 +191,75 @@ export function AiResultModal({
   );
 
   return (
-    <DashboardModal
-      onClose={onClose}
-      open={open}
-      showCloseButton={false}
-      size="wide"
-      title={titles[status]}
-    >
-      <div className="flex flex-col gap-5">
-        <div className="flex items-start gap-4">
-          {status === "unknown" ? null : (
-            <div className="shrink-0">
-              <StatusMark size="large" status={status} />
-            </div>
-          )}
-          <p className="text-[16px] leading-[1.55] text-primary-900/80">
-            {copy[status]}
-          </p>
-        </div>
-
-        <PpgTrace
-          className="h-36 w-full rounded-[18px] bg-paper"
-          data={data?.ppgResult?.rawPpgData}
-          label="Grafik sinyal PPG sesi ini"
-          tone={status === "af" ? "pink" : "blue"}
-        />
-
-        <dl className="grid gap-4 rounded-[18px] bg-paper p-5 text-[15px] sm:grid-cols-3">
-          <div>
-            <dt className="text-primary-900/75">Waktu</dt>
-            <dd className="mt-1 font-semibold text-primary-900">
-              {measuredAt ?? "—"}
-            </dd>
+    <div className="flex flex-col gap-5">
+      <div className="flex items-start gap-4">
+        {status === "unknown" ? null : (
+          <div className="shrink-0">
+            <StatusMark size="large" status={status} />
           </div>
-          <div>
-            <dt className="text-primary-900/75">Keyakinan AI</dt>
-            <dd className="mt-1 font-semibold tabular-nums text-primary-900">
-              {confidence ?? "Tidak tersedia"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-primary-900/75">Status analisis</dt>
-            <dd className="mt-1 font-semibold text-primary-900">
-              {analysisStatusLabel(data?.status)}
-            </dd>
-          </div>
-        </dl>
-
-        <div className="flex w-full flex-col gap-3 sm:flex-row">
-          {status === "af" ? (
-            <>
-              <Link
-                className={primaryActionClassName}
-                href={reportHref(
-                  rangeEndingOn(data?.completedAt ?? data?.createdAt),
-                )}
-                onClick={onClose}
-              >
-                Buat laporan dokter
-              </Link>
-              {historyLink}
-              {restartButton}
-              {closeButton}
-            </>
-          ) : status === "normal" ? (
-            <>
-              {closeButton}
-              {historyLink}
-              {restartButton}
-            </>
-          ) : (
-            <>
-              {historyLink}
-              {closeButton}
-            </>
-          )}
-        </div>
+        )}
+        <p className="text-[16px] leading-[1.55] text-primary-900/80">
+          {copy[status]}
+        </p>
       </div>
-    </DashboardModal>
+
+      <PpgTrace
+        className="h-36 w-full rounded-[18px] bg-paper"
+        data={data?.ppgResult?.rawPpgData}
+        label="Grafik sinyal PPG sesi ini"
+        tone={status === "af" ? "pink" : "blue"}
+      />
+
+      <dl className="grid gap-4 rounded-[18px] bg-paper p-5 text-[15px] sm:grid-cols-3">
+        <div>
+          <dt className="text-primary-900/75">Waktu</dt>
+          <dd className="mt-1 font-semibold text-primary-900">
+            {measuredAt ?? "—"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-primary-900/75">Keyakinan AI</dt>
+          <dd className="mt-1 font-semibold tabular-nums text-primary-900">
+            {confidence ?? "Tidak tersedia"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-primary-900/75">Status analisis</dt>
+          <dd className="mt-1 font-semibold text-primary-900">
+            {analysisStatusLabel(data?.status)}
+          </dd>
+        </div>
+      </dl>
+
+      <div className="flex w-full flex-col gap-3 sm:flex-row">
+        {status === "af" ? (
+          <>
+            <Link
+              className={primaryActionClassName}
+              href={reportHref(
+                rangeEndingOn(data?.completedAt ?? data?.createdAt),
+              )}
+              onClick={onClose}
+            >
+              Buat laporan dokter
+            </Link>
+            {historyLink}
+            {restartButton}
+            {closeButton}
+          </>
+        ) : status === "normal" ? (
+          <>
+            {closeButton}
+            {historyLink}
+            {restartButton}
+          </>
+        ) : (
+          <>
+            {historyLink}
+            {closeButton}
+          </>
+        )}
+      </div>
+    </div>
   );
 }
