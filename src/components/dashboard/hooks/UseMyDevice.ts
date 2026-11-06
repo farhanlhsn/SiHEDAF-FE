@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useOnlineStatus } from "@/components/ui/hooks/UseOnlineStatus";
+import {
+  describeCaughtError,
+  type DataError,
+} from "@/components/ui/FetchError";
 import {
   apiFetch,
   SessionExpiredError,
@@ -17,6 +21,8 @@ export type MeasurementDevice = {
 export function useMyDevice() {
   const [device, setDevice] = useState<MeasurementDevice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<DataError | null>(null);
+  const [reloadCount, setReloadCount] = useState(0);
   const { reconnectCount } = useOnlineStatus();
 
   useEffect(() => {
@@ -26,12 +32,18 @@ export function useMyDevice() {
       try {
         const res = await apiFetch("/api/v1/measurement/my-device");
         const json = await res.json();
-        if (!isCancelled && json.code === 200 && json.data) {
-          setDevice(json.data);
+        if (isCancelled) return;
+        if (json.code === 200) {
+          // 200 with no data means no wristband is bound yet.
+          setDevice(json.data ?? null);
+          setError(null);
+        } else {
+          setError(describeCaughtError(null, res.status));
         }
       } catch (e) {
         if (e instanceof SessionExpiredError) return;
         console.error("Gagal memuat status perangkat:", e);
+        if (!isCancelled) setError(describeCaughtError(e));
       }
       if (!isCancelled) setIsLoading(false);
     }
@@ -41,7 +53,9 @@ export function useMyDevice() {
     return () => {
       isCancelled = true;
     };
-  }, [reconnectCount]);
+  }, [reconnectCount, reloadCount]);
 
-  return { device, isLoading };
+  const reload = useCallback(() => setReloadCount((count) => count + 1), []);
+
+  return { device, isLoading, error, reload };
 }

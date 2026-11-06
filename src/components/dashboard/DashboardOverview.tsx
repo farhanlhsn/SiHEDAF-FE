@@ -18,6 +18,7 @@ import {
   formatWib,
 } from "@/components/dashboard/DashboardFormat";
 import { DataErrorState } from "@/components/ui/DataErrorState";
+import { DeviceOfflineCard } from "@/components/dashboard/DeviceOfflineCard";
 import { FirstRunGuide } from "@/components/dashboard/FirstRunGuide";
 import { SignalChart } from "@/components/dashboard/SignalChart";
 import { Sparkline } from "@/components/dashboard/Sparkline";
@@ -33,6 +34,9 @@ export function DashboardOverview() {
   const {
     firstName,
     deviceData,
+    deviceStatus,
+    deviceError,
+    reloadDevice,
     latestData,
     hasLoadedLatest,
     latestError,
@@ -162,6 +166,13 @@ export function DashboardOverview() {
             </p>
           </div>
         ) : null}
+
+        <DeviceOfflineCard
+          error={deviceError}
+          lastSeen={deviceData?.lastSeen}
+          onRetry={reloadDevice}
+          state={deviceStatus}
+        />
 
         <article
           className={`mt-10 scroll-mt-24 ${panelClassName} px-5 pt-6 pb-5 sm:px-7`}
@@ -315,11 +326,6 @@ export function DashboardOverview() {
                 </Link>
               </p>
             </div>
-          ) : null}
-          {deviceData && !isDeviceOnline ? (
-            <p className="mt-3 text-[0.875rem] text-primary-900/75">
-              Monitoring bisa dimulai setelah perangkat terhubung kembali.
-            </p>
           ) : null}
           <SignalChart
             data={signalsData}

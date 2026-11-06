@@ -52,3 +52,35 @@ test("DataErrorState is an alert with a 48px retry", async () => {
   assert.match(source, /Coba lagi/);
   assert.match(source, /h-12/);
 });
+
+test("DeviceOfflineCard guides the reader without naming a connection type", async () => {
+  const source = await read("components/dashboard/DeviceOfflineCard.tsx");
+  for (const text of [
+    "Pastikan wristband menyala dan terpasang di pergelangan tangan.",
+    "Pastikan baterainya cukup; isi daya bila perlu.",
+    "Pastikan wristband berada di dekat jaringan yang biasa dipakai saat penyambungan, lalu tunggu beberapa menit.",
+    "Masih belum terhubung? Sambungkan ulang perangkat.",
+    "Wristband belum terhubung",
+    "Terakhir terlihat",
+    "Belum pernah terlihat",
+    "Belum ada perangkat terhubung",
+    "Periksa lagi",
+    'href="/hubungkan-perangkat"',
+    "<ol",
+    "<DataErrorState",
+  ]) {
+    assert.ok(source.includes(text), `missing: ${text}`);
+  }
+  assert.doesNotMatch(source, /wi-?fi|bluetooth/i);
+  assert.match(source, /h-12/);
+  assert.match(source, /focus-visible:/);
+});
+
+test("the overview renders the offline card instead of the old sentence", async () => {
+  const overview = await read("components/dashboard/DashboardOverview.tsx");
+  assert.doesNotMatch(
+    overview,
+    /Monitoring bisa dimulai setelah perangkat terhubung kembali\./,
+  );
+  assert.match(overview, /<DeviceOfflineCard/);
+});

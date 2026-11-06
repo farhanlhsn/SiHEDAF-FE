@@ -12,6 +12,7 @@ import {
   apiFetch,
   SessionExpiredError,
 } from "@/features/auth/session/client/ApiFetch";
+import { deviceState } from "@/components/dashboard/DeviceState";
 import {
   useMyDevice,
   type MeasurementDevice,
@@ -50,7 +51,12 @@ export function useDashboardOverview() {
   const { online, reconnectCount } = useOnlineStatus();
   const [monitoringRange, setMonitoringRange] = useState("12");
 
-  const { device: deviceData, isLoading: isDeviceLoading } = useMyDevice();
+  const {
+    device: deviceData,
+    isLoading: isDeviceLoading,
+    error: deviceError,
+    reload: reloadDevice,
+  } = useMyDevice();
   const [latestData, setLatestData] = useState<MeasurementData | null>(null);
   const [hasLoadedLatest, setHasLoadedLatest] = useState(false);
   const [latestError, setLatestError] = useState<DataError | null>(null);
@@ -134,6 +140,11 @@ export function useDashboardOverview() {
   const firstName = user?.fullname ? user.fullname.split(" ")[0] : "Pengguna";
   const result = resultStatus(latestData?.resultLabel);
   const isDeviceOnline = deviceData?.status === "ONLINE";
+  const deviceStatus = deviceState({
+    device: deviceData,
+    isLoading: isDeviceLoading,
+    error: deviceError,
+  });
   const firstRunGuideSteps = firstRunSteps({
     deviceOnline: isDeviceOnline,
     monitoringActive:
@@ -149,6 +160,9 @@ export function useDashboardOverview() {
     user,
     firstName,
     deviceData,
+    deviceStatus,
+    deviceError,
+    reloadDevice,
     latestData,
     hasLoadedLatest,
     latestError,
