@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { deviceState } from "../components/dashboard/DeviceState";
+import {
+  DEVICE_STATUS_LABEL,
+  deviceState,
+} from "../components/dashboard/DeviceState";
 
 const noError = null;
 
@@ -44,4 +47,14 @@ test("any other status is offline", () => {
       "offline",
     );
   }
+});
+
+test("the status card names every device state honestly", () => {
+  assert.deepEqual(DEVICE_STATUS_LABEL, {
+    loading: "Memuat...",
+    online: "Terhubung",
+    offline: "Terputus",
+    none: "Belum ada perangkat",
+    error: "Tidak diketahui",
+  });
 });

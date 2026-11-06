@@ -4,6 +4,8 @@ type DataErrorStateProps = {
   title: string;
   message: string;
   onRetry?: () => void;
+  /** A retry is in flight: the button waits and says so. */
+  retrying?: boolean;
   compact?: boolean;
   className?: string;
 };
@@ -13,6 +15,7 @@ export function DataErrorState({
   title,
   message,
   onRetry,
+  retrying = false,
   compact = false,
   className = "",
 }: DataErrorStateProps) {
@@ -28,11 +31,13 @@ export function DataErrorState({
       </p>
       {onRetry ? (
         <button
-          className="mt-2 inline-flex h-12 items-center justify-center rounded-full border-[1.5px] border-primary-900/20 bg-white px-6 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300 print:hidden"
+          aria-busy={retrying || undefined}
+          className="mt-2 inline-flex h-12 items-center justify-center rounded-full border-[1.5px] border-primary-900/20 bg-white px-6 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300 disabled:cursor-wait disabled:border-primary-900/15 disabled:text-primary-900/70 disabled:hover:bg-white print:hidden"
+          disabled={retrying}
           onClick={onRetry}
           type="button"
         >
-          Coba lagi
+          {retrying ? "Memuat ulang…" : "Coba lagi"}
         </button>
       ) : null}
     </div>

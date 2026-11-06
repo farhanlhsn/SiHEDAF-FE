@@ -54,13 +54,18 @@ test("every data fetch reloads when the connection returns", async () => {
 
 test("monitoring controls explain themselves while offline", async () => {
   const overview = await read("components/dashboard/DashboardOverview.tsx");
-  assert.match(overview, /!online/);
+  assert.match(overview, /toggleBlocked === "no-network"/);
   assert.ok(overview.includes("Tidak ada koneksi internet."));
   assert.match(overview, /aria-describedby=\{[^}]*\}/);
+  // An unknown device state is never described as an offline wristband.
+  assert.match(overview, /toggleBlocked === "device-unknown"/);
+  assert.ok(overview.includes("Status perangkat belum bisa dimuat."));
 
   const modal = await read("components/dashboard/AiResultModal.tsx");
   assert.match(modal, /"no-network"/);
   assert.ok(modal.includes("Tidak ada koneksi internet."));
+  assert.match(modal, /restart === "device-unknown"/);
+  assert.ok(modal.includes("Status perangkat belum bisa dimuat."));
 
   const hook = await read("components/dashboard/hooks/UseDashboardOverview.ts");
   assert.match(hook, /networkOnline/);

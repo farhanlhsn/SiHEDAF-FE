@@ -1,6 +1,7 @@
 import { SessionExpiredError } from "@/features/auth/session/client/ApiFetch";
 
 import { resultStatus } from "@/components/dashboard/DashboardFormat";
+import type { DeviceState } from "@/components/dashboard/DeviceState";
 
 /** Where the monitoring moment is: the signal card and the AI modal follow it. */
 export type MonitoringPhase =
@@ -160,19 +161,23 @@ export function rememberInitial(
     : baseline;
 }
 
-export type RestartAction = "hidden" | "ready" | "busy" | "offline" | "no-network";
+export type RestartAction =
+  | "hidden"
+  | "ready"
+  | "busy"
+  | "offline"
+  | "no-network"
+  | "device-unknown";
 
 /** "Mulai monitoring lagi" is offered only while no session is running. */
 export function restartAction(
   phase: MonitoringPhase,
   {
-    deviceOnline,
-    deviceLoading = false,
+    device,
     busy,
     networkOnline = true,
   }: {
-    deviceOnline: boolean;
-    deviceLoading?: boolean;
+    device: DeviceState;
     busy: boolean;
     networkOnline?: boolean;
   },
@@ -180,10 +185,35 @@ export function restartAction(
   if (phase === "recording" || phase === "analysing") return "hidden";
   if (!networkOnline) return "no-network";
   // Still asking for the device: wait, do not claim it is offline.
-  if (deviceLoading) return "busy";
-  if (!deviceOnline) return "offline";
+  if (device === "loading") return "busy";
+  // The request failed: we do not know whether the wristband is connected.
+  if (device === "error") return "device-unknown";
+  if (device !== "online") return "offline";
 
   return busy ? "busy" : "ready";
+}
+
+/** Why "Mulai/Hentikan Monitoring" cannot be pressed, or null when it can. */
+export type ToggleBlock =
+  | "no-network"
+  | "device-unknown"
+  | "device-unavailable"
+  | null;
+
+export function toggleBlock(
+  phase: MonitoringPhase,
+  { device, networkOnline }: { device: DeviceState; networkOnline: boolean },
+): ToggleBlock {
+  if (!networkOnline) return "no-network";
+  if (device === "online") return null;
+  // Stopping does not need the wristband's state; starting does.
+  if (device === "error") {
+    return phase === "recording" || phase === "analysing"
+      ? null
+      : "device-unknown";
+  }
+
+  return "device-unavailable";
 }
 
 /**

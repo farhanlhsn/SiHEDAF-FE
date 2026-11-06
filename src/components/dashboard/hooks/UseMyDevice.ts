@@ -23,6 +23,9 @@ export function useMyDevice() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<DataError | null>(null);
   const [reloadCount, setReloadCount] = useState(0);
+  // A "Periksa lagi" / "Coba lagi" check in flight. The device and its state
+  // stay as they are meanwhile, so the card does not disappear.
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { reconnectCount } = useOnlineStatus();
 
   useEffect(() => {
@@ -45,7 +48,10 @@ export function useMyDevice() {
         console.error("Gagal memuat status perangkat:", e);
         if (!isCancelled) setError(describeCaughtError(e));
       }
-      if (!isCancelled) setIsLoading(false);
+      if (!isCancelled) {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
     }
 
     void fetchDevice();
@@ -55,7 +61,10 @@ export function useMyDevice() {
     };
   }, [reconnectCount, reloadCount]);
 
-  const reload = useCallback(() => setReloadCount((count) => count + 1), []);
+  const reload = useCallback(() => {
+    setIsRefreshing(true);
+    setReloadCount((count) => count + 1);
+  }, []);
 
-  return { device, isLoading, error, reload };
+  return { device, isLoading, isRefreshing, error, reload };
 }

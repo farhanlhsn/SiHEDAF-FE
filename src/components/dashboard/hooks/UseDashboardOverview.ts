@@ -12,14 +12,20 @@ import {
   apiFetch,
   SessionExpiredError,
 } from "@/features/auth/session/client/ApiFetch";
-import { deviceState } from "@/components/dashboard/DeviceState";
+import {
+  DEVICE_STATUS_LABEL,
+  deviceState,
+} from "@/components/dashboard/DeviceState";
 import {
   useMyDevice,
   type MeasurementDevice,
 } from "@/components/dashboard/hooks/UseMyDevice";
 import { firstRunSteps } from "@/components/dashboard/FirstRun";
 import { resultStatus } from "@/components/dashboard/DashboardFormat";
-import { restartAction } from "@/components/dashboard/MonitoringSession";
+import {
+  restartAction,
+  toggleBlock,
+} from "@/components/dashboard/MonitoringSession";
 import { useMonitoringSession } from "@/components/dashboard/hooks/UseMonitoringSession";
 import { useProfile } from "@/features/profile/client/ProfileProvider";
 
@@ -54,6 +60,7 @@ export function useDashboardOverview() {
   const {
     device: deviceData,
     isLoading: isDeviceLoading,
+    isRefreshing: isDeviceRefreshing,
     error: deviceError,
     reload: reloadDevice,
   } = useMyDevice();
@@ -139,14 +146,14 @@ export function useDashboardOverview() {
 
   const firstName = user?.fullname ? user.fullname.split(" ")[0] : "Pengguna";
   const result = resultStatus(latestData?.resultLabel);
-  const isDeviceOnline = deviceData?.status === "ONLINE";
+  // The one source for every device claim: card, status value, toggle, modal.
   const deviceStatus = deviceState({
     device: deviceData,
     isLoading: isDeviceLoading,
     error: deviceError,
   });
   const firstRunGuideSteps = firstRunSteps({
-    deviceOnline: isDeviceOnline,
+    deviceOnline: deviceStatus === "online",
     monitoringActive:
       session.phase === "recording" || session.phase === "analysing",
     hasResult: Boolean(latestData),
@@ -161,7 +168,9 @@ export function useDashboardOverview() {
     firstName,
     deviceData,
     deviceStatus,
+    deviceStatusLabel: DEVICE_STATUS_LABEL[deviceStatus],
     deviceError,
+    isDeviceRefreshing,
     reloadDevice,
     latestData,
     hasLoadedLatest,
@@ -184,11 +193,13 @@ export function useDashboardOverview() {
     closeAiModal: session.closeModal,
     restartMonitoring: session.restart,
     restartState: restartAction(session.phase, {
-      deviceOnline: isDeviceOnline,
-      deviceLoading: isDeviceLoading,
+      device: deviceStatus,
       busy: session.isTogglingAction,
       networkOnline: online,
     }),
-    networkOnline: online,
+    toggleBlocked: toggleBlock(session.phase, {
+      device: deviceStatus,
+      networkOnline: online,
+    }),
   };
 }

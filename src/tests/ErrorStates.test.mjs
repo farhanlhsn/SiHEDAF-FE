@@ -84,3 +84,30 @@ test("the overview renders the offline card instead of the old sentence", async 
   );
   assert.match(overview, /<DeviceOfflineCard/);
 });
+
+test("a device re-check shows it is working without hiding the card", async () => {
+  const hook = await read("components/dashboard/hooks/UseMyDevice.ts");
+  assert.match(hook, /const \[isRefreshing, setIsRefreshing\] = useState\(false\)/);
+  assert.match(hook, /setIsRefreshing\(true\);\s*setReloadCount/);
+  // A re-check never flips the card back to loading.
+  assert.doesNotMatch(hook, /setIsLoading\(true\)/);
+  assert.match(hook, /return \{ device, isLoading, isRefreshing, error, reload \}/);
+
+  const card = await read("components/dashboard/DeviceOfflineCard.tsx");
+  assert.match(card, /disabled=\{refreshing\}/);
+  assert.match(card, /aria-busy=\{refreshing \|\| undefined\}/);
+  assert.ok(card.includes('refreshing ? "Memeriksa…" : "Periksa lagi"'));
+  assert.match(card, /retrying=\{refreshing\}/);
+
+  const errorState = await read("components/ui/DataErrorState.tsx");
+  assert.match(errorState, /retrying\?: boolean/);
+  assert.match(errorState, /disabled=\{retrying\}/);
+  assert.match(errorState, /aria-busy=\{retrying \|\| undefined\}/);
+  assert.ok(errorState.includes('retrying ? "Memuat ulang…" : "Coba lagi"'));
+});
+
+test("a failed device request says the wristband status could not be loaded", async () => {
+  const card = await read("components/dashboard/DeviceOfflineCard.tsx");
+  assert.ok(card.includes('title="Status wristband belum bisa dimuat"'));
+  assert.match(card, /message=\{`\$\{error\.title\}\. \$\{error\.message\}`\}/);
+});

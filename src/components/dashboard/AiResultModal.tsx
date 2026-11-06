@@ -28,7 +28,7 @@ type AiResultModalProps = Readonly<{
   onClose: () => void;
   onRestart: () => void;
   open: boolean;
-  /** "Mulai monitoring lagi": hidden while a session runs, disabled when busy or offline. */
+  /** "Mulai monitoring lagi": hidden while a session runs; disabled (with a reason) when busy, offline or unknown. */
   restart: RestartAction;
   view: ResultModalView;
 }>;
@@ -176,13 +176,17 @@ function ResultBody({
   );
   // Offered with a result only once no session runs, never while recording.
   const offersRestart = status !== "unknown" && restart !== "hidden";
+  const restartHint =
+    restart === "no-network"
+      ? "Tidak ada koneksi internet."
+      : restart === "device-unknown"
+        ? "Status perangkat belum bisa dimuat."
+        : restart === "offline"
+          ? "Perangkat belum terhubung."
+          : null;
   const restartButton = offersRestart ? (
     <button
-      aria-describedby={
-        restart === "offline" || restart === "no-network"
-          ? restartHintId
-          : undefined
-      }
+      aria-describedby={restartHint ? restartHintId : undefined}
       className={secondaryActionClassName}
       disabled={restart !== "ready"}
       onClick={onRestart}
@@ -273,14 +277,12 @@ function ResultBody({
           </>
         )}
       </div>
-      {offersRestart && (restart === "offline" || restart === "no-network") ? (
+      {offersRestart && restartHint ? (
         <p
           className="-mt-2 text-[0.875rem] text-primary-900/75"
           id={restartHintId}
         >
-          {restart === "no-network"
-            ? "Tidak ada koneksi internet."
-            : "Perangkat belum terhubung."}
+          {restartHint}
         </p>
       ) : null}
     </div>

@@ -19,3 +19,12 @@ export function deviceState({
   if (!device) return "none";
   return device.status === "ONLINE" ? "online" : "offline";
 }
+
+/** The "Status Perangkat" card value: never claims a state we do not know. */
+export const DEVICE_STATUS_LABEL: Record<DeviceState, string> = {
+  loading: "Memuat...",
+  online: "Terhubung",
+  offline: "Terputus",
+  none: "Belum ada perangkat",
+  error: "Tidak diketahui",
+};

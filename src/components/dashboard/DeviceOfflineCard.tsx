@@ -10,6 +10,8 @@ type DeviceOfflineCardProps = {
   lastSeen?: string;
   error?: DataError | null;
   onRetry: () => void;
+  /** A check started by "Periksa lagi" / "Coba lagi" is in flight. */
+  refreshing?: boolean;
 };
 
 const steps = [
@@ -29,11 +31,18 @@ export function DeviceOfflineCard({
   lastSeen,
   error,
   onRetry,
+  refreshing = false,
 }: DeviceOfflineCardProps) {
   if (state === "error" && error) {
+    // Say what failed (the wristband status), then why, in one alert.
     return (
       <div className={cardClassName}>
-        <DataErrorState {...error} onRetry={onRetry} />
+        <DataErrorState
+          message={`${error.title}. ${error.message}`}
+          onRetry={onRetry}
+          retrying={refreshing}
+          title="Status wristband belum bisa dimuat"
+        />
       </div>
     );
   }
@@ -86,11 +95,13 @@ export function DeviceOfflineCard({
         </li>
       </ol>
       <button
-        className="mt-5 inline-flex h-12 items-center justify-center rounded-full border-[1.5px] border-primary-900/20 bg-white px-6 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
+        aria-busy={refreshing || undefined}
+        className="mt-5 inline-flex h-12 items-center justify-center rounded-full border-[1.5px] border-primary-900/20 bg-white px-6 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300 disabled:cursor-wait disabled:border-primary-900/15 disabled:text-primary-900/70 disabled:hover:bg-white"
+        disabled={refreshing}
         onClick={onRetry}
         type="button"
       >
-        Periksa lagi
+        {refreshing ? "Memeriksa…" : "Periksa lagi"}
       </button>
     </section>
   );

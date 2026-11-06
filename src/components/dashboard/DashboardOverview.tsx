@@ -27,7 +27,7 @@ import { useDashboardOverview } from "@/components/dashboard/hooks/UseDashboardO
 
 const panelClassName = "rounded-[24px] border border-primary-900/10 bg-white";
 const labelClassName = "text-[0.875rem] font-medium text-primary-900/75";
-const offlineHintId = "monitoring-offline-hint";
+const toggleHintId = "monitoring-toggle-hint";
 const valueClassName = "mt-1 text-[1rem] font-semibold text-primary-900";
 
 export function DashboardOverview() {
@@ -35,7 +35,9 @@ export function DashboardOverview() {
     firstName,
     deviceData,
     deviceStatus,
+    deviceStatusLabel,
     deviceError,
+    isDeviceRefreshing,
     reloadDevice,
     latestData,
     hasLoadedLatest,
@@ -58,7 +60,7 @@ export function DashboardOverview() {
     closeAiModal,
     restartMonitoring,
     restartState,
-    networkOnline: online,
+    toggleBlocked,
   } = useDashboardOverview();
 
   const isAnalysing = phase === "analysing";
@@ -68,7 +70,13 @@ export function DashboardOverview() {
     latestData?.completedAt ?? latestData?.updatedAt,
   );
   const measuredAt = formatWib(latestData?.createdAt);
-  const isDeviceOnline = deviceData?.status === "ONLINE";
+  const isDeviceOnline = deviceStatus === "online";
+  const toggleHint =
+    toggleBlocked === "no-network"
+      ? "Tidak ada koneksi internet."
+      : toggleBlocked === "device-unknown"
+        ? "Status perangkat belum bisa dimuat."
+        : null;
 
   return (
     <section className="min-h-[calc(100dvh-72px)] min-w-0 px-4 py-8 sm:px-7 lg:px-10 lg:py-10">
@@ -171,6 +179,7 @@ export function DashboardOverview() {
           error={deviceError}
           lastSeen={deviceData?.lastSeen}
           onRetry={reloadDevice}
+          refreshing={isDeviceRefreshing}
           state={deviceStatus}
         />
 
@@ -252,13 +261,9 @@ export function DashboardOverview() {
                     ? "border-[1.5px] border-primary-900/20 bg-white text-primary-900 hover:bg-paper-deep"
                     : "btn-primary bg-primary-900 text-white"
                 }`}
-                aria-describedby={online ? undefined : offlineHintId}
+                aria-describedby={toggleHint ? toggleHintId : undefined}
                 disabled={
-                  !online ||
-                  isTogglingAction ||
-                  isAnalysing ||
-                  !deviceData ||
-                  deviceData?.status !== "ONLINE"
+                  toggleBlocked !== null || isTogglingAction || isAnalysing
                 }
                 onClick={handleToggleMonitoring}
                 type="button"
@@ -283,14 +288,14 @@ export function DashboardOverview() {
               </button>
             </div>
           </div>
-          {online ? null : (
+          {toggleHint ? (
             <p
               className="mt-3 text-[0.9375rem] font-medium text-primary-900/80"
-              id={offlineHintId}
+              id={toggleHintId}
             >
-              Tidak ada koneksi internet.
+              {toggleHint}
             </p>
-          )}
+          ) : null}
           {isMonitoringActive ? (
             <div
               className="mt-4 flex max-w-[760px] gap-3 rounded-[18px] bg-primary-50 p-4 text-[0.9375rem] leading-[1.55] text-primary-900"
@@ -435,11 +440,7 @@ export function DashboardOverview() {
                       className="h-2.5 w-2.5 rounded-full border-2 border-primary-900/40"
                     />
                   )}
-                  {isDeviceOnline
-                    ? "Terhubung"
-                    : deviceData
-                      ? "Terputus"
-                      : "Memuat..."}
+                  {deviceStatusLabel}
                 </p>
                 <h3 className="mt-2 text-[1.1875rem] font-semibold text-primary-900">
                   SiHEDAF Wristband
