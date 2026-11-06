@@ -13,6 +13,7 @@ import { ProfileAvatar } from "@/components/dashboard/ProfileAvatar";
 import { PulseLoader } from "@/components/ui/PulseLoader";
 import { useMyDevice } from "@/components/dashboard/hooks/UseMyDevice";
 import { useUpdateProfile } from "@/features/profile/client/hooks/UseUpdateProfile";
+import { SESSION_EXPIRED_PATH } from "@/features/auth/session/client/ApiFetch";
 import { useProfile } from "@/features/profile/client/ProfileProvider";
 import {
   type UpdateProfileRequest,
@@ -59,8 +60,11 @@ function EditProfileForm({ user }: { user: UserProfile }) {
           setError("fullname", { message: messages?.[0], type: "server" });
         }
       }
+      if (result.status === 401) {
+        router.replace(SESSION_EXPIRED_PATH);
+        return;
+      }
       toast.error(result.message);
-      if (result.status === 401) router.replace("/login");
       setShowConfirm(false);
       return;
     }

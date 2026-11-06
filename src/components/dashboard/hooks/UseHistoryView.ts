@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import type { DateRange } from "@daypicker/react";
+import {
+  apiFetch,
+  SessionExpiredError,
+} from "@/features/auth/session/client/ApiFetch";
 
 export type HistoryItem = {
   id?: number;
@@ -56,7 +60,7 @@ export function useHistoryView() {
           params.append("endDate", toDate.toISOString().split("T")[0]);
         }
 
-        const res = await fetch(
+        const res = await apiFetch(
           `/api/v1/measurement/history?${params.toString()}`,
         );
         if (!res.ok) throw new Error("Gagal mengambil data");
@@ -81,6 +85,7 @@ export function useHistoryView() {
           ]);
         }
       } catch (err: unknown) {
+        if (err instanceof SessionExpiredError) return;
         console.error("Gagal mengambil riwayat:", err);
         setError("Gagal mengambil riwayat.");
       } finally {

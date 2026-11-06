@@ -7,6 +7,10 @@ import { id as localeId } from "date-fns/locale";
 
 import { formatWib } from "@/components/dashboard/DashboardFormat";
 import { StatusMark } from "@/components/dashboard/StatusMark";
+import {
+  apiFetch,
+  SessionExpiredError,
+} from "@/features/auth/session/client/ApiFetch";
 
 type Notification = {
   id: number;
@@ -33,12 +37,13 @@ export function NotificationPanel({
   useEffect(() => {
     async function fetchNotifications() {
       try {
-        const res = await fetch("/api/v1/notification");
+        const res = await apiFetch("/api/v1/notification");
         const json = await res.json();
         if (json.code === 200 && json.data) {
           setNotifications(json.data);
         }
       } catch (e) {
+        if (e instanceof SessionExpiredError) return;
         console.error("Gagal memuat notifikasi:", e);
       } finally {
         setIsLoading(false);
@@ -63,8 +68,9 @@ export function NotificationPanel({
     );
 
     try {
-      await fetch(`/api/v1/notification/${id}/read`, { method: "PATCH" });
+      await apiFetch(`/api/v1/notification/${id}/read`, { method: "PATCH" });
     } catch (e) {
+      if (e instanceof SessionExpiredError) return;
       console.error("Gagal menandai dibaca:", e);
       // Revert if failed
       setNotifications((prev) =>

@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 
+import {
+  apiFetch,
+  SessionExpiredError,
+} from "@/features/auth/session/client/ApiFetch";
 export type MeasurementDevice = {
   status?: string;
   deviceNumber?: string;
@@ -18,12 +22,13 @@ export function useMyDevice() {
 
     async function fetchDevice() {
       try {
-        const res = await fetch("/api/v1/measurement/my-device");
+        const res = await apiFetch("/api/v1/measurement/my-device");
         const json = await res.json();
         if (!isCancelled && json.code === 200 && json.data) {
           setDevice(json.data);
         }
       } catch (e) {
+        if (e instanceof SessionExpiredError) return;
         console.error("Gagal memuat status perangkat:", e);
       } finally {
         if (!isCancelled) {

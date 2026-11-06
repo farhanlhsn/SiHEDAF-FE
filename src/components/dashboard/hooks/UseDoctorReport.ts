@@ -3,6 +3,10 @@
 import type { DateRange } from "@daypicker/react";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  apiFetch,
+  SessionExpiredError,
+} from "@/features/auth/session/client/ApiFetch";
 
 import { useMyDevice } from "@/components/dashboard/hooks/UseMyDevice";
 import type { HistoryItem } from "@/components/dashboard/hooks/UseHistoryView";
@@ -31,7 +35,7 @@ const fetchHistoryPage: FetchHistoryPage = async (page, pageSize, range) => {
     startDate: range.from,
     endDate: range.to,
   });
-  const res = await fetch(`/api/v1/measurement/history?${params.toString()}`);
+  const res = await apiFetch(`/api/v1/measurement/history?${params.toString()}`);
   if (!res.ok) throw new Error(FETCH_ERROR);
   const json = await res.json();
   if (json.code !== 200 || !json.data) throw new Error(FETCH_ERROR);
@@ -70,7 +74,8 @@ export function useDoctorReport(initialParams: InitialParams) {
       try {
         const data = await collectReport(fetchHistoryPage, range);
         if (!isCancelled) setReport(data);
-      } catch {
+      } catch (error) {
+        if (error instanceof SessionExpiredError) return;
         if (!isCancelled) {
           setReport(null);
           setError(FETCH_ERROR);

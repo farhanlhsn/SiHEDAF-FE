@@ -12,6 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 
 import { PulseLoader } from "@/components/ui/PulseLoader";
+import { SESSION_EXPIRED_PATH } from "@/features/auth/session/client/ApiFetch";
 
 import type { UserProfile } from "@/features/profile/shared/ProfileTypes";
 
@@ -47,8 +48,7 @@ export function ProfileProvider({
     if (!result.success) {
       setIsLoading(false);
       if (result.status === 401) {
-        setError(result.message);
-        router.replace("/login");
+        router.replace(SESSION_EXPIRED_PATH);
         return;
       }
       setError(result.message);
@@ -70,8 +70,7 @@ export function ProfileProvider({
       if (!result.success) {
         setIsLoading(false);
         if (result.status === 401) {
-          setError(result.message);
-          router.replace("/login");
+          router.replace(SESSION_EXPIRED_PATH);
           return;
         }
         setError(result.message);

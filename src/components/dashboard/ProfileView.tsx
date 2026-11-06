@@ -17,6 +17,7 @@ import { PulseLoader } from "@/components/ui/PulseLoader";
 import { useMyDevice } from "@/components/dashboard/hooks/UseMyDevice";
 import { useLogout } from "@/features/profile/client/hooks/UseLogout";
 import { useUpdatePassword } from "@/features/profile/client/hooks/UseUpdatePassword";
+import { SESSION_EXPIRED_PATH } from "@/features/auth/session/client/ApiFetch";
 import { useProfile } from "@/features/profile/client/ProfileProvider";
 import {
   type UpdatePasswordRequest,
@@ -93,8 +94,11 @@ export function ProfileView() {
           type: "server",
         });
       }
+      if (result.status === 401) {
+        router.replace(SESSION_EXPIRED_PATH);
+        return;
+      }
       toast.error(result.message);
-      if (result.status === 401) router.replace("/login");
       return;
     }
 

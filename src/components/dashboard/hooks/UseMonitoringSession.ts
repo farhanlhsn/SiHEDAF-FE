@@ -4,6 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
+  apiFetch,
+  SessionExpiredError,
+} from "@/features/auth/session/client/ApiFetch";
+
+import {
   EMPTY_BASELINE,
   POLL_INTERVAL_MS,
   POLL_MAX_ATTEMPTS,
@@ -42,7 +47,7 @@ async function postMeasurement(
   action: ToggleAction,
   lifetime: AbortSignal,
 ): Promise<Envelope> {
-  const res = await fetch(`/api/v1/measurement/${action}`, {
+  const res = await apiFetch(`/api/v1/measurement/${action}`, {
     method: "POST",
     signal: requestSignal(lifetime, TOGGLE_TIMEOUT_MS),
   });
@@ -52,7 +57,7 @@ async function postMeasurement(
 
 /** The latest record (null when there is none); throws when the read fails. */
 async function fetchLatest(signal: AbortSignal) {
-  const res = await fetch("/api/v1/measurement/latest", {
+  const res = await apiFetch("/api/v1/measurement/latest", {
     signal: requestSignal(signal),
   });
   const json: Envelope<MeasurementData> = await res.json();
@@ -199,7 +204,8 @@ export function useMonitoringSession({
       let latest: MeasurementData | null;
       try {
         latest = await fetchLatest(lifetime);
-      } catch {
+      } catch (error) {
+        if (error instanceof SessionExpiredError) return;
         if (!lifetime.aborted) toast.error(TOGGLE_ERROR);
         return;
       }
@@ -232,14 +238,14 @@ export function useMonitoringSession({
         if (lifetime.aborted) return;
 
         if (json.code !== 200) {
-          toast.error(json.message || TOGGLE_FAILED);
+          toast.error(TOGGLE_FAILED);
         } else if (action === "start") {
           beginRecording(Date.now());
         } else {
           beginAnalysing(lifetime);
         }
       } catch (error) {
-        if (lifetime.aborted) return;
+        if (lifetime.aborted || error instanceof SessionExpiredError) return;
         // A slow backend may still have done it: look before reporting.
         if (isTimeoutError(error)) await recoverFromTimeout(action, lifetime);
         else toast.error(TOGGLE_ERROR);

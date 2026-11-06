@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 
 import {
+  apiFetch,
+  SessionExpiredError,
+} from "@/features/auth/session/client/ApiFetch";
+import {
   useMyDevice,
   type MeasurementDevice,
 } from "@/components/dashboard/hooks/UseMyDevice";
@@ -47,7 +51,7 @@ export function useDashboardOverview() {
 
     async function fetchLatest() {
       try {
-        const res = await fetch("/api/v1/measurement/latest");
+        const res = await apiFetch("/api/v1/measurement/latest");
         const json = await res.json();
         if (cancelled) return;
         // Ignored once the user started or stopped while this was loading.
@@ -55,6 +59,7 @@ export function useDashboardOverview() {
           setLatestData(json.data);
         }
       } catch (e) {
+        if (e instanceof SessionExpiredError) return;
         console.error("Gagal memuat data terakhir:", e);
       } finally {
         if (!cancelled) setHasLoadedLatest(true);
@@ -70,7 +75,7 @@ export function useDashboardOverview() {
   useEffect(() => {
     async function fetchSignals() {
       try {
-        const res = await fetch(
+        const res = await apiFetch(
           `/api/v1/measurement/signals?minutes=${monitoringRange}`,
         );
         const json = await res.json();
@@ -78,6 +83,7 @@ export function useDashboardOverview() {
           setSignalsData(json.data.rawPpgData || []);
         }
       } catch (e) {
+        if (e instanceof SessionExpiredError) return;
         console.error("Gagal memuat data sinyal:", e);
       }
     }
