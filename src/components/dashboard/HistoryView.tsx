@@ -1,6 +1,7 @@
 "use client";
 
 import type { DateRange } from "@daypicker/react";
+import Link from "next/link";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 import {
@@ -15,6 +16,10 @@ import { Sparkline } from "@/components/dashboard/Sparkline";
 import { StatusMark } from "@/components/dashboard/StatusMark";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { useHistoryView } from "@/components/dashboard/hooks/UseHistoryView";
+import {
+  rangeFromDateRange,
+  reportHref,
+} from "@/components/dashboard/ReportRange";
 
 const pagerButtonClassName =
   "flex h-11 items-center justify-center gap-1 rounded-full border-[1.5px] border-primary-900/20 bg-white px-3 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300 disabled:cursor-not-allowed disabled:border-primary-900/10 disabled:bg-transparent disabled:text-primary-900/70 sm:px-4";
@@ -63,7 +68,15 @@ export function HistoryView() {
               terbaru.
             </p>
           </div>
-          <DateRangePicker onChange={handleRangeChange} value={dateRange} />
+          <div className="flex flex-wrap items-center gap-3">
+            <DateRangePicker onChange={handleRangeChange} value={dateRange} />
+            <Link
+              className="inline-flex h-11 items-center rounded-full bg-primary-900 px-5 text-[15px] font-semibold text-white transition-colors hover:bg-primary-800 focus-visible:outline-2 focus-visible:outline-primary-300"
+              href={reportHref(rangeFromDateRange(dateRange))}
+            >
+              Buat laporan dokter
+            </Link>
+          </div>
         </div>
 
         <div className="mt-10 grid grid-cols-3 border-y border-primary-900/10 py-6 sm:py-8">

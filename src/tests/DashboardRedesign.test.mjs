@@ -21,6 +21,7 @@ const viewFiles = [
   "components/dashboard/DashboardModal.tsx",
   "components/dashboard/HistoryView.tsx",
   "components/dashboard/HistoryDetailModal.tsx",
+  "components/dashboard/DoctorReportView.tsx",
   "components/dashboard/DateRangePicker.tsx",
   "components/dashboard/ProfileView.tsx",
   "components/dashboard/EditProfileView.tsx",

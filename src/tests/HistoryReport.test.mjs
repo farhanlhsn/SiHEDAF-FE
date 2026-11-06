@@ -49,3 +49,65 @@ test("DashboardModal supports a wide size", async () => {
   assert.match(source, /max-w-\[760px\]/);
   assert.match(source, /size\?: "default" \| "wide"/);
 });
+
+test("doctor report route awaits searchParams and renders the view", async () => {
+  const source = await read("app/(dashboard)/riwayat/laporan/page.tsx");
+  assert.match(source, /await searchParams/);
+  assert.match(source, /<DoctorReportView/);
+});
+
+test("doctor report view carries the required copy and states", async () => {
+  const source = await read("components/dashboard/DoctorReportView.tsx");
+  for (const text of [
+    "window.print()",
+    "print:hidden",
+    "Laporan Pemantauan Irama Jantung",
+    "Tidak ada AF terdeteksi pada periode ini.",
+    "Belum ada rekaman pada periode ini.",
+    "rekaman pertama pada periode ini",
+    "bukan diagnosis",
+    "Grafik ditampilkan tanpa skala waktu",
+    "<PpgTrace",
+    "<PulseLoader",
+    "Coba lagi",
+  ]) {
+    assert.ok(source.includes(text), `missing ${text}`);
+  }
+});
+
+test("useDoctorReport collects the report with a cancellable fetch", async () => {
+  const source = await read("components/dashboard/hooks/UseDoctorReport.ts");
+  for (const text of [
+    "collectReport(",
+    "router.replace(reportHref(",
+    "isCancelled",
+    "startDate",
+    "endDate",
+  ]) {
+    assert.ok(source.includes(text), `missing ${text}`);
+  }
+});
+
+test("shell hides chrome when printing and titles the report route", async () => {
+  const source = await read("components/dashboard/DashboardShell.tsx");
+  assert.ok(source.includes('"/riwayat/laporan": "Laporan"'));
+  assert.ok((source.match(/print:hidden/g) ?? []).length >= 4);
+});
+
+test("sidebar keeps Riwayat active on nested routes", async () => {
+  const source = await read("components/dashboard/DashboardSidebar.tsx");
+  assert.match(source, /pathname\.startsWith\(item\.href\)/);
+});
+
+test("history header links to the doctor report", async () => {
+  const source = await read("components/dashboard/HistoryView.tsx");
+  assert.match(source, /Buat laporan dokter/);
+  assert.match(source, /reportHref\(rangeFromDateRange\(dateRange\)\)/);
+});
+
+test("global print rules target A4 and keep colours", async () => {
+  const source = await read("app/globals.css");
+  assert.match(source, /@media print/);
+  assert.match(source, /@page\s*{[^}]*size:\s*A4/);
+  assert.match(source, /print-color-adjust:\s*exact/);
+});

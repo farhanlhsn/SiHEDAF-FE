@@ -67,9 +67,9 @@ export function DashboardSidebar({
         <ul className="relative space-y-2">
           {navigation.map((item) => {
             const isActive =
-              item.href === "/profil"
-                ? pathname.startsWith("/profil")
-                : pathname === item.href;
+              item.href === "/dashboard"
+                ? pathname === item.href
+                : pathname.startsWith(item.href);
 
             return (
               <li key={item.href}>
