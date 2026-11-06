@@ -1,16 +1,19 @@
-import { cookies } from "next/headers";
-
-import { ACCESS_TOKEN_COOKIE } from "@/features/auth/session/server/AuthCookies";
+import { proxyBackend } from "@/features/auth/session/server/ProxyBackend";
 import {
+  DEVICE_ALREADY_BOUND,
+  DEVICE_NOT_FOUND,
   DEVICE_SERVICE_UNAVAILABLE,
-  DeviceServiceError,
 } from "@/features/device/server/DeviceServiceError";
-import { bindDevice } from "@/features/device/server/services/DeviceService";
 import { BindDeviceRequestSchema } from "@/features/device/shared/DeviceSchema";
 import type { BindDeviceResponse } from "@/features/device/shared/DeviceTypes";
 
 function json(body: BindDeviceResponse, status: number) {
   return Response.json(body, { status });
+}
+
+function backendMessage(body: unknown) {
+  const errors = (body as { errors?: { message?: unknown } } | null)?.errors;
+  return typeof errors?.message === "string" ? errors.message : null;
 }
 
 export async function POST(request: Request) {
@@ -37,27 +40,36 @@ export async function POST(request: Request) {
     );
   }
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get(ACCESS_TOKEN_COOKIE)?.value;
+  const response = await proxyBackend("measurement/bind", {
+    method: "POST",
+    body: JSON.stringify(parsed.data),
+    contentType: "application/json",
+  });
+  const result = (await response.json()) as {
+    code?: unknown;
+    message?: unknown;
+    data?: { message?: unknown };
+  };
 
-  if (!token) {
-    return json(
-      {
-        success: false,
-        message: "Sesi telah berakhir. Silakan masuk kembali.",
-      },
-      401,
-    );
+  // Session failures keep the proxy's `{ code, message }` shape.
+  if (response.status === 401) {
+    return json({ success: false, message: String(result.message) }, 401);
   }
 
-  try {
-    const result = await bindDevice(token, parsed.data);
-    return json({ success: true, message: result.message }, 200);
-  } catch (error) {
-    if (error instanceof DeviceServiceError) {
-      return json({ success: false, message: error.message }, error.status);
+  if (response.ok) {
+    const message = result.data?.message;
+    if (result.code === 200 && typeof message === "string" && message) {
+      return json({ success: true, message }, 200);
     }
-
     return json({ success: false, message: DEVICE_SERVICE_UNAVAILABLE }, 502);
   }
+
+  const detail = backendMessage(result);
+  if (response.status === 400 || response.status === 404) {
+    return json({ success: false, message: detail ?? DEVICE_NOT_FOUND }, 400);
+  }
+  if (response.status === 409) {
+    return json({ success: false, message: detail ?? DEVICE_ALREADY_BOUND }, 409);
+  }
+  return json({ success: false, message: DEVICE_SERVICE_UNAVAILABLE }, 502);
 }
