@@ -96,6 +96,7 @@ export function shareOf(part: number, total: number) {
  * Whole-number percentages of `total` for each part (largest-remainder
  * method). Any part of `total` not covered by `parts` joins the allocation as
  * an implicit last part that is not returned, so the full set sums to 100.
+ * Parts that add up to more than `total` are shared out of their own sum.
  */
 export function splitShares(parts: ReadonlyArray<number>, total: number) {
   if (!(total > 0)) {
@@ -103,9 +104,11 @@ export function splitShares(parts: ReadonlyArray<number>, total: number) {
   }
 
   const amounts = parts.map((part) => (part > 0 ? part : 0));
-  const rest = total - amounts.reduce((sum, part) => sum + part, 0);
+  const covered = amounts.reduce((sum, part) => sum + part, 0);
+  const base = Math.max(total, covered);
+  const rest = base - covered;
   const all = rest > 0 ? [...amounts, rest] : amounts;
-  const exact = all.map((amount) => (amount / total) * 100);
+  const exact = all.map((amount) => (amount / base) * 100);
   const shares = exact.map(Math.floor);
   let left = 100 - shares.reduce((sum, share) => sum + share, 0);
 

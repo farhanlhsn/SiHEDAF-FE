@@ -82,6 +82,9 @@ test("splits counts into shares that always add up to 100", () => {
   assert.deepEqual(splitShares([0, 0], 0), [0, 0]);
   assert.deepEqual(splitShares([5, 0], 5), [100, 0]);
   assert.deepEqual(splitShares([Number.NaN, -2], 5), [0, 0]);
+  // Parts that exceed the total are shared out of their own sum.
+  assert.deepEqual(splitShares([10, 10], 10), [50, 50]);
+  assert.deepEqual(splitShares([3, 1], 2), [75, 25]);
 
   for (let total = 1; total <= 60; total += 1) {
     for (let af = 0; af <= total; af += 1) {
