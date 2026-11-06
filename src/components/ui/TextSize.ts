@@ -17,13 +17,13 @@ export function parseTextSize(value: unknown): TextSize {
 
 /**
  * Self-contained IIFE for the root layout <head>. Runs before first paint and
- * must never throw (localStorage can be blocked). Expects `document` and
- * `localStorage` in scope.
+ * must never throw (localStorage can be blocked). It also follows a size
+ * chosen in another tab (`storage` event), on every page. Expects `window`,
+ * `document` and `localStorage` in scope.
  */
 export function textSizeScript(): string {
-  return `(function(){try{var v=localStorage.getItem(${JSON.stringify(
-    TEXT_SIZE_STORAGE_KEY,
-  )});if(${JSON.stringify(
-    TEXT_SIZES.filter((size) => size !== "normal"),
-  )}.indexOf(v)!==-1){document.documentElement.dataset.textSize=v}}catch(e){}})()`;
+  const key = JSON.stringify(TEXT_SIZE_STORAGE_KEY);
+  const larger = JSON.stringify(TEXT_SIZES.filter((size) => size !== "normal"));
+
+  return `(function(){var k=${key},s=${larger},d=document.documentElement;try{var v=localStorage.getItem(k);if(s.indexOf(v)!==-1){d.dataset.textSize=v}}catch(e){}try{window.addEventListener("storage",function(e){if(e.key!==null&&e.key!==k)return;if(s.indexOf(e.newValue)!==-1){d.dataset.textSize=e.newValue}else{delete d.dataset.textSize}})}catch(e){}})()`;
 }

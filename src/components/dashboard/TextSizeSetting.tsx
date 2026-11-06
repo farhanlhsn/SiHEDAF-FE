@@ -29,8 +29,14 @@ export function TextSizeSetting() {
           </label>
         ))}
       </div>
-      <p className="mt-4 rounded-[14px] bg-paper px-4 py-3 text-[1.125rem] font-semibold text-primary-900">
-        Irama terakhirmu normal.
+      {/* Neutral sample, not a health statement. */}
+      <p className="mt-4 rounded-[14px] bg-paper px-4 py-3 text-primary-900">
+        <span className="block text-[0.875rem] font-medium text-primary-900/75">
+          Contoh teks:
+        </span>
+        <span className="mt-1 block text-[1.125rem] font-semibold">
+          Hasil pemantauan dan riwayatmu akan tampil dengan ukuran ini.
+        </span>
       </p>
     </fieldset>
   );

@@ -166,10 +166,10 @@ export function ProfileView() {
             profileImage={user.profileImage}
           />
           <div className="min-w-0">
-            <h2 className="truncate text-[1.625rem] font-bold tracking-[-0.035em] text-primary-900">
+            <h2 className="text-[1.625rem] font-bold tracking-[-0.035em] [overflow-wrap:anywhere] text-primary-900">
               {user.fullname}
             </h2>
-            <p className="mt-1 truncate text-[1rem] text-primary-900/80">
+            <p className="mt-1 text-[1rem] [overflow-wrap:anywhere] text-primary-900/80">
               {user.email}
             </p>
           </div>

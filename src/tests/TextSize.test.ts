@@ -29,12 +29,27 @@ test("keeps the option order and labels", () => {
   });
 });
 
-function runScript(getItem: () => unknown) {
+type StorageListener = (event: { key: string | null; newValue: string | null }) => void;
+
+function loadScript(getItem: () => unknown) {
   const dataset: Record<string, string> = {};
   const document = { documentElement: { dataset } };
-  const run = new Function("document", "localStorage", textSizeScript());
-  run(document, { getItem });
-  return dataset;
+  const listeners: StorageListener[] = [];
+  const window = {
+    addEventListener(type: string, listener: StorageListener) {
+      if (type === "storage") listeners.push(listener);
+    },
+  };
+  const run = new Function("window", "document", "localStorage", textSizeScript());
+  run(window, document, { getItem });
+  const storage = (key: string | null, newValue: string | null) => {
+    for (const listener of listeners) listener({ key, newValue });
+  };
+  return { dataset, listeners, storage };
+}
+
+function runScript(getItem: () => unknown) {
+  return loadScript(getItem).dataset;
 }
 
 test("the head script survives a throwing localStorage", () => {
@@ -49,4 +64,36 @@ test("the head script applies a stored size", () => {
   assert.equal(runScript(() => "sangat-besar").textSize, "sangat-besar");
   assert.equal(runScript(() => "normal").textSize, undefined);
   assert.equal(runScript(() => "junk").textSize, undefined);
+});
+
+test("the head script follows a size chosen in another tab", () => {
+  const { dataset, listeners, storage } = loadScript(() => null);
+  assert.equal(listeners.length, 1, "listens for storage events");
+  assert.equal(dataset.textSize, undefined);
+
+  storage("sihedaf:text-size", "sangat-besar");
+  assert.equal(dataset.textSize, "sangat-besar");
+  storage("sihedaf:text-size", "besar");
+  assert.equal(dataset.textSize, "besar");
+  // Another key changes nothing.
+  storage("sihedaf:other", "normal");
+  assert.equal(dataset.textSize, "besar");
+  // Back to normal, an unknown value, or storage cleared: the default size.
+  storage("sihedaf:text-size", "normal");
+  assert.equal(dataset.textSize, undefined);
+  storage("sihedaf:text-size", "sangat-besar");
+  storage("sihedaf:text-size", "junk");
+  assert.equal(dataset.textSize, undefined);
+  storage("sihedaf:text-size", "besar");
+  storage(null, null);
+  assert.equal(dataset.textSize, undefined);
+});
+
+test("the head script still listens when localStorage is blocked", () => {
+  const { dataset, listeners, storage } = loadScript(() => {
+    throw new Error("blocked");
+  });
+  assert.equal(listeners.length, 1);
+  storage("sihedaf:text-size", "besar");
+  assert.equal(dataset.textSize, "besar");
 });

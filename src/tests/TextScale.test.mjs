@@ -42,4 +42,20 @@ test("the text size setting is wired in before first paint", () => {
   const setting = read("components", "dashboard", "TextSizeSetting.tsx");
   assert.match(setting, /type="radio"/);
   assert.match(setting, /useTextSize/);
+  // The preview is neutral sample text, labelled as an example.
+  assert.ok(setting.includes("Contoh teks:"));
+  assert.ok(
+    setting.includes("Hasil pemantauan dan riwayatmu akan tampil dengan ukuran ini."),
+  );
+  assert.doesNotMatch(setting, /Irama terakhirmu normal\./);
+});
+
+test("large text wraps the profile name and email instead of cutting them off", () => {
+  const profile = readFileSync(
+    path.join(root, "components", "dashboard", "ProfileView.tsx"),
+    "utf8",
+  );
+  assert.doesNotMatch(profile, /\btruncate\b/);
+  assert.match(profile, /<h2 className="[^"]*\[overflow-wrap:anywhere\][^"]*">\s*\{user\.fullname\}/);
+  assert.match(profile, /<p className="[^"]*\[overflow-wrap:anywhere\][^"]*">\s*\{user\.email\}/);
 });
