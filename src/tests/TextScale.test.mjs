@@ -29,3 +29,17 @@ test("globals.css sizes text in rem", () => {
   const css = readFileSync(path.join(root, "app", "globals.css"), "utf8");
   assert.doesNotMatch(css, /font-size:\s*\d+px/);
 });
+
+test("the text size setting is wired in before first paint", () => {
+  const read = (...p) => readFileSync(path.join(root, ...p), "utf8");
+  const layout = read("app", "layout.tsx");
+  assert.match(layout, /<head>[\s\S]*textSizeScript\(\)[\s\S]*<\/head>/);
+  assert.match(layout, /^\s*<html lang="id".*>$/m);
+  const css = read("app", "globals.css");
+  assert.match(css, /html\[data-text-size="besar"\]\s*\{[^}]*112\.5%/);
+  assert.match(css, /html\[data-text-size="sangat-besar"\]\s*\{[^}]*125%/);
+  assert.match(read("components", "dashboard", "ProfileView.tsx"), /<TextSizeSetting/);
+  const setting = read("components", "dashboard", "TextSizeSetting.tsx");
+  assert.match(setting, /type="radio"/);
+  assert.match(setting, /useTextSize/);
+});

@@ -74,6 +74,14 @@ html {
   -webkit-overflow-scrolling: touch;
 }
 
+html[data-text-size="besar"] {
+  font-size: 112.5%;
+}
+
+html[data-text-size="sangat-besar"] {
+  font-size: 125%;
+}
+
 /* Smooth scroll only for anchor / programmatic navigation, not normal scrolling */
 @media (prefers-reduced-motion: no-preference) {
   html:focus-within {

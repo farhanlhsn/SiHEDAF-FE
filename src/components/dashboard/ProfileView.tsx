@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { DashboardIcon } from "@/components/dashboard/DashboardIcon";
 import { DashboardModal } from "@/components/dashboard/DashboardModal";
 import { ProfileAvatar } from "@/components/dashboard/ProfileAvatar";
+import { TextSizeSetting } from "@/components/dashboard/TextSizeSetting";
 import { PulseLoader } from "@/components/ui/PulseLoader";
 import { useMyDevice } from "@/components/dashboard/hooks/UseMyDevice";
 import { useLogout } from "@/features/profile/client/hooks/UseLogout";
@@ -216,6 +217,13 @@ export function ProfileView() {
               </dd>
             </div>
           </dl>
+        </article>
+
+        <article className="mt-6 overflow-hidden rounded-[24px] border border-primary-900/10 bg-white">
+          <h2 className="px-6 pt-5 text-[1.25rem] font-bold tracking-[-0.03em] text-primary-900 sm:px-7">
+            Tampilan
+          </h2>
+          <TextSizeSetting />
         </article>
 
         <div className="mt-6 space-y-3">

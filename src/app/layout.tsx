@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 
 import { HashRouteRedirect } from "@/components/auth/HashRouteRedirect";
 import { AppToaster } from "@/components/ui/AppToaster";
+import { textSizeScript } from "@/components/ui/TextSize";
 
 import "./globals.css";
 
@@ -45,6 +46,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className={`${switzer.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: textSizeScript() }} />
+      </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {children}
         <HashRouteRedirect />
