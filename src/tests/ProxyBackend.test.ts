@@ -153,11 +153,13 @@ test("times out only when timeoutMs is set", async () => {
       );
     })) as typeof fetch;
   const { cookieStore } = setup([]);
+  // AbortSignal.timeout's timer is unref'd; hold the event loop open.
+  const keepAlive = setTimeout(() => undefined, 2_000);
   const response = await proxyBackend(
     "measurement/bind",
     { timeoutMs: 20 },
     { fetcher: hanging, cookieStore },
-  );
+  ).finally(() => clearTimeout(keepAlive));
   assert.equal(response.status, 502);
   assert.deepEqual(await response.json(), {
     code: 502,
