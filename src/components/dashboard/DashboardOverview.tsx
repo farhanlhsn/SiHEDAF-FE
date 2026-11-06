@@ -34,7 +34,7 @@ export function DashboardOverview() {
     showFirstRun,
     firstRunGuideSteps,
     signalsData,
-    isNormal,
+    result,
     isMonitoringActive,
     monitoringRange,
     setMonitoringRange,
@@ -50,7 +50,6 @@ export function DashboardOverview() {
   );
   const measuredAt = formatWib(latestData?.createdAt);
   const isDeviceOnline = deviceData?.status === "ONLINE";
-  const status = isNormal === false ? "af" : "normal";
 
   return (
     <section className="min-h-[calc(100dvh-72px)] min-w-0 px-4 py-8 sm:px-7 lg:px-10 lg:py-10">
@@ -62,15 +61,15 @@ export function DashboardOverview() {
         <h1 className="mt-3 max-w-[900px] text-[clamp(2.3rem,4.4vw,4rem)] leading-[0.98] tracking-[-0.05em] text-primary-900">
           {!hasLoadedLatest ? (
             <span className="font-bold">Memuat hasil terakhir</span>
-          ) : isNormal === null ? (
+          ) : result === "unknown" ? (
             <span className="font-bold">Belum ada hasil analisis.</span>
           ) : (
             <>
               <span className="font-extralight">Irama terakhirmu</span>{" "}
               <span
-                className={`font-bold ${isNormal ? "text-primary-300" : "text-af-500"}`}
+                className={`font-bold ${result === "normal" ? "text-primary-300" : "text-af-500"}`}
               >
-                {isNormal ? "normal." : "tidak teratur."}
+                {result === "normal" ? "normal." : "tidak teratur."}
               </span>
             </>
           )}
@@ -83,10 +82,17 @@ export function DashboardOverview() {
         {latestData ? (
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-primary-900/80">
-              <StatusMark size="small" status={status} />
+              {result === "unknown" ? null : (
+                <StatusMark size="small" status={result} />
+              )}
               <span className="font-semibold text-primary-900">
                 Hasil Analisis Terakhir
               </span>
+              {result === "unknown" ? (
+                <span className="font-semibold text-primary-900/70">
+                  Belum ada hasil
+                </span>
+              ) : null}
               {analysedAt ? <span>{analysedAt}</span> : null}
               {confidence ? (
                 <span>
@@ -102,7 +108,7 @@ export function DashboardOverview() {
               onClick={() => setIsAiModalOpen(true)}
               type="button"
             >
-              Detail Diagnosa AI
+              Detail Hasil AI
               <ArrowRight
                 aria-hidden="true"
                 className="size-4"
@@ -112,7 +118,7 @@ export function DashboardOverview() {
           </div>
         ) : null}
 
-        {isNormal === false ? (
+        {result === "af" ? (
           <div
             className="mt-6 flex max-w-[760px] gap-3 rounded-[18px] bg-af-50 p-5 text-[16px] leading-[1.55] text-primary-900"
             role="note"
@@ -241,19 +247,31 @@ export function DashboardOverview() {
             {latestData ? (
               <div className="mt-5 flex-1">
                 <p className="flex items-center gap-3">
-                  <StatusMark size="small" status={status} />
+                  {result === "unknown" ? null : (
+                    <StatusMark size="small" status={result} />
+                  )}
                   <span
                     className={`text-[15px] font-semibold ${
-                      isNormal ? "text-primary-500" : "text-af-700"
+                      result === "unknown"
+                        ? "text-primary-900/70"
+                        : result === "normal"
+                          ? "text-primary-500"
+                          : "text-af-700"
                     }`}
                   >
-                    {isNormal ? "Normal Rhythm" : "Terdeteksi Potensi AF"}
+                    {result === "unknown"
+                      ? "Belum ada hasil"
+                      : result === "normal"
+                        ? "Normal Rhythm"
+                        : "Terdeteksi Potensi AF"}
                   </span>
                 </p>
                 <h3 className="mt-3 text-[19px] font-semibold text-primary-900">
-                  {isNormal
-                    ? "Irama Jantung Normal & Stabil"
-                    : "Indikasi Anomali Irama Jantung"}
+                  {result === "unknown"
+                    ? "Hasil analisis belum tersedia"
+                    : result === "normal"
+                      ? "Irama Jantung Normal & Stabil"
+                      : "Indikasi Anomali Irama Jantung"}
                 </h3>
                 <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4">
                   <div>
@@ -269,7 +287,7 @@ export function DashboardOverview() {
                     <dd className="mt-2">
                       <Sparkline
                         data={latestData.ppgResult?.rawPpgData}
-                        tone={isNormal ? "blue" : "pink"}
+                        tone={result === "af" ? "pink" : "blue"}
                       />
                     </dd>
                   </div>

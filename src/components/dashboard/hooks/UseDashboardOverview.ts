@@ -8,7 +8,7 @@ import {
   type MeasurementDevice,
 } from "@/components/dashboard/hooks/UseMyDevice";
 import { firstRunSteps } from "@/components/dashboard/FirstRun";
-import { isNormalResult } from "@/components/dashboard/DashboardFormat";
+import { resultStatus } from "@/components/dashboard/DashboardFormat";
 import { useProfile } from "@/features/profile/client/ProfileProvider";
 
 export type { MeasurementDevice };
@@ -120,7 +120,7 @@ export function useDashboardOverview() {
   }
 
   const firstName = user?.fullname ? user.fullname.split(" ")[0] : "Pengguna";
-  const isNormal = isNormalResult(latestData?.resultLabel);
+  const result = resultStatus(latestData?.resultLabel);
   const firstRunGuideSteps = firstRunSteps({
     deviceOnline: deviceData?.status === "ONLINE",
     monitoringActive: isMonitoringActive,
@@ -138,7 +138,7 @@ export function useDashboardOverview() {
     hasLoadedLatest,
     showFirstRun,
     signalsData,
-    isNormal,
+    result,
     firstRunGuideSteps,
     isMonitoringActive,
     monitoringRange,

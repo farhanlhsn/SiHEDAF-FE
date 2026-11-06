@@ -39,5 +39,5 @@ test("verifies AiResultModal component structure and theme integration", async (
   assert.match(overviewSource, /Keyakinan AI/);
   assert.match(overviewSource, /isAiModalOpen/);
   assert.match(overviewSource, /setIsAiModalOpen/);
-  assert.match(overviewSource, /Detail Diagnosa AI/);
+  assert.match(overviewSource, /Detail Hasil AI/);
 });

@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   formatConfidence,
   formatWib,
-  isNormalResult,
+  resultStatus,
 } from "@/components/dashboard/DashboardFormat";
 import { DashboardModal } from "@/components/dashboard/DashboardModal";
 import { PpgTrace } from "@/components/dashboard/PpgTrace";
@@ -25,9 +25,9 @@ const actionClassName =
   "inline-flex h-12 items-center justify-center rounded-full px-6 text-[16px] font-semibold focus-visible:outline-2 focus-visible:outline-primary-300";
 
 export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
-  const result = item ? isNormalResult(item.resultLabel) : null;
-  const isUnknown = result === null;
-  const isNormal = result === true;
+  const result = resultStatus(item?.resultLabel);
+  const isUnknown = result === "unknown";
+  const isNormal = result === "normal";
   const facts = item
     ? [
         { label: "Waktu", value: formatWib(item.requestedAt) ?? "—" },
@@ -104,7 +104,7 @@ export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
             >
               Tutup
             </button>
-            {result === false ? (
+            {result === "af" ? (
               <Link
                 className={`${actionClassName} bg-primary-900 text-white hover:bg-primary-800`}
                 href={reportHref(rangeEndingOn(item.requestedAt))}
