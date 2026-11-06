@@ -92,6 +92,12 @@ Sebelum mengubah API, route, layout, metadata, atau convention Next.js, baca pan
 - Edit profil memiliki field terkontrol, upload/preview foto maksimal 2 MB, Device ID disabled, cancel navigation, serta modal sukses setelah penyimpanan.
 - Nama, email, dan avatar edit profil disimpan sementara melalui adapter `ProfileStorage.ts` berbasis `localStorage`; adapter ini adalah batas yang perlu diganti dengan query/mutation backend.
 - Primitive `DashboardModal.tsx` dipakai bersama untuk dialog akun dan hasil aksi; modal dapat ditutup melalui backdrop, tombol close, atau tombol Escape.
+- Detail riwayat: baris riwayat dapat diklik dan punya tombol aksesibel "Lihat detail analisis …". `HistoryDetailModal` memakai `DashboardModal size="wide"` berisi `PpgTrace` (tanpa sumbu waktu) dan fakta Waktu, Keyakinan AI, serta Device ID. Untuk hasil AF tersedia tautan "Buat laporan dokter" ke jendela 30 hari yang berakhir pada item tersebut.
+- Laporan dokter: route `/riwayat/laporan?from=YYYY-MM-DD&to=YYYY-MM-DD` (hari Asia/Jakarta; parameter tidak valid atau kosong kembali ke 30 hari terakhir). Logika murni ada di `ReportRange.ts` dan `ReportData.ts` (`collectReport`: halaman berisi 50 data hingga 10 halaman, ringkasan diambil dari halaman 1, daftar AF terbaru lebih dulu, catatan `truncated` bila terpotong). Hook `UseDoctorReport.ts` menjaga respons usang (stale-response guard) dan memakai `router.replace`; tampilan di `DoctorReportView.tsx`. Tombol "Cetak / Simpan PDF" memanggil `window.print()`. CSS cetak: `@page` A4 margin 14mm, `print:hidden` pada chrome shell, `.print-avoid-break`, dan `print-color-adjust: exact`. Teks "Tidak ada AF…" hanya tampil bila jumlah AF pada ringkasan adalah 0.
+- Panduan pertama kali: `FirstRun.ts` (`firstRunSteps`) dan `FirstRunGuide.tsx` tampil saat `hasLoadedLatest && !latestData`, berisi tiga langkah dengan tautan anchor `#monitor`.
+- `tracePath` bersama di `DashboardFormat.ts` dipakai oleh `Sparkline`, `SignalChart`, dan `PpgTrace`.
+- Semua dialog dashboard (`DashboardModal`) dirender lewat portal ke `document.body` agar overlay menutupi seluruh layar dan tidak terpotong ancestor ber-`transform` (`.dashboard-enter`).
+- Item sidebar Riwayat aktif untuk semua route `/riwayat/*`.
 - Tampilan dashboard memakai bahasa visual landing: latar `paper`, sidebar berupa rel dengan "stasiun" (halaman aktif = lingkaran navy terisi), ringkasan dibuka dengan kalimat status besar ("Irama terakhirmu normal/tidak teratur.") plus saran konsultasi dokter saat AF, grafik PPG bergaya monitor dengan sweep saat monitoring aktif, notifikasi sebagai timeline per hari, dan riwayat dengan angka besar + bar proporsi Normal/AF.
 - Format data lewat `DashboardFormat.ts` (`formatConfidence`, `formatWib`, `isNormalResult`, `shareOf`); fungsi ini mengembalikan `null` alih-alih mengarang nilai, jadi UI menampilkan "—" bila API tidak mengirim data (tidak ada lagi fallback keyakinan 95%, baterai 92%, atau ID perangkat `PPG001`).
 - `UseMyDevice.ts` adalah satu-satunya sumber data perangkat (`/api/v1/measurement/my-device`) untuk ringkasan, profil, dan edit profil.
@@ -169,6 +175,7 @@ Gunakan token `primary-*` untuk warna brand. Warna semantic health boleh memakai
 | `/hubungkan-perangkat` | Input Device ID |
 | `/dashboard` | Ringkasan monitoring |
 | `/riwayat` | Riwayat analisis PPG |
+| `/riwayat/laporan` | Laporan pemantauan untuk dokter (siap cetak/PDF) |
 | `/profil` | Informasi dan tindakan akun |
 | `/profil/ubah` | Form edit profil |
 
@@ -233,3 +240,5 @@ Sebelum menyatakan perubahan selesai, jalankan test, lint, dan production build.
 - Tidak ada proteksi route/session untuk dashboard.
 - Tidak ada database, API, device protocol, atau real-time PPG stream.
 - Avatar profil menggunakan placeholder dan dapat diganti setelah asset final tersedia.
+- Laporan dokter bergantung pada `summary` API yang menghormati filter tanggal.
+- PDF dihasilkan oleh dialog cetak browser (`window.print()`); tidak ada pembuatan PDF di server.
