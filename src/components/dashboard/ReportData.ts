@@ -40,12 +40,21 @@ export async function collectReport(
 
   const first = await fetchPage(1, pageSize, range);
   const lastPage = Math.min(Math.max(first.totalPages, 1), maxPages);
-  const items = [...first.items];
+  const fetched = [...first.items];
 
   for (let page = 2; page <= lastPage; page += 1) {
     const next = await fetchPage(page, pageSize, range);
-    items.push(...next.items);
+    fetched.push(...next.items);
   }
+
+  // Offset pagination can return the same record on two pages; first one wins.
+  const seen = new Set<HistoryItem["id"]>();
+  const items = fetched.filter((item) => {
+    if (item.id == null) return true;
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
 
   return {
     summary: first.summary,

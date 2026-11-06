@@ -94,3 +94,20 @@ test("rejects when a page fails", async () => {
   );
   await assert.rejects(collectReport(fetchPage, range), /Gagal/);
 });
+
+test("drops duplicate items across pages", async () => {
+  const { fetchPage } = recorder((page) => ({
+    items:
+      page === 1
+        ? [{ id: 1, resultLabel: "AF Detected", requestedAt: "2026-11-01T08:00:00Z" }, { id: 2 }, { resultLabel: "AF Detected" }]
+        : [{ id: 2 }, { id: 3, resultLabel: "AF Detected", requestedAt: "2026-11-02T08:00:00Z" }, { resultLabel: "AF Detected" }],
+    totalPages: 2,
+    summary,
+  }));
+  const report = await collectReport(fetchPage, range);
+  assert.equal(report.scanned, 5);
+  assert.deepEqual(
+    report.afEvents.map((item) => item.id),
+    [3, 1, undefined, undefined],
+  );
+});

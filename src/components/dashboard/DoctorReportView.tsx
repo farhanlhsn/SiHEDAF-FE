@@ -38,7 +38,7 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
   const summary = report?.summary;
   const total = summary?.totalData ?? 0;
   const afShare = shareOf(summary?.totalAfib ?? 0, total);
-  const normalShare = total > 0 ? 100 - afShare : 0;
+  const normalShare = shareOf(summary?.totalNormal ?? 0, total);
 
   return (
     <section className="px-4 py-8 sm:px-7 lg:px-10 lg:py-10 print:p-0">
@@ -159,7 +159,9 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                   <p className="mt-3 text-[15px] text-primary-900/80">
                     {report.summary.totalAfib === 0
                       ? "Tidak ada AF terdeteksi pada periode ini."
-                      : `Ringkasan mencatat ${report.summary.totalAfib} kejadian AF, tetapi kejadian tersebut berada di luar ${report.scanned} rekaman pertama yang ditampilkan. Persempit periode laporan untuk melihatnya.`}
+                      : report.truncated
+                        ? `Ringkasan mencatat ${report.summary.totalAfib} kejadian AF, tetapi kejadian tersebut berada di luar ${report.scanned} rekaman pertama yang ditampilkan. Persempit periode laporan untuk melihatnya.`
+                        : `Ringkasan mencatat ${report.summary.totalAfib} kejadian AF, tetapi rinciannya tidak tersedia.`}
                   </p>
                 ) : (
                   <table className="mt-3 w-full border-collapse text-left">

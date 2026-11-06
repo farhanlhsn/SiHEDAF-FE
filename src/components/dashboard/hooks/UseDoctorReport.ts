@@ -70,10 +70,10 @@ export function useDoctorReport(initialParams: InitialParams) {
       try {
         const data = await collectReport(fetchHistoryPage, range);
         if (!isCancelled) setReport(data);
-      } catch (err) {
+      } catch {
         if (!isCancelled) {
           setReport(null);
-          setError(err instanceof Error && err.message ? err.message : FETCH_ERROR);
+          setError(FETCH_ERROR);
         }
       } finally {
         if (!isCancelled) setIsLoading(false);

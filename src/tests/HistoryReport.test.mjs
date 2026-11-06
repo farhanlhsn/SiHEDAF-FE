@@ -116,6 +116,31 @@ test("report only claims no AF when the summary agrees", async () => {
   const source = await read("components/dashboard/DoctorReportView.tsx");
   assert.match(source, /totalAfib === 0\s*\?\s*"Tidak ada AF terdeteksi pada periode ini\."/);
   assert.ok(source.includes("Ringkasan mencatat ${report.summary.totalAfib} kejadian AF, tetapi kejadian tersebut berada di luar ${report.scanned} rekaman pertama yang ditampilkan. Persempit periode laporan untuk melihatnya."));
+  assert.match(source, /report\.truncated\s*\?\s*`Ringkasan mencatat/);
+  assert.ok(source.includes("Ringkasan mencatat ${report.summary.totalAfib} kejadian AF, tetapi rinciannya tidak tersedia."));
+});
+
+test("report normal share comes from the normal count, not 100 minus AF", async () => {
+  const source = await read("components/dashboard/DoctorReportView.tsx");
+  assert.match(source, /shareOf\(summary\?\.totalNormal \?\? 0, total\)/);
+  assert.doesNotMatch(source, /100 - afShare/);
+});
+
+test("date range picker formats in the runtime's local zone", async () => {
+  const source = await read("components/dashboard/DateRangePicker.tsx");
+  assert.doesNotMatch(source, /timeZone/);
+});
+
+test("report page sets a document title", async () => {
+  const source = await read("app/(dashboard)/riwayat/laporan/page.tsx");
+  assert.match(source, /import type \{ Metadata \} from "next"/);
+  assert.match(source, /export const metadata: Metadata = \{\s*title: "Laporan Pemantauan Irama Jantung"/);
+});
+
+test("report fetch errors never show a raw browser message", async () => {
+  const source = await read("components/dashboard/hooks/UseDoctorReport.ts");
+  assert.match(source, /setError\(FETCH_ERROR\)/);
+  assert.doesNotMatch(source, /err\.message/);
 });
 
 test("first-run guide shows only after the latest data loaded and is empty", async () => {
