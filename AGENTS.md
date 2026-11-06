@@ -12,7 +12,7 @@ Terakhir diperbarui: 6 November 2026.
 
 SiHEDAF adalah antarmuka web untuk wearable pemantau sinyal PPG yang membantu deteksi dini risiko Atrial Fibrillation (AF) dan stroke. Project saat ini mencakup website pemasaran, autentikasi, penyambungan perangkat, serta dashboard pemantauan kesehatan.
 
-Bahasa utama antarmuka adalah Bahasa Indonesia. Implementasi saat ini berfokus pada UI dan pengalaman pengguna berdasarkan desain referensi; data kesehatan, akun, notifikasi, dan perangkat masih berupa data statis/mock.
+Bahasa utama antarmuka adalah Bahasa Indonesia. Implementasi saat ini berfokus pada UI dan pengalaman pengguna berdasarkan desain referensi; dashboard membaca data kesehatan, akun, notifikasi, dan perangkat dari backend melalui route proxy API (`src/app/api/v1/*`); hanya ilustrasi di landing page yang bersifat ilustratif.
 
 ## Tech Stack
 
@@ -94,7 +94,8 @@ Sebelum mengubah API, route, layout, metadata, atau convention Next.js, baca pan
 - Primitive `DashboardModal.tsx` dipakai bersama untuk dialog akun dan hasil aksi; modal dapat ditutup melalui backdrop, tombol close, atau tombol Escape.
 - Detail riwayat: baris riwayat dapat diklik dan punya tombol aksesibel "Lihat detail analisis …". `HistoryDetailModal` memakai `DashboardModal size="wide"` berisi `PpgTrace` (tanpa sumbu waktu) dan fakta Waktu, Keyakinan AI, serta Device ID. Untuk hasil AF tersedia tautan "Buat laporan dokter" ke jendela 30 hari yang berakhir pada item tersebut.
 - Laporan dokter: route `/riwayat/laporan?from=YYYY-MM-DD&to=YYYY-MM-DD` (hari Asia/Jakarta; parameter tidak valid atau kosong kembali ke 30 hari terakhir). Logika murni ada di `ReportRange.ts` dan `ReportData.ts` (`collectReport`: halaman berisi 50 data hingga 10 halaman, ringkasan diambil dari halaman 1, daftar AF terbaru lebih dulu, catatan `truncated` bila terpotong). Hook `UseDoctorReport.ts` menjaga respons usang (stale-response guard) dan memakai `router.replace`; tampilan di `DoctorReportView.tsx`. Tombol "Cetak / Simpan PDF" memanggil `window.print()`. CSS cetak: `@page` A4 margin 14mm, `print:hidden` pada chrome shell, `.print-avoid-break`, dan `print-color-adjust: exact`. Teks "Tidak ada AF…" hanya tampil bila jumlah AF pada ringkasan adalah 0.
-- Panduan pertama kali: `FirstRun.ts` (`firstRunSteps`) dan `FirstRunGuide.tsx` tampil saat `hasLoadedLatest && !latestData`, berisi tiga langkah dengan tautan anchor `#monitor`.
+- Panduan pertama kali: `FirstRun.ts` (`firstRunSteps`) dan `FirstRunGuide.tsx` tampil saat `showFirstRun = hasLoadedLatest && !isDeviceLoading && !latestData`, berisi tiga langkah dengan tautan anchor `#monitor`.
+- `resultStatus` (`normal` / `af` / `unknown`) di `DashboardFormat.ts` adalah satu-satunya sumber status hasil untuk ringkasan, tabel riwayat, dan modal detail; `splitShares` (largest remainder) menjaga persentase Normal/AF selalu berjumlah 100.
 - `tracePath` bersama di `DashboardFormat.ts` dipakai oleh `Sparkline`, `SignalChart`, dan `PpgTrace`.
 - Semua dialog dashboard (`DashboardModal`) dirender lewat portal ke `document.body` agar overlay menutupi seluruh layar dan tidak terpotong ancestor ber-`transform` (`.dashboard-enter`).
 - Item sidebar Riwayat aktif untuk semua route `/riwayat/*`.
@@ -239,7 +240,7 @@ Sebelum menyatakan perubahan selesai, jalankan test, lint, dan production build.
 - Edit profile dan avatar menggunakan `localStorage` sebagai persistence simulasi; upload belum dikirim ke object storage/backend.
 - Logout baru mengarahkan ke `/login` dan belum menghapus session/token karena authentication backend belum tersedia.
 - `src/proxy.ts` mengalihkan `/dashboard`, `/riwayat`, dan `/profil` ke `/login` bila tidak ada cookie access/refresh token; ini hanya pemeriksaan keberadaan cookie, validasi token dilakukan backend.
-- Tidak ada database, API, device protocol, atau real-time PPG stream.
+- Frontend tidak punya database sendiri dan tidak ada device protocol di sisi frontend; sinyal PPG di-polling setiap 3 detik dari `/measurement/signals`, bukan di-stream secara real-time.
 - Avatar profil menggunakan placeholder dan dapat diganti setelah asset final tersedia.
 - Laporan dokter bergantung pada `summary` API yang menghormati filter tanggal.
 - PDF dihasilkan oleh dialog cetak browser (`window.print()`); tidak ada pembuatan PDF di server.
