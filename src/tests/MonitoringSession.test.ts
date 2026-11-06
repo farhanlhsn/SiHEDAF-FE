@@ -5,10 +5,14 @@ import {
   POLL_INTERVAL_MS,
   POLL_MAX_ATTEMPTS,
   REQUEST_TIMEOUT_MS,
+  TOGGLE_TIMEOUT_MS,
+  afterToggleTimeout,
   analysisStatusLabel,
   formatElapsed,
   isFreshResult,
+  isTimeoutError,
   pollForFreshResult,
+  rememberInitial,
   rememberResult,
   requestSignal,
   restartAction,
@@ -326,4 +330,59 @@ test("waitFor resolves after the delay, or at once when aborted", async () => {
   const aborted = new AbortController();
   aborted.abort();
   await waitFor(60_000, aborted.signal);
+});
+
+test("rememberInitial fills only a baseline that knows nothing yet", () => {
+  const latest = { id: 7, resultLabel: "Normal", status: "COMPLETED" };
+  assert.deepEqual(rememberInitial(EMPTY_BASELINE, latest), {
+    ...EMPTY_BASELINE,
+    previousResultId: 7,
+  });
+  // An equal-by-value empty baseline counts as empty too.
+  assert.equal(rememberInitial({ ...EMPTY_BASELINE }, latest).previousResultId, 7);
+
+  // A fresh result was already remembered: a slow first /latest must not undo it.
+  const known = { ...EMPTY_BASELINE, previousResultId: 9 };
+  assert.equal(rememberInitial(known, latest), known);
+  const resumed = { ...EMPTY_BASELINE, sessionId: 12, sessionCreatedAt: "2026-11-06T10:00:00Z" };
+  assert.equal(rememberInitial(resumed, latest), resumed);
+});
+
+test("restartAction treats a device still loading as busy, not offline", () => {
+  assert.equal(
+    restartAction("result", { deviceOnline: false, deviceLoading: true, busy: false }),
+    "busy",
+  );
+  assert.equal(
+    restartAction("idle", { deviceOnline: false, deviceLoading: false, busy: false }),
+    "offline",
+  );
+  assert.equal(
+    restartAction("recording", { deviceOnline: false, deviceLoading: true, busy: false }),
+    "hidden",
+  );
+});
+
+test("afterToggleTimeout adopts the state that /latest reports", () => {
+  const running = { status: "IN_PROGRESS", createdAt: "2026-11-06T10:00:00Z" };
+  const processing = { status: "PROCESSING" };
+  const done = { status: "COMPLETED", resultLabel: "Normal" };
+
+  assert.deepEqual(afterToggleTimeout("start", running), { phase: "recording", tookEffect: true });
+  assert.deepEqual(afterToggleTimeout("start", done), { phase: "idle", tookEffect: false });
+  assert.deepEqual(afterToggleTimeout("start", null), { phase: "idle", tookEffect: false });
+  assert.deepEqual(afterToggleTimeout("stop", running), { phase: "recording", tookEffect: false });
+  assert.deepEqual(afterToggleTimeout("stop", processing), { phase: "analysing", tookEffect: true });
+  assert.deepEqual(afterToggleTimeout("stop", done), { phase: "analysing", tookEffect: true });
+  assert.deepEqual(afterToggleTimeout("stop", null), { phase: "analysing", tookEffect: true });
+});
+
+test("start and stop wait longer than polls; timeouts are told apart from failures", () => {
+  assert.equal(TOGGLE_TIMEOUT_MS, 30_000);
+  assert.ok(TOGGLE_TIMEOUT_MS > REQUEST_TIMEOUT_MS);
+  assert.equal(isTimeoutError(new DOMException("timed out", "TimeoutError")), true);
+  assert.equal(isTimeoutError(new DOMException("aborted", "AbortError")), true);
+  assert.equal(isTimeoutError(new TypeError("Failed to fetch")), false);
+  assert.equal(isTimeoutError(new SyntaxError("Unexpected token")), false);
+  assert.equal(isTimeoutError(undefined), false);
 });

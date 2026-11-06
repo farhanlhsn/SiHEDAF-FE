@@ -13,8 +13,10 @@ export type ResultModalView = "analysing" | "result" | "timeout";
 
 export const POLL_INTERVAL_MS = 3000;
 export const POLL_MAX_ATTEMPTS = 20;
-/** Every start, stop and poll request gives up after this long. */
+/** Every poll (and other read) request gives up after this long. */
 export const REQUEST_TIMEOUT_MS = 10_000;
+/** Start and stop may take the backend longer; they give up after this long. */
+export const TOGGLE_TIMEOUT_MS = 30_000;
 
 /** Wall-clock elapsed time: MM:SS, or H:MM:SS from one hour. */
 export function formatElapsed(ms: number): string {
@@ -134,17 +136,75 @@ export function rememberResult(
   return baseline;
 }
 
+function knowsNothing(baseline: ResultBaseline) {
+  return (
+    baseline.previousResultId === null &&
+    baseline.previousTimestamp === null &&
+    baseline.sessionId === null &&
+    baseline.sessionCreatedAt === null
+  );
+}
+
+/**
+ * The baseline after the first /latest. It only fills a baseline that knows
+ * nothing yet, so a slow first answer never undoes a result remembered since.
+ */
+export function rememberInitial(
+  baseline: ResultBaseline,
+  latest: ResultRecord,
+): ResultBaseline {
+  return knowsNothing(baseline)
+    ? rememberResult(EMPTY_BASELINE, latest)
+    : baseline;
+}
+
 export type RestartAction = "hidden" | "ready" | "busy" | "offline";
 
 /** "Mulai monitoring lagi" is offered only while no session is running. */
 export function restartAction(
   phase: MonitoringPhase,
-  { deviceOnline, busy }: { deviceOnline: boolean; busy: boolean },
+  {
+    deviceOnline,
+    deviceLoading = false,
+    busy,
+  }: { deviceOnline: boolean; deviceLoading?: boolean; busy: boolean },
 ): RestartAction {
   if (phase === "recording" || phase === "analysing") return "hidden";
+  // Still asking for the device: wait, do not claim it is offline.
+  if (deviceLoading) return "busy";
   if (!deviceOnline) return "offline";
 
   return busy ? "busy" : "ready";
+}
+
+/**
+ * Where to go when a start/stop request timed out, from what /latest reports
+ * now: a running session keeps recording; after a stop anything else is
+ * being analysed; after a start anything else means it did not start.
+ */
+export function afterToggleTimeout(
+  action: "start" | "stop",
+  latest: { status?: string } | null | undefined,
+): { phase: "recording" | "analysing" | "idle"; tookEffect: boolean } {
+  const running = latest?.status?.toUpperCase() === "IN_PROGRESS";
+
+  if (action === "start") {
+    return running
+      ? { phase: "recording", tookEffect: true }
+      : { phase: "idle", tookEffect: false };
+  }
+
+  return running
+    ? { phase: "recording", tookEffect: false }
+    : { phase: "analysing", tookEffect: true };
+}
+
+/** A request that timed out or was aborted, as opposed to one that failed. */
+export function isTimeoutError(error: unknown): boolean {
+  return (
+    error instanceof DOMException &&
+    (error.name === "TimeoutError" || error.name === "AbortError")
+  );
 }
 
 export type PollOutcome<T> =
