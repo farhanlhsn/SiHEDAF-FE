@@ -3,21 +3,28 @@ import test from "node:test";
 import { SessionExpiredError } from "../features/auth/session/client/ApiFetch";
 import {
   EMPTY_BASELINE,
+  MAX_RECORDING_MS,
   POLL_INTERVAL_MS,
   POLL_MAX_ATTEMPTS,
+  RECORDING_WATCH_INTERVAL_MS,
   REQUEST_TIMEOUT_MS,
   TOGGLE_TIMEOUT_MS,
+  afterStopRefused,
   afterToggleTimeout,
   analysisStatusLabel,
   formatElapsed,
   isFreshResult,
   isTimeoutError,
   pollForFreshResult,
+  recordingClock,
   rememberInitial,
   rememberResult,
+  rememberSession,
   requestSignal,
   restartAction,
+  runningSessionFrom,
   sessionStartFrom,
+  toggleAnswer,
   toggleBlock,
   waitFor,
 } from "../components/dashboard/MonitoringSession";
@@ -451,4 +458,122 @@ test("pollForFreshResult stops on an expired session instead of retrying", async
   assert.deepEqual(outcome, { kind: "cancelled" });
   assert.equal(fetches, 1);
   assert.deepEqual(log, []);
+});
+
+test("a recording lasts at most 3 minutes and is watched every 5 s", () => {
+  assert.equal(MAX_RECORDING_MS, 180_000);
+  assert.equal(RECORDING_WATCH_INTERVAL_MS, 5000);
+});
+
+test("recordingClock counts up to 03:00, then reports overtime", () => {
+  assert.deepEqual(recordingClock(0), { overtime: false, elapsed: "00:00", limit: "03:00", text: "00:00 / 03:00" });
+  assert.deepEqual(recordingClock(72_000), { overtime: false, elapsed: "01:12", limit: "03:00", text: "01:12 / 03:00" });
+  assert.deepEqual(recordingClock(179_999), { overtime: false, elapsed: "02:59", limit: "03:00", text: "02:59 / 03:00" });
+  assert.deepEqual(recordingClock(180_000), { overtime: true });
+  assert.deepEqual(recordingClock(3_600_000), { overtime: true });
+});
+
+test("recordingClock never shows a negative or broken time", () => {
+  // A server clock ahead of the reader's gives a negative elapsed time on resume.
+  assert.deepEqual(recordingClock(-4000), { overtime: false, elapsed: "00:00", limit: "03:00", text: "00:00 / 03:00" });
+  assert.deepEqual(recordingClock(Number.NaN), { overtime: false, elapsed: "00:00", limit: "03:00", text: "00:00 / 03:00" });
+});
+
+test("toggleAnswer tells done, refused by the backend and failed on the way apart", () => {
+  assert.equal(toggleAnswer(200, 200), "ok");
+  // The backend refuses: no device, wristband offline or not seen for 30 s, a session already running, nothing to stop.
+  assert.equal(toggleAnswer(400, 400), "refused");
+  assert.equal(toggleAnswer(400, "BAD_REQUEST"), "refused");
+  assert.equal(toggleAnswer(404, 404), "refused");
+  assert.equal(toggleAnswer(200, 400), "refused");
+  assert.equal(toggleAnswer(200, undefined), "refused");
+  // The server or the way to it failed: not a statement about the wristband.
+  assert.equal(toggleAnswer(500, undefined), "failed");
+  assert.equal(toggleAnswer(502, 502), "failed");
+  assert.equal(toggleAnswer(504, 504), "failed");
+});
+
+test("afterStopRefused shows a result the wristband finished by itself, else goes idle", () => {
+  const fresh = { id: 9, status: "COMPLETED", resultClass: 0, resultLabel: "Normal (N)", confidenceLevel: 0.9 };
+  const old = { id: 5, status: "COMPLETED", resultClass: 0, resultLabel: "Normal (N)", confidenceLevel: 0.9 };
+  const isFresh = (data: { id: number }) => data.id !== 5;
+
+  assert.deepEqual(afterStopRefused(fresh, isFresh), { kind: "result", data: fresh });
+  assert.deepEqual(afterStopRefused(old, isFresh), { kind: "idle" });
+  assert.deepEqual(afterStopRefused(null, isFresh), { kind: "idle" });
+  assert.deepEqual(afterStopRefused(undefined, isFresh), { kind: "idle" });
+});
+
+function history(items: unknown[], code: unknown = 200) {
+  return {
+    code,
+    status: "OK",
+    data: { summary: {}, metadata: { totalFiltered: items.length, currentPage: 1, totalPages: 1, limit: 1 }, data: items },
+  };
+}
+
+test("runningSessionFrom resumes the newest history row only while it is IN_PROGRESS", () => {
+  const requestedAt = "2026-11-07T03:00:00.000Z";
+  const createdAt = "2026-11-07T03:00:00.500Z";
+
+  assert.deepEqual(
+    runningSessionFrom(history([{ id: 510, status: "IN_PROGRESS", requestedAt, createdAt }])),
+    { id: 510, createdAt, startedAt: Date.parse(requestedAt) },
+  );
+  assert.deepEqual(
+    runningSessionFrom(history([{ id: 510, status: "in_progress", createdAt }])),
+    { id: 510, createdAt, startedAt: Date.parse(createdAt) },
+    "without requestedAt the start is createdAt",
+  );
+  // Running but its start is unknown: still resumed; the hook counts from now.
+  assert.deepEqual(
+    runningSessionFrom(history([{ id: 510, status: "IN_PROGRESS", requestedAt: "nope" }])),
+    { id: 510, createdAt: null, startedAt: null },
+  );
+  assert.deepEqual(
+    runningSessionFrom(history([{ status: "IN_PROGRESS", requestedAt }])),
+    { id: null, createdAt: null, startedAt: Date.parse(requestedAt) },
+  );
+
+  // Nothing running.
+  for (const status of ["COMPLETED", "FAILED", "PENDING", "EXPIRED", undefined]) {
+    assert.equal(runningSessionFrom(history([{ id: 510, status, requestedAt }])), null, String(status));
+  }
+  assert.equal(runningSessionFrom(history([])), null);
+  // Only the first (newest) row counts.
+  assert.equal(
+    runningSessionFrom(history([{ id: 511, status: "COMPLETED" }, { id: 510, status: "IN_PROGRESS", requestedAt }])),
+    null,
+  );
+});
+
+test("runningSessionFrom ignores answers that are not a history page", () => {
+  const row = { id: 510, status: "IN_PROGRESS", requestedAt: "2026-11-07T03:00:00Z" };
+  assert.equal(runningSessionFrom(history([row], 400)), null);
+  assert.equal(runningSessionFrom({ ...history([row]), code: undefined }), null);
+  assert.equal(runningSessionFrom({ code: 200, data: null }), null);
+  assert.equal(runningSessionFrom({ code: 200, data: { data: "nope" } }), null);
+  assert.equal(runningSessionFrom({ code: 200, data: { data: [null] } }), null);
+  assert.equal(runningSessionFrom(null), null);
+  assert.equal(runningSessionFrom("nope"), null);
+});
+
+test("rememberSession lets the resumed session's own result count as fresh", () => {
+  const session = { id: 510, createdAt: "2026-11-07T03:00:00Z", startedAt: Date.parse("2026-11-07T03:00:00Z") };
+
+  // Resumed before the first /latest arrived: only this session's result is fresh.
+  const resumed = rememberSession(EMPTY_BASELINE, session);
+  assert.deepEqual(resumed, { ...EMPTY_BASELINE, sessionId: 510, sessionCreatedAt: "2026-11-07T03:00:00Z" });
+  const earlier = { id: 499, status: "COMPLETED", resultClass: 0, resultLabel: "Normal (N)", confidenceLevel: 0.9, createdAt: "2026-11-07T01:00:00Z" };
+  const own = { id: 510, status: "COMPLETED", resultClass: 1, resultLabel: "AFIB", confidenceLevel: 0.9, createdAt: "2026-11-07T03:00:00Z" };
+  assert.equal(isFreshResult(earlier, resumed.previousResultId, resumed), false);
+  assert.equal(isFreshResult(own, resumed.previousResultId, resumed), true);
+  // A slow first /latest does not undo the resumed session.
+  assert.equal(rememberInitial(resumed, earlier), resumed);
+
+  // Resumed after the first /latest: the earlier id is kept.
+  const known = rememberSession({ ...EMPTY_BASELINE, previousResultId: 499 }, session);
+  assert.equal(known.previousResultId, 499);
+  assert.equal(isFreshResult(earlier, known.previousResultId, known), false);
+  assert.equal(isFreshResult(own, known.previousResultId, known), true);
 });

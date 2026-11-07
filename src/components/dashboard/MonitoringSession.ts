@@ -20,6 +20,10 @@ export const POLL_MAX_ATTEMPTS = 20;
 export const REQUEST_TIMEOUT_MS = 10_000;
 /** Start and stop may take the backend longer; they give up after this long. */
 export const TOGGLE_TIMEOUT_MS = 30_000;
+/** The wristband records at most 3 minutes, then the server finishes the session by itself. */
+export const MAX_RECORDING_MS = 180_000;
+/** While recording, /latest is checked this often for a session the wristband finished. */
+export const RECORDING_WATCH_INTERVAL_MS = 5000;
 
 /** Wall-clock elapsed time: MM:SS, or H:MM:SS from one hour. */
 export function formatElapsed(ms: number): string {
@@ -33,6 +37,23 @@ export function formatElapsed(ms: number): string {
   const ss = String(seconds).padStart(2, "0");
 
   return hours > 0 ? `${hours}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
+export type RecordingClock =
+  | { overtime: false; elapsed: string; limit: string; text: string }
+  | { overtime: true };
+
+/**
+ * The recording status: "01:12 / 03:00" up to the 3-minute limit, then
+ * overtime (the wristband has stopped and the result is on its way).
+ */
+export function recordingClock(elapsedMs: number): RecordingClock {
+  if (elapsedMs >= MAX_RECORDING_MS) return { overtime: true };
+
+  const elapsed = formatElapsed(elapsedMs);
+  const limit = formatElapsed(MAX_RECORDING_MS);
+
+  return { overtime: false, elapsed, limit, text: `${elapsed} / ${limit}` };
 }
 
 type ResultRecord = {
@@ -131,14 +152,64 @@ export function rememberResult(
   }
 
   if (data.status?.toUpperCase() === "IN_PROGRESS") {
-    return {
-      ...baseline,
-      sessionId: data.id ?? null,
-      sessionCreatedAt: data.createdAt ?? null,
-    };
+    return rememberSession(baseline, {
+      id: data.id ?? null,
+      createdAt: data.createdAt ?? null,
+    });
   }
 
   return baseline;
+}
+
+/** The baseline once a running session is known: its own result will be fresh. */
+export function rememberSession(
+  baseline: ResultBaseline,
+  session: Pick<RunningSession, "id" | "createdAt">,
+): ResultBaseline {
+  return {
+    ...baseline,
+    sessionId: session.id,
+    sessionCreatedAt: session.createdAt,
+  };
+}
+
+/** A session that is still recording, as the newest history row reports it. */
+export type RunningSession = {
+  id: number | null;
+  createdAt: string | null;
+  /** Epoch ms of requestedAt ?? createdAt, or null when neither parses. */
+  startedAt: number | null;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function optionalString(value: unknown) {
+  return typeof value === "string" ? value : null;
+}
+
+/**
+ * Reads GET /measurement/history?page=1&limit=1 (newest first, any status):
+ * the running session when that newest row is IN_PROGRESS, otherwise null.
+ * /latest only returns COMPLETED rows, so this is how a reload resumes.
+ */
+export function runningSessionFrom(history: unknown): RunningSession | null {
+  if (!isRecord(history) || history.code !== 200) return null;
+  const page = history.data;
+  if (!isRecord(page) || !Array.isArray(page.data)) return null;
+
+  const row: unknown = page.data[0];
+  if (!isRecord(row)) return null;
+  if (optionalString(row.status)?.toUpperCase() !== "IN_PROGRESS") return null;
+
+  const createdAt = optionalString(row.createdAt);
+
+  return {
+    id: typeof row.id === "number" ? row.id : null,
+    createdAt: parseTime(createdAt) === null ? null : createdAt,
+    startedAt: parseTime(optionalString(row.requestedAt) ?? createdAt),
+  };
 }
 
 function knowsNothing(baseline: ResultBaseline) {
@@ -238,6 +309,33 @@ export function afterToggleTimeout(
   return running
     ? { phase: "recording", tookEffect: false }
     : { phase: "analysing", tookEffect: true };
+}
+
+/**
+ * How the backend answered a start/stop: done; refused (4xx: no device, the
+ * wristband is offline or busy, nothing left to stop); or failed on the way
+ * (5xx, including the proxy's 502), which says nothing about the wristband.
+ */
+export function toggleAnswer(
+  status: number,
+  code: unknown,
+): "ok" | "refused" | "failed" {
+  if (status >= 500) return "failed";
+
+  return status >= 200 && status < 300 && code === 200 ? "ok" : "refused";
+}
+
+/**
+ * Stop was refused, typically because the wristband already finished the
+ * session by itself: show that result when /latest has a fresh one, else idle.
+ */
+export function afterStopRefused<T>(
+  latest: T | null | undefined,
+  isFresh: (data: T) => boolean,
+): { kind: "result"; data: T } | { kind: "idle" } {
+  return latest != null && isFresh(latest)
+    ? { kind: "result", data: latest }
+    : { kind: "idle" };
 }
 
 /** A request that timed out or was aborted, as opposed to one that failed. */
