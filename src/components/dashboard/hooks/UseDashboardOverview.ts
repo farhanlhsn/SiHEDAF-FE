@@ -14,6 +14,7 @@ import {
   SessionExpiredError,
 } from "@/features/auth/session/client/ApiFetch";
 import {
+  DEVICE_REFRESH_MS,
   DEVICE_STATUS_LABEL,
   deviceState,
 } from "@/components/dashboard/DeviceState";
@@ -63,8 +64,10 @@ export function useDashboardOverview() {
     isLoading: isDeviceLoading,
     isRefreshing: isDeviceRefreshing,
     error: deviceError,
+    checkedAt: deviceCheckedAt,
     reload: reloadDevice,
-  } = useMyDevice();
+    // Re-checked every 30 s so online, stale and offline stay current.
+  } = useMyDevice({ refreshMs: DEVICE_REFRESH_MS });
   const [latestData, setLatestData] = useState<MeasurementData | null>(null);
   const [hasLoadedLatest, setHasLoadedLatest] = useState(false);
   const [latestError, setLatestError] = useState<DataError | null>(null);
@@ -150,10 +153,12 @@ export function useDashboardOverview() {
   const firstName = user?.fullname ? user.fullname.split(" ")[0] : "Pengguna";
   const result = latestData ? classifyResult(latestData) : "pending";
   // The one source for every device claim: card, status value, toggle, modal.
+  // Staleness is judged when the device answered (every 30 s here).
   const deviceStatus = deviceState({
     device: deviceData,
     isLoading: isDeviceLoading,
     error: deviceError,
+    now: deviceCheckedAt,
   });
   const firstRunGuideSteps = firstRunSteps({
     deviceOnline: deviceStatus === "online",

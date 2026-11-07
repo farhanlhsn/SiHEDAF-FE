@@ -271,6 +271,20 @@ test("restartAction treats no bound device like an offline one", () => {
   assert.equal(restartAction("idle", { device: "none", busy: true }), "offline");
 });
 
+test("restartAction lets a stale wristband try again: the backend decides", () => {
+  assert.equal(restartAction("result", { device: "stale", busy: false }), "ready");
+  assert.equal(restartAction("timeout", { device: "stale", busy: true }), "busy");
+  assert.equal(restartAction("idle", { device: "stale", busy: false, networkOnline: false }), "no-network");
+  assert.equal(restartAction("recording", { device: "stale", busy: false }), "hidden");
+});
+
+test("toggleBlock lets a stale wristband start; a refusal comes back from the backend", () => {
+  assert.equal(toggleBlock("idle", { device: "stale", networkOnline: true }), null);
+  assert.equal(toggleBlock("result", { device: "stale", networkOnline: true }), null);
+  assert.equal(toggleBlock("timeout", { device: "stale", networkOnline: true }), null);
+  assert.equal(toggleBlock("idle", { device: "stale", networkOnline: false }), "no-network");
+});
+
 test("toggleBlock says why Mulai/Hentikan Monitoring is unavailable", () => {
   assert.equal(toggleBlock("idle", { device: "online", networkOnline: true }), null);
   assert.equal(toggleBlock("recording", { device: "online", networkOnline: true }), null);

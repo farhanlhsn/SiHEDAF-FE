@@ -261,7 +261,8 @@ export function restartAction(
   if (device === "loading") return "busy";
   // The request failed: we do not know whether the wristband is connected.
   if (device === "error") return "device-unknown";
-  if (device !== "online") return "offline";
+  // A stale wristband may still start; the backend refuses it if not.
+  if (device !== "online" && device !== "stale") return "offline";
 
   return busy ? "busy" : "ready";
 }
@@ -278,7 +279,8 @@ export function toggleBlock(
   { device, networkOnline }: { device: DeviceState; networkOnline: boolean },
 ): ToggleBlock {
   if (!networkOnline) return "no-network";
-  if (device === "online") return null;
+  // Stale may still start: the backend decides, and its refusal gets a toast.
+  if (device === "online" || device === "stale") return null;
   // Stopping does not need the wristband's state; starting does.
   if (device === "error") {
     return phase === "recording" || phase === "analysing"
