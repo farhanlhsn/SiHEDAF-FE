@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Clock } from "lucide-react";
 import { useId } from "react";
 
 import {
@@ -28,6 +29,8 @@ import { StatusMark } from "@/components/dashboard/StatusMark";
 import { PulseLoader } from "@/components/ui/PulseLoader";
 
 type AiResultModalProps = Readonly<{
+  /** The wristband ended the session after 3 minutes; the user did not press Stop. */
+  autoFinished: boolean;
   data: MeasurementData | null;
   onClose: () => void;
   onRestart: () => void;
@@ -48,6 +51,7 @@ const primaryActionClassName = `btn-primary ${actionClassName} bg-primary-900 te
 const secondaryActionClassName = `${actionClassName} border-[1.5px] border-primary-900/20 text-primary-900 transition-colors hover:bg-paper-deep disabled:cursor-not-allowed disabled:border-primary-900/15 disabled:text-primary-900/70 disabled:hover:bg-transparent`;
 
 export function AiResultModal({
+  autoFinished,
   data,
   onClose,
   onRestart,
@@ -81,6 +85,7 @@ export function AiResultModal({
         <TimeoutBody onClose={onClose} />
       ) : (
         <ResultBody
+          autoFinished={autoFinished}
           data={data}
           onClose={onClose}
           onRestart={onRestart}
@@ -139,11 +144,13 @@ function TimeoutBody({ onClose }: Readonly<{ onClose: () => void }>) {
 }
 
 function ResultBody({
+  autoFinished,
   data,
   onClose,
   onRestart,
   restart,
 }: Readonly<{
+  autoFinished: boolean;
   data: MeasurementData | null;
   onClose: () => void;
   onRestart: () => void;
@@ -203,6 +210,19 @@ function ResultBody({
 
   return (
     <div className="flex flex-col gap-5">
+      {autoFinished ? (
+        <p
+          className="flex items-center gap-2.5 rounded-[14px] bg-primary-50 px-4 py-3 text-[0.9375rem] font-medium text-primary-900"
+          role="note"
+        >
+          <Clock
+            aria-hidden="true"
+            className="size-4 shrink-0 text-primary-500"
+            strokeWidth={2.25}
+          />
+          Rekaman selesai otomatis setelah 3 menit.
+        </p>
+      ) : null}
       <div className="flex items-start gap-4">
         {isNeutral ? null : (
           <div className="shrink-0">

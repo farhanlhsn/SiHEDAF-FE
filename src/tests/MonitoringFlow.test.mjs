@@ -148,3 +148,70 @@ test("a view swap replaces only the dialog, keeping the backdrop and the opener"
   // …while a content swap moves focus into the new dialog.
   assert.match(dashboardModal, /dialogRef\.current\?\.focus\(\);\s*\}, \[contentKey, isShown\]\);/);
 });
+
+test("the recording status counts up to 03:00, then waits for the wristband", () => {
+  assert.match(sessionHook, /recordingClock\(/);
+  assert.match(overviewHook, /clock: session\.clock/);
+  assert.match(overview, /\{clock\.text\}/);
+  assert.match(overview, /aria-label=\{`Lama perekaman \$\{clock\.elapsed\} dari \$\{clock\.limit\}`\}/);
+  // From 03:00 the waiting text replaces the phase word in the polite region and the timer leaves.
+  const politeAt = overview.indexOf('aria-live="polite"');
+  const liveElement = overview.slice(politeAt, overview.indexOf("</span>", politeAt));
+  assert.ok(liveElement.includes("Menunggu hasil dari wristband…"), "waiting text belongs to the phase word");
+  assert.ok(liveElement.includes('"Merekam"'));
+  assert.match(overview, /isMonitoringActive && !clock\.overtime \?/);
+});
+
+test("while recording, /latest is watched every 5 s and the watch ends with the recording", () => {
+  assert.match(sessionHook, /intervalMs: RECORDING_WATCH_INTERVAL_MS/);
+  assert.match(sessionHook, /await waitFor\(RECORDING_WATCH_INTERVAL_MS, watch\);/);
+  // One effect owns the watch: only while recording and no start/stop is in flight;
+  // its cleanup aborts it when recording ends, Stop is pressed or the page unmounts.
+  assert.match(sessionHook, /if \(phase !== "recording" \|\| isTogglingAction\) return;/);
+  assert.match(sessionHook, /const watch = new AbortController\(\);/);
+  assert.match(sessionHook, /return \(\) => \{\s*watch\.abort\(\);/);
+  // Pressing Stop ends the watch at once, so Stop's analysing poll is the only loop.
+  assert.match(sessionHook, /if \(action === "stop"\) stopWatching\(\);/);
+  assert.match(sessionHook, /watchRef\.current\?\.abort\(\);/);
+  // The watch follows the same fresh-result rules as the analysing poll.
+  assert.match(sessionHook, /isFresh: isFreshNow,/);
+  assert.match(sessionHook, /void watchRecording\(watch\.signal, isFreshNow\)\.then\(/);
+  assert.match(sessionHook, /maxAttempts: Number\.POSITIVE_INFINITY/);
+});
+
+test("a recording the wristband finished opens the result with a note", () => {
+  assert.ok(modal.includes("Rekaman selesai otomatis setelah 3 menit."));
+  assert.match(modal, /autoFinished \?/);
+  assert.match(overviewHook, /autoFinished: session\.autoFinished/);
+  assert.match(overview, /autoFinished=\{autoFinished\}/);
+  // Watch result and a refused Stop that finds a fresh result: automatic; the analysing poll: not.
+  assert.match(sessionHook, /showResult\(outcome\.data, \{ automatic: true \}\)/);
+  assert.match(sessionHook, /showResult\(next\.data, \{ automatic: true \}\)/);
+  assert.match(sessionHook, /showResult\(outcome\.data, \{ automatic: false \}\)/);
+  assert.match(sessionHook, /afterStopRefused\(latest, isFreshNow\)/);
+  assert.match(sessionHook, /toggleAnswer\(status, json\?\.code\)/);
+});
+
+test("a reload resumes a running session from the newest history row", () => {
+  assert.ok(sessionHook.includes('"/api/v1/measurement/history?page=1&limit=1"'));
+  assert.match(sessionHook, /runningSessionFrom\(/);
+  assert.match(sessionHook, /rememberSession\(baselineRef\.current, running\)/);
+  // Ignored once the user started or stopped meanwhile; never after unmount.
+  assert.match(sessionHook, /if \(lifetime\.aborted \|\| !running \|\| userActedRef\.current\) return;/);
+  assert.match(sessionHook, /void resumeRunningSession\(lifetime\.signal\);/);
+});
+
+test("a refused start gets a fixed wristband hint and no server text reaches a toast", () => {
+  assert.ok(
+    sessionHook.includes(
+      "Wristband belum siap untuk merekam. Pastikan wristband menyala, terhubung ke internet, dan tidak sedang merekam, lalu coba lagi.",
+    ),
+  );
+  assert.match(sessionHook, /toast\.error\(START_REFUSED\)/);
+  const toastArgs = [...sessionHook.matchAll(/toast\.\w+\(([^)]*)\)/g)].map((match) => match[1]);
+  assert.ok(toastArgs.length >= 3);
+  for (const arg of toastArgs) {
+    assert.match(arg, /^(?:TOGGLE_FAILED|TOGGLE_ERROR|START_REFUSED)$/, `toast shows ${arg}`);
+  }
+  assert.doesNotMatch(sessionHook, /\.message\b|\.errors\b/, "server text is never read");
+});

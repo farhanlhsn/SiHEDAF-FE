@@ -12,20 +12,26 @@ import {
   EMPTY_BASELINE,
   POLL_INTERVAL_MS,
   POLL_MAX_ATTEMPTS,
+  RECORDING_WATCH_INTERVAL_MS,
   TOGGLE_TIMEOUT_MS,
+  afterStopRefused,
   afterToggleTimeout,
-  formatElapsed,
   isFreshResult,
   isTimeoutError,
   pollForFreshResult,
+  recordingClock,
   rememberInitial,
   rememberResult,
+  rememberSession,
   requestSignal,
+  runningSessionFrom,
   sessionStartFrom,
+  toggleAnswer,
   waitFor,
   type MonitoringPhase,
   type ResultBaseline,
   type ResultModalView,
+  type RunningSession,
 } from "@/components/dashboard/MonitoringSession";
 import type { MeasurementData } from "@/components/dashboard/hooks/UseDashboardOverview";
 
@@ -34,25 +40,28 @@ type UseMonitoringSessionOptions = {
   onFreshResult: (data: MeasurementData) => void;
 };
 
-type Envelope<T = unknown> = { code?: number; message?: string; data?: T };
+// Server text (message, errors) is never read: every toast is fixed copy.
+type Envelope<T = unknown> = { code?: unknown; data?: T };
 
 type ToggleAction = "start" | "stop";
 
 const TOGGLE_FAILED = "Gagal mengubah status monitoring.";
 const TOGGLE_ERROR =
   "Terjadi kesalahan saat mengubah status monitoring. Coba lagi.";
+const START_REFUSED =
+  "Wristband belum siap untuk merekam. Pastikan wristband menyala, terhubung ke internet, dan tidak sedang merekam, lalu coba lagi.";
 
 /** Start or stop a session; throws on network errors and timeouts. */
 async function postMeasurement(
   action: ToggleAction,
   lifetime: AbortSignal,
-): Promise<Envelope> {
+): Promise<{ status: number; json: Envelope<MeasurementData> | null }> {
   const res = await apiFetch(`/api/v1/measurement/${action}`, {
     method: "POST",
     signal: requestSignal(lifetime, TOGGLE_TIMEOUT_MS),
   });
 
-  return res.json();
+  return { status: res.status, json: await res.json() };
 }
 
 /** The latest record (null when there is none); throws when the read fails. */
@@ -63,15 +72,50 @@ async function fetchLatest(signal: AbortSignal) {
   const json: Envelope<MeasurementData> = await res.json();
 
   if (!res.ok || json.code !== 200) {
-    throw new Error(json.message || "Gagal membaca data terakhir.");
+    throw new Error("Gagal membaca data terakhir.");
   }
 
   return json.data ?? null;
 }
 
 /**
- * Owns the monitoring moment: recording (wall-clock elapsed), analysing
- * (polling /latest for a fresh result) and the AI result modal.
+ * The session still recording, from the newest history row (any status);
+ * /latest only ever returns COMPLETED rows. Throws when the read fails.
+ */
+async function fetchRunningSession(signal: AbortSignal) {
+  const res = await apiFetch("/api/v1/measurement/history?page=1&limit=1", {
+    signal: requestSignal(signal),
+  });
+
+  return res.ok ? runningSessionFrom(await res.json()) : null;
+}
+
+/**
+ * While recording: the wristband stops by itself after 3 minutes and the
+ * server completes the session, so /latest is checked every 5 s until a
+ * fresh result arrives or `watch` is aborted.
+ */
+async function watchRecording(
+  watch: AbortSignal,
+  isFresh: (data: MeasurementData) => boolean,
+) {
+  await waitFor(RECORDING_WATCH_INTERVAL_MS, watch);
+
+  return pollForFreshResult({
+    fetchLatest: () => fetchLatest(watch),
+    isFresh,
+    wait: (ms) => waitFor(ms, watch),
+    isCancelled: () => watch.aborted,
+    // For as long as it records: a session the wristband lost stays open until Stop.
+    maxAttempts: Number.POSITIVE_INFINITY,
+    intervalMs: RECORDING_WATCH_INTERVAL_MS,
+  });
+}
+
+/**
+ * Owns the monitoring moment: recording (wall-clock time against the 3-minute
+ * limit, watching /latest for a session the wristband finished by itself),
+ * analysing (polling /latest after Stop) and the AI result modal.
  */
 export function useMonitoringSession({
   onFreshResult,
@@ -82,6 +126,8 @@ export function useMonitoringSession({
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [now, setNow] = useState<number | null>(null);
   const [isTogglingAction, setIsTogglingAction] = useState(false);
+  // The shown result ended without Stop: the wristband finished after 3 minutes.
+  const [autoFinished, setAutoFinished] = useState(false);
 
   const baselineRef = useRef<ResultBaseline>(EMPTY_BASELINE);
   // Once the user started or stopped, a slow first /latest is out of date.
@@ -89,6 +135,8 @@ export function useMonitoringSession({
   // Aborted when the component unmounts; every request and loop follows it.
   const lifetimeRef = useRef<AbortController | null>(null);
   const pollRef = useRef<AbortController | null>(null);
+  // The recording watch; owned by its effect, aborted at once by Stop.
+  const watchRef = useRef<AbortController | null>(null);
   const onFreshResultRef = useRef(onFreshResult);
 
   useEffect(() => {
@@ -100,16 +148,52 @@ export function useMonitoringSession({
     pollRef.current = null;
   }, []);
 
+  const stopWatching = useCallback(() => {
+    watchRef.current?.abort();
+    watchRef.current = null;
+  }, []);
+
+  /** The fresh-result rules against what is known right now. */
+  const isFreshNow = useCallback(
+    (data: MeasurementData) =>
+      isFreshResult(
+        data,
+        baselineRef.current.previousResultId,
+        baselineRef.current,
+      ),
+    [],
+  );
+
+  /** After a reload: resume a session the newest history row still records. */
+  const resumeRunningSession = useCallback(async (lifetime: AbortSignal) => {
+    let running: RunningSession | null;
+    try {
+      running = await fetchRunningSession(lifetime);
+    } catch {
+      // Expired session (redirecting), no network or a timeout: stay idle.
+      return;
+    }
+    if (lifetime.aborted || !running || userActedRef.current) return;
+
+    // Its own result will count as fresh once the server completes it.
+    baselineRef.current = rememberSession(baselineRef.current, running);
+    const current = Date.now();
+    setStartedAt(running.startedAt ?? current);
+    setNow(current);
+    setPhase("recording");
+  }, []);
+
   // Created in the effect body so a StrictMode remount gets a live one again.
   useEffect(() => {
     const lifetime = new AbortController();
     lifetimeRef.current = lifetime;
+    void resumeRunningSession(lifetime.signal);
 
     return () => {
       lifetime.abort();
       cancelPolling();
     };
-  }, [cancelPolling]);
+  }, [cancelPolling, resumeRunningSession]);
 
   // One-second tick for the elapsed time, only while recording.
   useEffect(() => {
@@ -139,6 +223,20 @@ export function useMonitoringSession({
     return true;
   }, []);
 
+  /** Show a fresh result; automatic when the wristband ended the session. */
+  const showResult = useCallback(
+    (data: MeasurementData, { automatic }: { automatic: boolean }) => {
+      baselineRef.current = rememberResult(baselineRef.current, data);
+      onFreshResultRef.current(data);
+      setAutoFinished(automatic);
+      setPhase("result");
+      setModalView("result");
+      // After Stop the modal is open already, or the reader closed it on purpose.
+      if (automatic) setIsModalOpen(true);
+    },
+    [],
+  );
+
   const pollForResult = useCallback(
     async (lifetime: AbortSignal) => {
       cancelPolling();
@@ -148,12 +246,7 @@ export function useMonitoringSession({
 
       const outcome = await pollForFreshResult({
         fetchLatest: () => fetchLatest(run.signal),
-        isFresh: (data) =>
-          isFreshResult(
-            data,
-            baselineRef.current.previousResultId,
-            baselineRef.current,
-          ),
+        isFresh: isFreshNow,
         wait: (ms) => waitFor(ms, run.signal),
         isCancelled,
         maxAttempts: POLL_MAX_ATTEMPTS,
@@ -164,22 +257,42 @@ export function useMonitoringSession({
       pollRef.current = null;
 
       if (outcome.kind === "fresh") {
-        baselineRef.current = rememberResult(baselineRef.current, outcome.data);
-        onFreshResultRef.current(outcome.data);
-        setPhase("result");
-        setModalView("result");
+        showResult(outcome.data, { automatic: false });
       } else {
         setPhase("timeout");
         setModalView("timeout");
       }
     },
-    [cancelPolling],
+    [cancelPolling, isFreshNow, showResult],
   );
 
+  // The recording watch runs only while recording with no start/stop in
+  // flight; recording ending, Stop being pressed or unmounting aborts it.
+  useEffect(() => {
+    if (phase !== "recording" || isTogglingAction) return;
+
+    const watch = new AbortController();
+    watchRef.current = watch;
+    void watchRecording(watch.signal, isFreshNow).then((outcome) => {
+      if (outcome.kind !== "fresh" || watch.signal.aborted) return;
+      showResult(outcome.data, { automatic: true });
+    });
+
+    return () => {
+      watch.abort();
+      if (watchRef.current === watch) watchRef.current = null;
+    };
+  }, [isFreshNow, isTogglingAction, phase, showResult]);
+
   const beginRecording = useCallback(
-    (startedAtMs: number) => {
+    (startedAtMs: number, session?: MeasurementData | null) => {
       userActedRef.current = true;
       cancelPolling();
+      // The new session's own result is fresh even before the first /latest lands.
+      if (session) {
+        baselineRef.current = rememberResult(baselineRef.current, session);
+      }
+      setAutoFinished(false);
       setStartedAt(startedAtMs);
       setNow(Date.now());
       setPhase("recording");
@@ -190,6 +303,7 @@ export function useMonitoringSession({
   const beginAnalysing = useCallback(
     (lifetime: AbortSignal) => {
       userActedRef.current = true;
+      setAutoFinished(false);
       setPhase("analysing");
       setModalView("analysing");
       setIsModalOpen(true);
@@ -227,22 +341,56 @@ export function useMonitoringSession({
     [beginAnalysing, beginRecording, cancelPolling],
   );
 
+  /**
+   * Stop was refused, typically because the wristband had already finished:
+   * read /latest once and show that result, otherwise go idle.
+   */
+  const recoverFromRefusedStop = useCallback(
+    async (lifetime: AbortSignal) => {
+      let latest: MeasurementData | null = null;
+      try {
+        latest = await fetchLatest(lifetime);
+      } catch (error) {
+        if (error instanceof SessionExpiredError) return;
+      }
+      if (lifetime.aborted) return;
+
+      userActedRef.current = true;
+      const next = afterStopRefused(latest, isFreshNow);
+      if (next.kind === "result") {
+        showResult(next.data, { automatic: true });
+      } else {
+        cancelPolling();
+        setPhase("idle");
+        toast.error(TOGGLE_FAILED);
+      }
+    },
+    [cancelPolling, isFreshNow, showResult],
+  );
+
   const toggle = useCallback(
     async (action: ToggleAction) => {
       const lifetime = lifetimeRef.current?.signal;
       if (!lifetime || lifetime.aborted) return;
 
+      // Stop's own analysing poll replaces the recording watch: never two loops.
+      if (action === "stop") stopWatching();
       setIsTogglingAction(true);
       try {
-        const json = await postMeasurement(action, lifetime);
+        const { status, json } = await postMeasurement(action, lifetime);
         if (lifetime.aborted) return;
 
-        if (json.code !== 200) {
-          toast.error(TOGGLE_FAILED);
+        const answer = toggleAnswer(status, json?.code);
+        if (answer === "ok") {
+          if (action === "start") beginRecording(Date.now(), json?.data);
+          else beginAnalysing(lifetime);
+        } else if (answer === "failed") {
+          // The server or the way to it failed: the session state is unchanged.
+          toast.error(TOGGLE_ERROR);
         } else if (action === "start") {
-          beginRecording(Date.now());
+          toast.error(START_REFUSED);
         } else {
-          beginAnalysing(lifetime);
+          await recoverFromRefusedStop(lifetime);
         }
       } catch (error) {
         if (lifetime.aborted || error instanceof SessionExpiredError) return;
@@ -253,7 +401,13 @@ export function useMonitoringSession({
         if (!lifetime.aborted) setIsTogglingAction(false);
       }
     },
-    [beginAnalysing, beginRecording, recoverFromTimeout],
+    [
+      beginAnalysing,
+      beginRecording,
+      recoverFromRefusedStop,
+      recoverFromTimeout,
+      stopWatching,
+    ],
   );
 
   const handleToggleMonitoring = useCallback(async () => {
@@ -278,14 +432,17 @@ export function useMonitoringSession({
 
   const closeModal = useCallback(() => setIsModalOpen(false), []);
 
-  const elapsed =
+  // "01:12 / 03:00" while recording; overtime once the 3 minutes are over.
+  const clock = recordingClock(
     phase === "recording" && startedAt !== null && now !== null
-      ? formatElapsed(now - startedAt)
-      : "00:00";
+      ? now - startedAt
+      : 0,
+  );
 
   return {
     phase,
-    elapsed,
+    clock,
+    autoFinished,
     isTogglingAction,
     isModalOpen,
     modalView,

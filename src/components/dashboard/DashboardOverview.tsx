@@ -53,7 +53,8 @@ export function DashboardOverview() {
     result,
     isMonitoringActive,
     phase,
-    elapsed,
+    clock,
+    autoFinished,
     monitoringRange,
     setMonitoringRange,
     isTogglingAction,
@@ -220,21 +221,24 @@ export function DashboardOverview() {
                   {/* Only the phase word is live; the timer would be read every second. */}
                   <span aria-live="polite">
                     {isMonitoringActive
-                      ? "Merekam"
+                      ? clock.overtime
+                        ? "Menunggu hasil dari wristband…"
+                        : "Merekam"
                       : isAnalysing
                         ? "Menganalisis rekaman…"
                         : "Monitoring dijeda"}
                   </span>
-                  {isMonitoringActive ? (
+                  {/* From 03:00 the wristband has stopped: the waiting text replaces the clock. */}
+                  {isMonitoringActive && !clock.overtime ? (
                     <>
                       <span aria-hidden="true">·</span>
                       <span
-                        aria-label={`Lama perekaman ${elapsed}`}
+                        aria-label={`Lama perekaman ${clock.elapsed} dari ${clock.limit}`}
                         aria-live="off"
                         className="tabular-nums"
                         role="timer"
                       >
-                        {elapsed}
+                        {clock.text}
                       </span>
                     </>
                   ) : null}
@@ -472,6 +476,7 @@ export function DashboardOverview() {
       </div>
 
       <AiResultModal
+        autoFinished={autoFinished}
         data={latestData}
         onClose={closeAiModal}
         onRestart={restartMonitoring}
