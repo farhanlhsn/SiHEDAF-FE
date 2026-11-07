@@ -7,6 +7,16 @@ import { id as localeId } from "date-fns/locale";
 
 import { formatWib } from "@/components/dashboard/DashboardFormat";
 import { StatusMark } from "@/components/dashboard/StatusMark";
+import { useOnlineStatus } from "@/components/ui/hooks/UseOnlineStatus";
+import { DataErrorState } from "@/components/ui/DataErrorState";
+import {
+  describeCaughtError,
+  type DataError,
+} from "@/components/ui/FetchError";
+import {
+  apiFetch,
+  SessionExpiredError,
+} from "@/features/auth/session/client/ApiFetch";
 
 type Notification = {
   id: number;
@@ -23,29 +33,56 @@ type NotificationPanelProps = {
   onUnreadChange?: (hasUnread: boolean) => void;
 };
 
+class HttpError extends Error {
+  constructor(readonly status: number) {
+    super(`HTTP ${status}`);
+  }
+}
+
 export function NotificationPanel({
   onClose,
   onUnreadChange,
 }: NotificationPanelProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<DataError | null>(null);
+  const [reloadCount, setReloadCount] = useState(0);
+  const { reconnectCount } = useOnlineStatus();
 
   useEffect(() => {
+    let isCancelled = false;
+
     async function fetchNotifications() {
+      setIsLoading(true);
+      setLoadError(null);
       try {
-        const res = await fetch("/api/v1/notification");
+        const res = await apiFetch("/api/v1/notification");
+        if (!res.ok) throw new HttpError(res.status);
         const json = await res.json();
-        if (json.code === 200 && json.data) {
+        if (!isCancelled && json.code === 200 && json.data) {
           setNotifications(json.data);
         }
       } catch (e) {
+        // Navigating to /login: stay quiet and keep the loader.
+        if (e instanceof SessionExpiredError) return;
         console.error("Gagal memuat notifikasi:", e);
-      } finally {
-        setIsLoading(false);
+        if (!isCancelled) {
+          setLoadError(
+            describeCaughtError(
+              e,
+              e instanceof HttpError ? e.status : undefined,
+            ),
+          );
+        }
       }
+      if (!isCancelled) setIsLoading(false);
     }
-    fetchNotifications();
-  }, []);
+    void fetchNotifications();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [reloadCount, reconnectCount]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -63,8 +100,9 @@ export function NotificationPanel({
     );
 
     try {
-      await fetch(`/api/v1/notification/${id}/read`, { method: "PATCH" });
+      await apiFetch(`/api/v1/notification/${id}/read`, { method: "PATCH" });
     } catch (e) {
+      if (e instanceof SessionExpiredError) return;
       console.error("Gagal menandai dibaca:", e);
       // Revert if failed
       setNotifications((prev) =>
@@ -100,11 +138,11 @@ export function NotificationPanel({
         >
           <PanelRightClose aria-hidden="true" size={19} strokeWidth={1.9} />
         </button>
-        <h2 className="text-[20px] font-bold tracking-[-0.03em] text-primary-900">
+        <h2 className="text-[1.25rem] font-bold tracking-[-0.03em] text-primary-900">
           Notifikasi
         </h2>
         {unreadCount > 0 ? (
-          <span className="ml-auto rounded-full bg-af-50 px-2.5 py-1 text-[13px] font-semibold text-af-700">
+          <span className="ml-auto rounded-full bg-af-50 px-2.5 py-1 text-[0.8125rem] font-semibold text-af-700">
             {unreadCount} baru
           </span>
         ) : null}
@@ -112,17 +150,24 @@ export function NotificationPanel({
 
       <div className="mt-8 space-y-8">
         {isLoading ? (
-          <p className="text-center text-[15px] text-primary-900/75">
+          <p className="text-center text-[0.9375rem] text-primary-900/75">
             Memuat notifikasi...
           </p>
+        ) : loadError ? (
+          <DataErrorState
+            compact
+            message={loadError.message}
+            onRetry={() => setReloadCount((count) => count + 1)}
+            title={loadError.title}
+          />
         ) : notifications.length === 0 ? (
-          <p className="text-center text-[15px] text-primary-900/75">
+          <p className="text-center text-[0.9375rem] text-primary-900/75">
             Belum ada notifikasi.
           </p>
         ) : (
           Object.entries(grouped).map(([dayLabel, items]) => (
             <section key={dayLabel}>
-              <h3 className="text-[13px] font-semibold tracking-[0.08em] text-primary-900/75 uppercase">
+              <h3 className="text-[0.8125rem] font-semibold tracking-[0.08em] text-primary-900/75 uppercase">
                 {dayLabel}
               </h3>
               <ol className="relative mt-4">
@@ -145,7 +190,7 @@ export function NotificationPanel({
                         status={isAf ? "af" : "normal"}
                       />
                       <div className="min-w-0 flex-1 pt-0.5">
-                        <p className="flex items-center gap-2 text-[15px] font-semibold text-primary-900">
+                        <p className="flex items-center gap-2 text-[0.9375rem] font-semibold text-primary-900">
                           {notif.title}
                           {!notif.isRead ? (
                             <span
@@ -155,16 +200,16 @@ export function NotificationPanel({
                             />
                           ) : null}
                         </p>
-                        <p className="mt-1 text-[14px] leading-[1.55] text-primary-900/80">
+                        <p className="mt-1 text-[0.875rem] leading-[1.55] text-primary-900/80">
                           {notif.message}
                         </p>
                         <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-[13px] font-medium text-primary-900/70">
+                          <span className="text-[0.8125rem] font-medium text-primary-900/70">
                             Pukul {formatWib(notif.createdAt, "time") ?? "—"}
                           </span>
                           {!notif.isRead ? (
                             <button
-                              className="flex h-9 items-center gap-1.5 rounded-full border border-primary-900/20 bg-white px-3 text-[13px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
+                              className="flex h-9 items-center gap-1.5 rounded-full border border-primary-900/20 bg-white px-3 text-[0.8125rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
                               onClick={() =>
                                 handleMarkAsRead(notif.id, notif.isRead)
                               }
@@ -174,7 +219,7 @@ export function NotificationPanel({
                               Tandai dibaca
                             </button>
                           ) : (
-                            <span className="flex items-center gap-1 text-[13px] font-medium text-primary-900/70">
+                            <span className="flex items-center gap-1 text-[0.8125rem] font-medium text-primary-900/70">
                               <Check size={14} strokeWidth={2.5} />
                               Telah dibaca
                             </span>

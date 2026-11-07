@@ -15,7 +15,7 @@ export function profileInitials(fullname: string) {
 }
 
 export function ProfileAvatar({
-  className = "h-20 w-20 text-[22px]",
+  className = "h-20 w-20 text-[1.375rem]",
   fullname,
   profileImage,
 }: ProfileAvatarProps) {

@@ -11,7 +11,7 @@ import { SESSION_EXPIRED, SessionServiceError } from "./SessionServiceError";
 import { refreshAccessToken } from "./services/RefreshTokenService";
 import type { AccessTokenResult } from "../shared/SessionTypes";
 
-type AccessTokenRefresher = (
+export type AccessTokenRefresher = (
   refreshToken: string,
 ) => Promise<AccessTokenResult>;
 

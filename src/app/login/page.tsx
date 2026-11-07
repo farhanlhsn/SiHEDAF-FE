@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { AuthShell } from "@/components/auth/AuthShell";
+import { SessionExpiredNotice } from "@/components/auth/SessionExpiredNotice";
 import { LoginForm } from "@/components/auth/LoginForm";
 
 export const metadata: Metadata = {
@@ -16,6 +18,9 @@ export default function LoginPage() {
       journeyStep={1}
       title={{ strong: "Selamat datang", light: "kembali." }}
     >
+      <Suspense fallback={null}>
+        <SessionExpiredNotice />
+      </Suspense>
       <LoginForm />
     </AuthShell>
   );

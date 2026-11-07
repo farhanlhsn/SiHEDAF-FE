@@ -57,14 +57,14 @@ export function FeaturesSection() {
                 key={feature.title}
                 style={{ "--i": index } as React.CSSProperties}
               >
-                <span className="text-[15px] font-semibold tabular-nums text-primary-500">
+                <span className="text-[0.9375rem] font-semibold tabular-nums text-primary-500">
                   0{index + 1}
                 </span>
                 <span>
-                  <span className="block text-[22px] font-bold tracking-[-0.035em] text-primary-900">
+                  <span className="block text-[1.375rem] font-bold tracking-[-0.035em] text-primary-900">
                     {feature.title}
                   </span>
-                  <span className="mt-2 block max-w-[440px] text-[17px] leading-[1.55] text-primary-900/80">
+                  <span className="mt-2 block max-w-[440px] text-[1.0625rem] leading-[1.55] text-primary-900/80">
                     {feature.description}
                   </span>
                 </span>

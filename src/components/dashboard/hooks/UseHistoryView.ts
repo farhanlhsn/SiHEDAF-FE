@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  describeCaughtError,
+  type DataError,
+} from "@/components/ui/FetchError";
+import { useOnlineStatus } from "@/components/ui/hooks/UseOnlineStatus";
 import type { DateRange } from "@daypicker/react";
+import {
+  apiFetch,
+  SessionExpiredError,
+} from "@/features/auth/session/client/ApiFetch";
 
 export type HistoryItem = {
   id?: number;
@@ -14,7 +23,14 @@ export type HistoryItem = {
   ppgResult?: { rawPpgData?: number[] };
 };
 
+class HttpError extends Error {
+  constructor(readonly status: number) {
+    super(`HTTP ${status}`);
+  }
+}
+
 export function useHistoryView() {
+  const { reconnectCount } = useOnlineStatus();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -22,7 +38,7 @@ export function useHistoryView() {
   const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<DataError | null>(null);
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
   const [reloadCount, setReloadCount] = useState(0);
 
@@ -56,10 +72,10 @@ export function useHistoryView() {
           params.append("endDate", toDate.toISOString().split("T")[0]);
         }
 
-        const res = await fetch(
+        const res = await apiFetch(
           `/api/v1/measurement/history?${params.toString()}`,
         );
-        if (!res.ok) throw new Error("Gagal mengambil data");
+        if (!res.ok) throw new HttpError(res.status);
         const json = await res.json();
 
         if (json.code === 200 && json.data) {
@@ -81,15 +97,20 @@ export function useHistoryView() {
           ]);
         }
       } catch (err: unknown) {
+        if (err instanceof SessionExpiredError) return;
         console.error("Gagal mengambil riwayat:", err);
-        setError("Gagal mengambil riwayat.");
-      } finally {
-        setIsLoading(false);
+        setError(
+          describeCaughtError(
+            err,
+            err instanceof HttpError ? err.status : undefined,
+          ),
+        );
       }
+      setIsLoading(false);
     }
 
     fetchHistory();
-  }, [currentPage, itemsPerPage, dateRange, reloadCount]);
+  }, [currentPage, itemsPerPage, dateRange, reloadCount, reconnectCount]);
 
   return {
     currentPage,

@@ -74,6 +74,14 @@ html {
   -webkit-overflow-scrolling: touch;
 }
 
+html[data-text-size="besar"] {
+  font-size: 112.5%;
+}
+
+html[data-text-size="sangat-besar"] {
+  font-size: 125%;
+}
+
 /* Smooth scroll only for anchor / programmatic navigation, not normal scrolling */
 @media (prefers-reduced-motion: no-preference) {
   html:focus-within {
@@ -120,7 +128,7 @@ footer[id] {
   margin: 0;
   color: #002758;
   font-family: var(--font-switzer), Arial, Helvetica, sans-serif;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .rdp-months {
@@ -128,7 +136,7 @@ footer[id] {
 }
 
 .rdp-month_caption {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
 }
 

@@ -13,6 +13,7 @@ import { ProfileAvatar } from "@/components/dashboard/ProfileAvatar";
 import { PulseLoader } from "@/components/ui/PulseLoader";
 import { useMyDevice } from "@/components/dashboard/hooks/UseMyDevice";
 import { useUpdateProfile } from "@/features/profile/client/hooks/UseUpdateProfile";
+import { SESSION_EXPIRED_PATH } from "@/features/auth/session/client/ApiFetch";
 import { useProfile } from "@/features/profile/client/ProfileProvider";
 import {
   type UpdateProfileRequest,
@@ -21,11 +22,11 @@ import {
 import type { UserProfile } from "@/features/profile/shared/ProfileTypes";
 
 const fieldClassName =
-  "mt-2.5 h-14 w-full rounded-[14px] border-[1.5px] border-primary-900/15 bg-white px-5 text-[16px] font-medium text-primary-900 outline-none transition-[border-color,box-shadow] placeholder:text-primary-900/60 focus:border-primary-300 focus:ring-4 focus:ring-primary-100 disabled:cursor-not-allowed disabled:border-primary-900/10 disabled:bg-paper disabled:text-primary-900/75";
-const labelClassName = "block text-[15px] font-semibold text-primary-900";
-const hintClassName = "mt-2 block text-[14px] font-normal text-primary-900/75";
+  "mt-2.5 h-14 w-full rounded-[14px] border-[1.5px] border-primary-900/15 bg-white px-5 text-[1rem] font-medium text-primary-900 outline-none transition-[border-color,box-shadow] placeholder:text-primary-900/60 focus:border-primary-300 focus:ring-4 focus:ring-primary-100 disabled:cursor-not-allowed disabled:border-primary-900/10 disabled:bg-paper disabled:text-primary-900/75";
+const labelClassName = "block text-[0.9375rem] font-semibold text-primary-900";
+const hintClassName = "mt-2 block text-[0.875rem] font-normal text-primary-900/75";
 const secondaryButtonClassName =
-  "h-13 rounded-full border-[1.5px] border-primary-900/20 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300";
+  "h-13 rounded-full border-[1.5px] border-primary-900/20 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300";
 
 function EditProfileForm({ user }: { user: UserProfile }) {
   const router = useRouter();
@@ -59,8 +60,11 @@ function EditProfileForm({ user }: { user: UserProfile }) {
           setError("fullname", { message: messages?.[0], type: "server" });
         }
       }
+      if (result.status === 401) {
+        router.replace(SESSION_EXPIRED_PATH);
+        return;
+      }
       toast.error(result.message);
-      if (result.status === 401) router.replace("/login");
       setShowConfirm(false);
       return;
     }
@@ -83,10 +87,10 @@ function EditProfileForm({ user }: { user: UserProfile }) {
             profileImage={user.profileImage}
           />
           <div>
-            <p className="text-[16px] font-semibold text-primary-900">
+            <p className="text-[1rem] font-semibold text-primary-900">
               Foto profil
             </p>
-            <p className="mt-1 text-[15px] leading-[1.5] text-primary-900/75">
+            <p className="mt-1 text-[0.9375rem] leading-[1.5] text-primary-900/75">
               Perubahan foto belum tersedia pada layanan akun.
             </p>
           </div>
@@ -98,7 +102,7 @@ function EditProfileForm({ user }: { user: UserProfile }) {
             <input className={fieldClassName} {...register("fullname")} />
             {errors.fullname ? (
               <span
-                className="mt-2 flex items-center gap-1.5 text-[14px] font-medium text-af-700"
+                className="mt-2 flex items-center gap-1.5 text-[0.875rem] font-medium text-af-700"
                 role="alert"
               >
                 <CircleAlert aria-hidden="true" className="size-4 shrink-0" />
@@ -139,7 +143,7 @@ function EditProfileForm({ user }: { user: UserProfile }) {
         {mutationError ? (
           <p
             aria-live="polite"
-            className="mt-5 text-[15px] font-medium text-af-700"
+            className="mt-5 text-[0.9375rem] font-medium text-af-700"
           >
             {mutationError.message}
           </p>
@@ -155,7 +159,7 @@ function EditProfileForm({ user }: { user: UserProfile }) {
             Batal
           </button>
           <button
-            className="btn-primary h-13 rounded-full bg-primary-900 text-[15px] font-semibold text-white"
+            className="btn-primary h-13 rounded-full bg-primary-900 text-[0.9375rem] font-semibold text-white"
             disabled={!isDirty || !isValid || isPending}
             type="submit"
           >
@@ -176,7 +180,7 @@ function EditProfileForm({ user }: { user: UserProfile }) {
           </span>
           <div className="mt-7 grid grid-cols-2 gap-3">
             <button
-              className="h-12 rounded-full border-[1.5px] border-primary-900/20 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
+              className="h-12 rounded-full border-[1.5px] border-primary-900/20 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
               disabled={isPending}
               onClick={() => setShowConfirm(false)}
               type="button"
@@ -184,7 +188,7 @@ function EditProfileForm({ user }: { user: UserProfile }) {
               Batal
             </button>
             <button
-              className="btn-primary h-12 rounded-full bg-primary-900 text-[15px] font-semibold text-white"
+              className="btn-primary h-12 rounded-full bg-primary-900 text-[0.9375rem] font-semibold text-white"
               disabled={isPending}
               onClick={() => void confirmSave()}
               type="button"
@@ -206,7 +210,7 @@ export function EditProfileView() {
       <div className="max-w-[760px]">
         <nav
           aria-label="Breadcrumb"
-          className="text-[15px] text-primary-900/75"
+          className="text-[0.9375rem] text-primary-900/75"
         >
           <Link
             className="font-semibold text-primary-500 underline-offset-4 hover:underline"
@@ -228,11 +232,11 @@ export function EditProfileView() {
           </div>
         ) : error || !user ? (
           <div className="mt-8 rounded-[24px] border border-af-500/30 bg-white p-7">
-            <p className="text-[16px] font-medium text-af-700">
-              {error ?? "Data profil tidak tersedia."}
+            <p className="text-[1rem] font-medium text-af-700">
+              {error?.message ?? "Data profil tidak tersedia."}
             </p>
             <button
-              className="btn-primary mt-5 h-12 rounded-full bg-primary-900 px-6 text-[15px] font-semibold text-white"
+              className="btn-primary mt-5 h-12 rounded-full bg-primary-900 px-6 text-[0.9375rem] font-semibold text-white"
               onClick={() => void reload()}
               type="button"
             >

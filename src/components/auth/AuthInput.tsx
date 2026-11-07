@@ -48,7 +48,7 @@ export function AuthInput({
   return (
     <div>
       <label
-        className="mb-2.5 block text-[15px] font-semibold tracking-[-0.01em] text-primary-900"
+        className="mb-2.5 block text-[0.9375rem] font-semibold tracking-[-0.01em] text-primary-900"
         htmlFor={inputId}
       >
         {label}
@@ -58,7 +58,7 @@ export function AuthInput({
           aria-describedby={describedBy || undefined}
           aria-invalid={Boolean(error)}
           autoComplete={autoComplete}
-          className={`h-14 w-full rounded-[14px] border-[1.5px] bg-white px-5 text-[16px] text-primary-900 outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-primary-900/60 focus:ring-4 ${
+          className={`h-14 w-full rounded-[14px] border-[1.5px] bg-white px-5 text-[1rem] text-primary-900 outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-primary-900/60 focus:ring-4 ${
             isPassword ? "pr-14" : ""
           } ${mono ? "font-mono tracking-[0.14em]" : "font-medium"} ${
             error
@@ -96,13 +96,13 @@ export function AuthInput({
         ) : null}
       </div>
       {hint && !error ? (
-        <p className="mt-2 text-[14px] text-primary-900/75" id={hintId}>
+        <p className="mt-2 text-[0.875rem] text-primary-900/75" id={hintId}>
           {hint}
         </p>
       ) : null}
       {error ? (
         <p
-          className="mt-2 flex items-start gap-1.5 text-[14px] font-medium text-af-700"
+          className="mt-2 flex items-start gap-1.5 text-[0.875rem] font-medium text-af-700"
           id={errorId}
           role="alert"
         >

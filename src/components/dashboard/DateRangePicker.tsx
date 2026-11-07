@@ -64,7 +64,7 @@ export function DateRangePicker({ onChange, value }: DateRangePickerProps) {
       <button
         aria-expanded={isOpen}
         aria-haspopup="dialog"
-        className="flex h-12 items-center gap-3 rounded-full border-[1.5px] border-primary-900/20 bg-white px-5 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
+        className="flex h-12 items-center gap-3 rounded-full border-[1.5px] border-primary-900/20 bg-white px-5 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
         onClick={toggleCalendar}
         type="button"
       >
@@ -87,7 +87,7 @@ export function DateRangePicker({ onChange, value }: DateRangePickerProps) {
           />
           <div className="mt-3 grid grid-cols-2 gap-2 border-t border-primary-900/10 pt-4">
             <button
-              className="h-11 rounded-full border-[1.5px] border-primary-900/20 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep"
+              className="h-11 rounded-full border-[1.5px] border-primary-900/20 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep"
               onClick={() => {
                 setDraftRange(undefined);
                 onChange(undefined);
@@ -98,7 +98,7 @@ export function DateRangePicker({ onChange, value }: DateRangePickerProps) {
               Reset Filter
             </button>
             <button
-              className="btn-primary h-11 rounded-full bg-primary-900 text-[15px] font-semibold text-white"
+              className="btn-primary h-11 rounded-full bg-primary-900 text-[0.9375rem] font-semibold text-white"
               disabled={!draftRange?.from || !draftRange.to}
               onClick={applyRange}
               type="button"

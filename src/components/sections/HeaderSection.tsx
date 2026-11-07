@@ -28,7 +28,7 @@ export function HeaderSection({ activePage = "home" }: HeaderSectionProps) {
               return (
                 <Link
                   aria-current={isActive ? "page" : undefined}
-                  className={`nav-pulse text-[15px] font-medium transition-colors duration-200 hover:text-primary-900 ${
+                  className={`nav-pulse text-[0.9375rem] font-medium transition-colors duration-200 hover:text-primary-900 ${
                     isActive ? "text-primary-900" : "text-primary-900/75"
                   }`}
                   href={item.href}
@@ -42,13 +42,13 @@ export function HeaderSection({ activePage = "home" }: HeaderSectionProps) {
 
           <div className="flex items-center gap-6">
             <Link
-              className="nav-pulse hidden text-[15px] font-semibold text-primary-900 sm:inline-flex"
+              className="nav-pulse hidden text-[0.9375rem] font-semibold text-primary-900 sm:inline-flex"
               href="/login"
             >
               Masuk
             </Link>
             <Link
-              className="btn-primary hidden h-11 items-center rounded-full bg-primary-900 px-6 text-[14px] font-semibold text-white md:inline-flex"
+              className="btn-primary hidden h-11 items-center rounded-full bg-primary-900 px-6 text-[0.875rem] font-semibold text-white md:inline-flex"
               href="/register"
             >
               Daftar

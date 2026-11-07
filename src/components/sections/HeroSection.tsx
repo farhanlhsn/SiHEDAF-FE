@@ -13,7 +13,7 @@ export function HeroSection() {
     >
       <div className="mx-auto w-full max-w-[1440px] px-5 lg:px-10">
         <p
-          className="hero-stagger flex items-center gap-3 text-[15px] font-medium text-primary-900/80"
+          className="hero-stagger flex items-center gap-3 text-[0.9375rem] font-medium text-primary-900/80"
           style={{ "--stagger": 0 } as React.CSSProperties}
         >
           <span aria-hidden="true" className="live-dot" />
@@ -36,20 +36,20 @@ export function HeroSection() {
           className="hero-stagger mt-10 grid gap-7 lg:grid-cols-12 lg:items-end"
           style={{ "--stagger": 2 } as React.CSSProperties}
         >
-          <p className="max-w-[520px] text-[18px] leading-[1.55] text-primary-900/80 lg:col-span-5">
+          <p className="max-w-[520px] text-[1.125rem] leading-[1.55] text-primary-900/80 lg:col-span-5">
             SiHEDAF memantau irama jantungmu dari pergelangan tangan dan memberi
             tahu kamu lebih awal, sebelum berujung stroke.
           </p>
           <div className="flex flex-wrap items-center gap-x-7 gap-y-4 lg:col-span-5 lg:col-start-8 lg:justify-end">
             <Link
-              className="btn-primary group inline-flex h-14 items-center gap-3 rounded-full bg-primary-900 pr-6 pl-7 text-[16px] font-semibold text-white"
+              className="btn-primary group inline-flex h-14 items-center gap-3 rounded-full bg-primary-900 pr-6 pl-7 text-[1rem] font-semibold text-white"
               href="/register"
             >
               Daftar sekarang
               <ArrowIcon className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
             </Link>
             <a
-              className="link-underline text-[16px] font-semibold text-primary-900"
+              className="link-underline text-[1rem] font-semibold text-primary-900"
               href="#cara-kerja"
             >
               Lihat cara kerjanya

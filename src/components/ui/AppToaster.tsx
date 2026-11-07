@@ -77,14 +77,14 @@ export function AppToaster() {
           loading: "border-primary-900/15 bg-white",
           content: "min-w-0 flex-1",
           icon: "mt-0.5 flex shrink-0 items-center",
-          title: "text-[15px] font-semibold leading-[1.4] text-primary-900",
-          description: "mt-0.5 text-[14px] leading-[1.45] text-primary-900/80",
+          title: "text-[0.9375rem] font-semibold leading-[1.4] text-primary-900",
+          description: "mt-0.5 text-[0.875rem] leading-[1.45] text-primary-900/80",
           closeButton:
             "absolute top-2.5 right-2.5 grid h-8 w-8 place-items-center rounded-full border border-primary-900/15 bg-white text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300",
           actionButton:
-            "rounded-full bg-primary-900 px-3.5 py-2 text-[14px] font-semibold text-white transition-colors hover:bg-primary-800 focus-visible:outline-2 focus-visible:outline-primary-300",
+            "rounded-full bg-primary-900 px-3.5 py-2 text-[0.875rem] font-semibold text-white transition-colors hover:bg-primary-800 focus-visible:outline-2 focus-visible:outline-primary-300",
           cancelButton:
-            "rounded-full border border-primary-900/20 bg-white px-3.5 py-2 text-[14px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300",
+            "rounded-full border border-primary-900/20 bg-white px-3.5 py-2 text-[0.875rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300",
         },
       }}
       visibleToasts={1}

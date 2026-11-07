@@ -14,6 +14,7 @@ import { HistoryDetailModal } from "@/components/dashboard/HistoryDetailModal";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { Sparkline } from "@/components/dashboard/Sparkline";
 import { StatusMark } from "@/components/dashboard/StatusMark";
+import { DataErrorState } from "@/components/ui/DataErrorState";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { useHistoryView } from "@/components/dashboard/hooks/UseHistoryView";
 import {
@@ -22,7 +23,7 @@ import {
 } from "@/components/dashboard/ReportRange";
 
 const pagerButtonClassName =
-  "flex h-11 items-center justify-center gap-1 rounded-full border-[1.5px] border-primary-900/20 bg-white px-3 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300 disabled:cursor-not-allowed disabled:border-primary-900/10 disabled:bg-transparent disabled:text-primary-900/70 sm:px-4";
+  "flex h-11 items-center justify-center gap-1 rounded-full border-[1.5px] border-primary-900/20 bg-white px-3 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300 disabled:cursor-not-allowed disabled:border-primary-900/10 disabled:bg-transparent disabled:text-primary-900/70 sm:px-4";
 
 export function HistoryView() {
   const {
@@ -65,7 +66,7 @@ export function HistoryView() {
             <h1 className="text-[clamp(2.2rem,3.8vw,3.4rem)] leading-[1] font-bold tracking-[-0.05em] text-primary-900">
               Riwayat Analisis
             </h1>
-            <p className="mt-3 max-w-[560px] text-[17px] leading-[1.55] text-primary-900/80">
+            <p className="mt-3 max-w-[560px] text-[1.0625rem] leading-[1.55] text-primary-900/80">
               Semua hasil analisis AI dari perangkat SiHEDAF-mu, urut dari yang
               terbaru.
             </p>
@@ -73,7 +74,7 @@ export function HistoryView() {
           <div className="flex flex-wrap items-center gap-3">
             <DateRangePicker onChange={handleRangeChange} value={dateRange} />
             <Link
-              className="inline-flex h-11 items-center rounded-full bg-primary-900 px-5 text-[15px] font-semibold text-white transition-colors hover:bg-primary-800 focus-visible:outline-2 focus-visible:outline-primary-300"
+              className="inline-flex h-11 items-center rounded-full bg-primary-900 px-5 text-[0.9375rem] font-semibold text-white transition-colors hover:bg-primary-800 focus-visible:outline-2 focus-visible:outline-primary-300"
               href={reportHref(rangeFromDateRange(dateRange))}
             >
               Buat laporan dokter
@@ -98,7 +99,7 @@ export function HistoryView() {
               >
                 {summary.value}
               </p>
-              <p className="mt-2 text-[14px] leading-[1.35] font-medium text-primary-900/80 sm:text-[15px]">
+              <p className="mt-2 text-[0.875rem] leading-[1.35] font-medium text-primary-900/80 sm:text-[0.9375rem]">
                 {summary.label}
               </p>
             </div>
@@ -124,7 +125,7 @@ export function HistoryView() {
               </>
             ) : null}
           </div>
-          <figcaption className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[14px] font-medium text-primary-900/80">
+          <figcaption className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[0.875rem] font-medium text-primary-900/80">
             <span className="inline-flex items-center gap-2">
               <span
                 aria-hidden="true"
@@ -144,7 +145,7 @@ export function HistoryView() {
 
         <article className="mt-10 overflow-hidden rounded-[24px] border border-primary-900/10 bg-white">
           <div className="px-5 py-5 sm:px-7 sm:py-6">
-            <h2 className="text-[20px] font-bold tracking-[-0.03em] text-primary-900">
+            <h2 className="text-[1.25rem] font-bold tracking-[-0.03em] text-primary-900">
               Daftar Riwayat
             </h2>
           </div>
@@ -152,7 +153,7 @@ export function HistoryView() {
           <ScrollArea className="w-full" viewportClassName="pb-2">
             <table className="w-full min-w-[680px] table-fixed border-collapse text-left">
               <thead>
-                <tr className="border-b border-primary-900/10 text-[14px] font-semibold text-primary-900/75">
+                <tr className="border-b border-primary-900/10 text-[0.875rem] font-semibold text-primary-900/75">
                   <th className="w-[32%] px-6 pb-3 font-semibold">
                     Waktu Analisis
                   </th>
@@ -171,7 +172,7 @@ export function HistoryView() {
                 {isLoading ? (
                   <tr>
                     <td
-                      className="px-6 py-12 text-center text-[15px] text-primary-900/75"
+                      className="px-6 py-12 text-center text-[0.9375rem] text-primary-900/75"
                       colSpan={4}
                     >
                       Memuat riwayat...
@@ -179,23 +180,8 @@ export function HistoryView() {
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td
-                      className="px-6 py-12 text-center"
-                      colSpan={4}
-                    >
-                      <p
-                        className="text-[15px] font-medium text-af-700"
-                        role="alert"
-                      >
-                        {error}
-                      </p>
-                      <button
-                        className="mt-4 h-11 rounded-full border-[1.5px] border-primary-900/20 px-5 text-[15px] font-semibold text-primary-900 hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
-                        onClick={reload}
-                        type="button"
-                      >
-                        Coba lagi
-                      </button>
+                    <td className="px-6 py-4" colSpan={4}>
+                      <DataErrorState {...error} onRetry={reload} />
                     </td>
                   </tr>
                 ) : (
@@ -226,10 +212,10 @@ export function HistoryView() {
                             }}
                             type="button"
                           >
-                            <span className="block text-[15px] font-semibold text-primary-900">
+                            <span className="block text-[0.9375rem] font-semibold text-primary-900">
                               {dateLabel ?? "—"}
                             </span>
-                            <span className="mt-0.5 block text-[14px] text-primary-900/75">
+                            <span className="mt-0.5 block text-[0.875rem] text-primary-900/75">
                               {timeLabel ?? ""}
                             </span>
                           </button>
@@ -244,7 +230,7 @@ export function HistoryView() {
                             )}
                             <div>
                               <p
-                                className={`text-[15px] font-semibold ${
+                                className={`text-[0.9375rem] font-semibold ${
                                   isUnknown
                                     ? "text-primary-900/70"
                                     : isNormal
@@ -259,7 +245,7 @@ export function HistoryView() {
                                     : "Terdeteksi AF"}
                               </p>
                               {isUnknown ? null : (
-                                <p className="mt-0.5 text-[14px] text-primary-900/75">
+                                <p className="mt-0.5 text-[0.875rem] text-primary-900/75">
                                   {isNormal
                                     ? "Tidak ditemukan pola AF"
                                     : "Pola AF teridentifikasi"}
@@ -268,7 +254,7 @@ export function HistoryView() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-[15px] font-semibold tabular-nums text-primary-900">
+                        <td className="px-4 py-3 text-[0.9375rem] font-semibold tabular-nums text-primary-900">
                           {formatConfidence(row.confidenceLevel) ?? "—"}
                         </td>
                         <td className="px-6 py-3">
@@ -284,7 +270,7 @@ export function HistoryView() {
               </tbody>
             </table>
             {!isLoading && !error && historyData.length === 0 ? (
-              <p className="px-6 py-12 text-center text-[15px] text-primary-900/75">
+              <p className="px-6 py-12 text-center text-[0.9375rem] text-primary-900/75">
                 Tidak ada riwayat pada rentang tanggal ini.
               </p>
             ) : null}
@@ -363,7 +349,7 @@ export function HistoryView() {
                     if (page.val === "...") {
                       return (
                         <span
-                          className={`px-1 text-[15px] text-primary-900/75 ${page.hiddenOnMobile ? "hidden sm:block" : "block"}`}
+                          className={`px-1 text-[0.9375rem] text-primary-900/75 ${page.hiddenOnMobile ? "hidden sm:block" : "block"}`}
                           key={`ellipsis-${index}`}
                         >
                           ...
@@ -376,7 +362,7 @@ export function HistoryView() {
                         aria-current={
                           page.val === currentPage ? "page" : undefined
                         }
-                        className={`h-11 min-w-11 place-items-center rounded-full px-2 text-[15px] font-semibold tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-primary-300 ${
+                        className={`h-11 min-w-11 place-items-center rounded-full px-2 text-[0.9375rem] font-semibold tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-primary-300 ${
                           page.hiddenOnMobile ? "hidden sm:grid" : "grid"
                         } ${
                           page.val === currentPage
@@ -412,12 +398,12 @@ export function HistoryView() {
               </button>
             </nav>
 
-            <label className="flex w-full items-center justify-between gap-3 text-[15px] text-primary-900/80 sm:w-auto sm:justify-start">
+            <label className="flex w-full items-center justify-between gap-3 text-[0.9375rem] text-primary-900/80 sm:w-auto sm:justify-start">
               <span>Tampilkan</span>
               <span className="relative">
                 <select
                   aria-label="Jumlah riwayat per halaman"
-                  className="h-11 appearance-none rounded-full border-[1.5px] border-primary-900/20 bg-white pr-9 pl-4 text-[15px] font-semibold text-primary-900 outline-none focus:border-primary-300 focus-visible:ring-4 focus-visible:ring-primary-100"
+                  className="h-11 appearance-none rounded-full border-[1.5px] border-primary-900/20 bg-white pr-9 pl-4 text-[0.9375rem] font-semibold text-primary-900 outline-none focus:border-primary-300 focus-visible:ring-4 focus-visible:ring-primary-100"
                   onChange={(event) =>
                     handleItemsPerPageChange(Number(event.target.value))
                   }

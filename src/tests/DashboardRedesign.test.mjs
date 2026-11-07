@@ -9,10 +9,12 @@ const sourceDirectory = path.resolve(testsDirectory, "..");
 
 const viewFiles = [
   "components/dashboard/DashboardShell.tsx",
+  "components/dashboard/OfflineBanner.tsx",
   "components/dashboard/DashboardSidebar.tsx",
   "components/dashboard/DashboardTopbar.tsx",
   "components/dashboard/DashboardOverview.tsx",
   "components/dashboard/FirstRunGuide.tsx",
+  "components/dashboard/DeviceOfflineCard.tsx",
   "components/dashboard/SignalChart.tsx",
   "components/dashboard/PpgTrace.tsx",
   "components/dashboard/Sparkline.tsx",
@@ -25,9 +27,14 @@ const viewFiles = [
   "components/dashboard/DoctorReportView.tsx",
   "components/dashboard/DateRangePicker.tsx",
   "components/dashboard/ProfileView.tsx",
+  "components/dashboard/TextSizeSetting.tsx",
+  "components/dashboard/InstallGuide.tsx",
   "components/dashboard/EditProfileView.tsx",
   "components/dashboard/ProfileAvatar.tsx",
   "features/profile/client/ProfileProvider.tsx",
+  "components/ui/DataErrorState.tsx",
+  "components/ui/BrokenSignal.tsx",
+  "components/ui/FetchError.ts",
 ];
 
 async function readSource(relativePath) {
@@ -45,11 +52,9 @@ test("styles the dashboard with design tokens and readable type only", async () 
       /\b(?:text|bg|border|ring|from|via|to|fill|stroke|outline)-\[#/,
       `${file} uses a raw hex colour instead of a token`,
     );
-    assert.doesNotMatch(
-      source,
-      /text-\[(?:[0-9]|1[0-2])px\]/,
-      `${file} has type below 13px`,
-    );
+    for (const [, size] of source.matchAll(/text-\[([\d.]+)rem\]/g)) {
+      assert.ok(Number(size) >= 0.8125, `${file} has type below 13px (${size}rem)`);
+    }
     assert.doesNotMatch(
       source,
       /(?<!placeholder:)text-primary-900\/(?:[1-6]\d|[1-9])\b/,

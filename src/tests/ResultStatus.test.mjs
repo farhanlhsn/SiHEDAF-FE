@@ -32,8 +32,7 @@ test("normal and AF percentages use largest-remainder shares", () => {
 
 test("history errors are Indonesian and retryable", () => {
   assert.doesNotMatch(historyHook, /err\.message/);
-  assert.match(historyHook, /Gagal mengambil riwayat\./);
+  assert.match(historyHook, /describeCaughtError/);
   assert.match(historyHook, /reload/);
-  assert.match(history, /Coba lagi/);
-  assert.match(history, /onClick=\{reload\}/);
+  assert.match(history, /<DataErrorState \{\.\.\.error\} onRetry=\{reload\}/);
 });

@@ -28,7 +28,7 @@ export function DashboardTopbar({
 
   return (
     <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
-      <span className="truncate text-[16px] font-bold tracking-[-0.02em] text-primary-900">
+      <span className="truncate text-[1rem] font-bold tracking-[-0.02em] text-primary-900">
         {title}
       </span>
 
@@ -47,17 +47,17 @@ export function DashboardTopbar({
         ) : null}
         <Link
           aria-label={`Buka profil ${fullname}`}
-          className="flex h-11 items-center gap-2.5 rounded-full border border-primary-900/15 bg-white pr-3 pl-1.5 text-[14px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300 sm:pr-4"
+          className="flex h-11 items-center gap-2.5 rounded-full border border-primary-900/15 bg-white pr-3 pl-1.5 text-[0.875rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300 sm:pr-4"
           href="/profil"
         >
           {user ? (
             <ProfileAvatar
-              className="h-8 w-8 border-0 text-[13px]"
+              className="h-8 w-8 border-0 text-[0.8125rem]"
               fullname={user.fullname}
               profileImage={user.profileImage}
             />
           ) : (
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-primary-800 text-[13px] font-semibold text-white">
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-primary-800 text-[0.8125rem] font-semibold text-white">
               {profileInitials(fullname)}
             </span>
           )}

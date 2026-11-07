@@ -27,7 +27,7 @@ function UndiagnosedDots() {
       </div>
       <p
         aria-hidden="true"
-        className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[14px] font-medium text-primary-900/80"
+        className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[0.875rem] font-medium text-primary-900/80"
       >
         <span className="inline-flex items-center gap-2">
           <span className="size-3 rounded-full bg-primary-300" /> terdiagnosis
@@ -70,7 +70,7 @@ function RiskBars() {
           className="grid grid-cols-[92px_1fr_52px] items-center gap-3"
           key={row.label}
         >
-          <span className="text-[14px] font-medium text-primary-900/80">
+          <span className="text-[0.875rem] font-medium text-primary-900/80">
             {row.label}
           </span>
           <span className="relative flex h-4">
@@ -95,12 +95,12 @@ function RiskBars() {
               />
             ) : null}
           </span>
-          <span className="text-right text-[15px] font-semibold tabular-nums text-primary-900">
+          <span className="text-right text-[0.9375rem] font-semibold tabular-nums text-primary-900">
             {row.value}
           </span>
         </div>
       ))}
-      <p className="text-[14px] text-primary-900/75">
+      <p className="text-[0.875rem] text-primary-900/75">
         Garis arsir: rentang 5–7 kali.
       </p>
     </div>
@@ -123,7 +123,7 @@ function StrokeShare() {
       </span>
       <span
         aria-hidden="true"
-        className="mt-2 flex justify-between text-[13px] font-medium tabular-nums text-primary-900/75"
+        className="mt-2 flex justify-between text-[0.8125rem] font-medium tabular-nums text-primary-900/75"
       >
         <span>0%</span>
         <span>100% stroke iskemik</span>
@@ -162,7 +162,7 @@ export function AfFacts() {
           <p className="text-[clamp(3rem,5vw,4.75rem)] leading-none font-bold tracking-[-0.055em] text-primary-900 tabular-nums">
             {fact.figure}
           </p>
-          <p className="mt-4 max-w-[360px] text-[17px] leading-[1.5] text-primary-900/80">
+          <p className="mt-4 max-w-[360px] text-[1.0625rem] leading-[1.5] text-primary-900/80">
             {fact.text}
           </p>
           {fact.chart}

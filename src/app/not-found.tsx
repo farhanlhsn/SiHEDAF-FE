@@ -11,7 +11,7 @@ export default function NotFound() {
       <HeaderSection />
       <main className="page-enter flex flex-1 flex-col justify-center py-16 lg:py-24">
         <div className="mx-auto w-full max-w-[1440px] px-5 lg:px-10">
-          <p className="flex items-center gap-3 text-[15px] font-semibold text-primary-500">
+          <p className="flex items-center gap-3 text-[0.9375rem] font-semibold text-primary-500">
             <span className="tabular-nums">404</span>
             <span aria-hidden="true" className="h-px w-8 bg-primary-300" />
             Sinyal hilang
@@ -20,7 +20,7 @@ export default function NotFound() {
             <span className="font-bold">Halaman ini</span>{" "}
             <span className="font-extralight">tidak ditemukan.</span>
           </h1>
-          <p className="mt-6 max-w-[520px] text-[18px] leading-[1.6] text-primary-900/80">
+          <p className="mt-6 max-w-[520px] text-[1.125rem] leading-[1.6] text-primary-900/80">
             Tautannya mungkin salah ketik, atau halamannya sudah dipindahkan.
             Coba mulai lagi dari beranda.
           </p>
@@ -30,14 +30,14 @@ export default function NotFound() {
 
         <div className="mx-auto flex w-full max-w-[1440px] flex-wrap items-center gap-x-7 gap-y-4 px-5 lg:px-10">
           <Link
-            className="btn-primary group inline-flex h-14 items-center gap-3 rounded-full bg-primary-900 pr-6 pl-7 text-[16px] font-semibold text-white"
+            className="btn-primary group inline-flex h-14 items-center gap-3 rounded-full bg-primary-900 pr-6 pl-7 text-[1rem] font-semibold text-white"
             href="/"
           >
             Kembali ke beranda
             <ArrowIcon className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
           </Link>
           <Link
-            className="link-underline text-[16px] font-semibold text-primary-900"
+            className="link-underline text-[1rem] font-semibold text-primary-900"
             href="/dashboard"
           >
             Buka dashboard

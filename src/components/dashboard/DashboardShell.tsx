@@ -6,6 +6,7 @@ import { PanelLeftClose, PanelLeftOpen, PanelRightOpen } from "lucide-react";
 
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardTopbar } from "@/components/dashboard/DashboardTopbar";
+import { OfflineBanner } from "@/components/dashboard/OfflineBanner";
 import { NotificationPanel } from "@/components/dashboard/NotificationPanel";
 import { ProfileProvider } from "@/features/profile/client/ProfileProvider";
 
@@ -125,6 +126,7 @@ export function DashboardShell({ children, initialUser }: DashboardShellProps) {
                 hasUnread={hasUnread}
               />
             </header>
+            <OfflineBanner besideNotificationButton={isDashboardRoute} />
 
             <div className="relative flex min-w-0 flex-1 flex-col xl:flex-row print:block">
               {isDashboardRoute ? (

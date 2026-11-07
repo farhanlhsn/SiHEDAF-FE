@@ -43,7 +43,7 @@ export function AuthVisualPanel({
           <span className="font-extralight">{title.light}</span>
         </h2>
         <p
-          className="hero-stagger mt-5 max-w-[440px] text-[17px] leading-[1.6] text-primary-900/80"
+          className="hero-stagger mt-5 max-w-[440px] text-[1.0625rem] leading-[1.6] text-primary-900/80"
           style={{ "--stagger": 1 } as React.CSSProperties}
         >
           {description}

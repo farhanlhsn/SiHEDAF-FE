@@ -20,7 +20,7 @@ test("shares backend profile state across dashboard routes", async () => {
   assert.match(shell, /ProfileProvider/);
   assert.match(provider, /fetchCurrentProfile/);
   assert.match(provider, /status === 401/);
-  assert.match(provider, /router\.replace\("\/login"\)/);
+  assert.match(provider, /router\.replace\(SESSION_EXPIRED_PATH\)/);
   assert.match(provider, /createContext/);
   assert.match(provider, /useProfile/);
   assert.match(provider, /if \(isLoading\)/);

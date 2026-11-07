@@ -48,7 +48,7 @@ export function DashboardSidebar({
           width={30}
         />
         <span
-          className={`ml-3 text-[19px] font-bold tracking-[-0.035em] whitespace-nowrap text-primary-900 transition-[opacity,max-width,margin] duration-300 ${
+          className={`ml-3 text-[1.1875rem] font-bold tracking-[-0.035em] whitespace-nowrap text-primary-900 transition-[opacity,max-width,margin] duration-300 ${
             collapsed ? "ml-0 max-w-0 opacity-0" : "max-w-28 opacity-100"
           }`}
         >
@@ -95,7 +95,7 @@ export function DashboardSidebar({
                     />
                   </span>
                   <span
-                    className={`overflow-hidden text-[15px] whitespace-nowrap transition-[opacity,max-width] duration-300 ${
+                    className={`overflow-hidden text-[0.9375rem] whitespace-nowrap transition-[opacity,max-width] duration-300 ${
                       collapsed ? "max-w-0 opacity-0" : "max-w-40 opacity-100"
                     } ${
                       isActive
@@ -114,7 +114,7 @@ export function DashboardSidebar({
 
       <div className="mt-auto px-6 pb-6">
         <p
-          className={`overflow-hidden text-[13px] whitespace-nowrap text-primary-900/70 transition-opacity duration-200 ${
+          className={`overflow-hidden text-[0.8125rem] whitespace-nowrap text-primary-900/70 transition-opacity duration-200 ${
             collapsed ? "opacity-0" : "opacity-100"
           }`}
         >

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { SessionExpiredError } from "../features/auth/session/client/ApiFetch";
 import {
   EMPTY_BASELINE,
   POLL_INTERVAL_MS,
@@ -17,6 +18,7 @@ import {
   requestSignal,
   restartAction,
   sessionStartFrom,
+  toggleBlock,
   waitFor,
 } from "../components/dashboard/MonitoringSession";
 
@@ -189,16 +191,60 @@ test("rememberResult tracks the shown result and a resumed session", () => {
 });
 
 test("restartAction offers a restart only once no session is running", () => {
-  const ready = { deviceOnline: true, busy: false };
+  const ready = { device: "online", busy: false } as const;
   assert.equal(restartAction("idle", ready), "ready");
   assert.equal(restartAction("result", ready), "ready");
   assert.equal(restartAction("timeout", ready), "ready");
   assert.equal(restartAction("recording", ready), "hidden");
   assert.equal(restartAction("analysing", ready), "hidden");
-  assert.equal(restartAction("result", { deviceOnline: true, busy: true }), "busy");
-  assert.equal(restartAction("result", { deviceOnline: false, busy: false }), "offline");
-  assert.equal(restartAction("result", { deviceOnline: false, busy: true }), "offline");
-  assert.equal(restartAction("recording", { deviceOnline: false, busy: true }), "hidden");
+  assert.equal(restartAction("result", { device: "online", busy: true }), "busy");
+  assert.equal(restartAction("result", { device: "offline", busy: false }), "offline");
+  assert.equal(restartAction("result", { device: "offline", busy: true }), "offline");
+  assert.equal(restartAction("recording", { device: "offline", busy: true }), "hidden");
+});
+
+test("restartAction reports a missing network before device checks", () => {
+  const base = { device: "online", busy: false, networkOnline: false } as const;
+  assert.equal(restartAction("idle", base), "no-network");
+  assert.equal(restartAction("result", { ...base, device: "offline" }), "no-network");
+  assert.equal(restartAction("result", { ...base, device: "error" }), "no-network");
+  assert.equal(restartAction("recording", base), "hidden");
+  assert.equal(restartAction("analysing", base), "hidden");
+  assert.equal(
+    restartAction("idle", { device: "online", busy: false, networkOnline: true }),
+    "ready",
+  );
+});
+
+test("restartAction never claims the device is offline when its state is unknown", () => {
+  assert.equal(restartAction("result", { device: "error", busy: false }), "device-unknown");
+  assert.equal(restartAction("timeout", { device: "error", busy: false }), "device-unknown");
+  assert.equal(restartAction("idle", { device: "error", busy: true }), "device-unknown");
+  assert.equal(restartAction("recording", { device: "error", busy: false }), "hidden");
+  assert.equal(restartAction("analysing", { device: "error", busy: false }), "hidden");
+});
+
+test("restartAction treats no bound device like an offline one", () => {
+  assert.equal(restartAction("result", { device: "none", busy: false }), "offline");
+  assert.equal(restartAction("idle", { device: "none", busy: true }), "offline");
+});
+
+test("toggleBlock says why Mulai/Hentikan Monitoring is unavailable", () => {
+  assert.equal(toggleBlock("idle", { device: "online", networkOnline: true }), null);
+  assert.equal(toggleBlock("recording", { device: "online", networkOnline: true }), null);
+  // No internet blocks both starting and stopping, as before.
+  assert.equal(toggleBlock("idle", { device: "online", networkOnline: false }), "no-network");
+  assert.equal(toggleBlock("recording", { device: "error", networkOnline: false }), "no-network");
+  // An unknown device state blocks starting, not stopping a running session.
+  assert.equal(toggleBlock("idle", { device: "error", networkOnline: true }), "device-unknown");
+  assert.equal(toggleBlock("result", { device: "error", networkOnline: true }), "device-unknown");
+  assert.equal(toggleBlock("timeout", { device: "error", networkOnline: true }), "device-unknown");
+  assert.equal(toggleBlock("recording", { device: "error", networkOnline: true }), null);
+  // Loading, offline or no device: unavailable (explained by the device card).
+  for (const device of ["loading", "offline", "none"] as const) {
+    assert.equal(toggleBlock("idle", { device, networkOnline: true }), "device-unavailable");
+    assert.equal(toggleBlock("recording", { device, networkOnline: true }), "device-unavailable");
+  }
 });
 
 function fakeClock() {
@@ -349,18 +395,9 @@ test("rememberInitial fills only a baseline that knows nothing yet", () => {
 });
 
 test("restartAction treats a device still loading as busy, not offline", () => {
-  assert.equal(
-    restartAction("result", { deviceOnline: false, deviceLoading: true, busy: false }),
-    "busy",
-  );
-  assert.equal(
-    restartAction("idle", { deviceOnline: false, deviceLoading: false, busy: false }),
-    "offline",
-  );
-  assert.equal(
-    restartAction("recording", { deviceOnline: false, deviceLoading: true, busy: false }),
-    "hidden",
-  );
+  assert.equal(restartAction("result", { device: "loading", busy: false }), "busy");
+  assert.equal(restartAction("idle", { device: "offline", busy: false }), "offline");
+  assert.equal(restartAction("recording", { device: "loading", busy: false }), "hidden");
 });
 
 test("afterToggleTimeout adopts the state that /latest reports", () => {
@@ -385,4 +422,24 @@ test("start and stop wait longer than polls; timeouts are told apart from failur
   assert.equal(isTimeoutError(new TypeError("Failed to fetch")), false);
   assert.equal(isTimeoutError(new SyntaxError("Unexpected token")), false);
   assert.equal(isTimeoutError(undefined), false);
+});
+
+test("pollForFreshResult stops on an expired session instead of retrying", async () => {
+  const { log, wait } = fakeClock();
+  let fetches = 0;
+  const outcome = await pollForFreshResult({
+    fetchLatest: async () => {
+      fetches += 1;
+      throw new SessionExpiredError();
+    },
+    isFresh: () => true,
+    wait,
+    isCancelled: () => false,
+    maxAttempts: 5,
+    intervalMs: 3000,
+  });
+
+  assert.deepEqual(outcome, { kind: "cancelled" });
+  assert.equal(fetches, 1);
+  assert.deepEqual(log, []);
 });

@@ -63,7 +63,7 @@ export function LoginForm() {
 
   return (
     <div>
-      <p className="text-[15px] font-semibold text-primary-500">
+      <p className="text-[0.9375rem] font-semibold text-primary-500">
         Akun SiHEDAF
       </p>
       <h1 className="mt-3 text-[clamp(2.1rem,3vw,2.75rem)] leading-[1.02] font-bold tracking-[-0.045em] text-primary-900">
@@ -115,7 +115,7 @@ export function LoginForm() {
           />
           <div className="mt-3 text-right">
             <Link
-              className="text-[15px] font-semibold text-primary-500 underline-offset-4 hover:underline"
+              className="text-[0.9375rem] font-semibold text-primary-500 underline-offset-4 hover:underline"
               href="/lupa-kata-sandi"
             >
               Lupa kata sandi?
@@ -124,7 +124,7 @@ export function LoginForm() {
         </div>
 
         <button
-          className="btn-primary h-14 w-full rounded-full bg-primary-900 text-[16px] font-semibold text-white"
+          className="btn-primary h-14 w-full rounded-full bg-primary-900 text-[1rem] font-semibold text-white"
           disabled={!isValid || isPending}
           type="submit"
         >
@@ -132,7 +132,7 @@ export function LoginForm() {
         </button>
       </form>
 
-      <p className="mt-7 text-center text-[15px] text-primary-900/75">
+      <p className="mt-7 text-center text-[0.9375rem] text-primary-900/75">
         Belum punya akun?{" "}
         <Link
           className="font-semibold text-primary-500 underline-offset-4 hover:underline"

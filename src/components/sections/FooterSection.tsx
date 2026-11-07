@@ -21,10 +21,10 @@ export function FooterSection() {
         <div className="grid gap-12 lg:grid-cols-12">
           <div className="lg:col-span-6">
             <BrandLogo tone="light" />
-            <p className="mt-6 text-[18px] font-semibold tracking-[-0.02em] text-white">
+            <p className="mt-6 text-[1.125rem] font-semibold tracking-[-0.02em] text-white">
               Sistem Hemat Energi Detektor Atrial Fibrilasi
             </p>
-            <p className="mt-4 max-w-[480px] text-[15px] leading-[1.6] text-white/75">
+            <p className="mt-4 max-w-[480px] text-[0.9375rem] leading-[1.6] text-white/75">
               SiHEDAF adalah alat bantu deteksi dini, bukan pengganti diagnosis
               dokter. Jika kamu merasakan keluhan, segera konsultasikan ke
               tenaga kesehatan.
@@ -36,14 +36,14 @@ export function FooterSection() {
             className="grid grid-cols-2 gap-8 lg:col-span-5 lg:col-start-8"
           >
             <div>
-              <p className="text-[13px] font-semibold tracking-[0.08em] text-white/70 uppercase">
+              <p className="text-[0.8125rem] font-semibold tracking-[0.08em] text-white/70 uppercase">
                 Jelajahi
               </p>
               <ul className="mt-4 space-y-3">
                 {footerNavigation.map((item) => (
                   <li key={item.href}>
                     <Link
-                      className="footer-link text-[16px] font-medium text-white"
+                      className="footer-link text-[1rem] font-medium text-white"
                       href={item.href}
                     >
                       {item.label}
@@ -53,14 +53,14 @@ export function FooterSection() {
               </ul>
             </div>
             <div>
-              <p className="text-[13px] font-semibold tracking-[0.08em] text-white/70 uppercase">
+              <p className="text-[0.8125rem] font-semibold tracking-[0.08em] text-white/70 uppercase">
                 Akun
               </p>
               <ul className="mt-4 space-y-3">
                 {accountNavigation.map((item) => (
                   <li key={item.href}>
                     <Link
-                      className="footer-link text-[16px] font-medium text-white"
+                      className="footer-link text-[1rem] font-medium text-white"
                       href={item.href}
                     >
                       {item.label}
@@ -81,7 +81,7 @@ export function FooterSection() {
       </div>
 
       <div className="relative border-t border-white/10 bg-primary-900">
-        <div className="mx-auto flex min-h-[88px] max-w-[1440px] flex-col items-start justify-center gap-2 px-5 py-6 text-[14px] text-white/70 sm:flex-row sm:items-center sm:justify-between lg:px-10">
+        <div className="mx-auto flex min-h-[88px] max-w-[1440px] flex-col items-start justify-center gap-2 px-5 py-6 text-[0.875rem] text-white/70 sm:flex-row sm:items-center sm:justify-between lg:px-10">
           <p>© 2026 SiHEDAF. Hak cipta dilindungi.</p>
           <p>Dibuat untuk deteksi dini, dengan sepenuh hati.</p>
         </div>

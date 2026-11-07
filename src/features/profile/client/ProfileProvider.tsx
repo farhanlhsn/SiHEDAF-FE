@@ -11,14 +11,20 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 
+import { DataErrorState } from "@/components/ui/DataErrorState";
+import {
+  describeCaughtError,
+  type DataError,
+} from "@/components/ui/FetchError";
 import { PulseLoader } from "@/components/ui/PulseLoader";
+import { SESSION_EXPIRED_PATH } from "@/features/auth/session/client/ApiFetch";
 
 import type { UserProfile } from "@/features/profile/shared/ProfileTypes";
 
 import { fetchCurrentProfile } from "./services/ProfileClient";
 
 type ProfileContextValue = {
-  error: string | null;
+  error: DataError | null;
   isLoading: boolean;
   reload: () => Promise<void>;
   updateUser: (changes: Partial<Pick<UserProfile, "fullname">>) => void;
@@ -37,7 +43,7 @@ export function ProfileProvider({
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(initialUser ?? null);
   const [isLoading, setIsLoading] = useState(!initialUser);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<DataError | null>(null);
 
   const reload = useCallback(async () => {
     setIsLoading(true);
@@ -47,11 +53,10 @@ export function ProfileProvider({
     if (!result.success) {
       setIsLoading(false);
       if (result.status === 401) {
-        setError(result.message);
-        router.replace("/login");
+        router.replace(SESSION_EXPIRED_PATH);
         return;
       }
-      setError(result.message);
+      setError(describeCaughtError(undefined, result.status));
       return;
     }
 
@@ -70,11 +75,10 @@ export function ProfileProvider({
       if (!result.success) {
         setIsLoading(false);
         if (result.status === 401) {
-          setError(result.message);
-          router.replace("/login");
+          router.replace(SESSION_EXPIRED_PATH);
           return;
         }
-        setError(result.message);
+        setError(describeCaughtError(undefined, result.status));
         return;
       }
 
@@ -114,22 +118,16 @@ export function ProfileProvider({
     return (
       <main className="grid min-h-dvh place-items-center bg-paper px-6">
         <div className="w-full max-w-md rounded-[24px] border border-primary-900/10 bg-white p-8 text-center">
-          <h1 className="text-[24px] font-bold tracking-[-0.035em] text-primary-900">
+          <h1 className="text-[1.5rem] font-bold tracking-[-0.035em] text-primary-900">
             Sesi belum dapat diverifikasi
           </h1>
-          <p className="mt-3 text-[16px] leading-[1.55] text-primary-900/80">
-            {error ?? "Konten dashboard belum dapat ditampilkan."}
-          </p>
-          <p className="mt-2 text-[15px] text-primary-900/75">
-            Konten dashboard belum dapat ditampilkan sebelum sesi terverifikasi.
-          </p>
-          <button
-            className="btn-primary mt-6 h-12 rounded-full bg-primary-900 px-7 text-[15px] font-semibold text-white"
-            onClick={() => void reload()}
-            type="button"
-          >
-            Coba lagi
-          </button>
+          <DataErrorState
+            message={
+              error?.message ?? "Konten dashboard belum dapat ditampilkan."
+            }
+            onRetry={() => void reload()}
+            title={error?.title ?? "Profil belum dapat dimuat"}
+          />
         </div>
       </main>
     );

@@ -22,7 +22,7 @@ type HistoryDetailModalProps = Readonly<{
 }>;
 
 const actionClassName =
-  "inline-flex h-12 items-center justify-center rounded-full px-6 text-[16px] font-semibold focus-visible:outline-2 focus-visible:outline-primary-300";
+  "inline-flex h-12 items-center justify-center rounded-full px-6 text-[1rem] font-semibold focus-visible:outline-2 focus-visible:outline-primary-300";
 
 export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
   const result = resultStatus(item?.resultLabel);
@@ -59,7 +59,7 @@ export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
             <div className="flex items-center gap-3">
               <StatusMark size="small" status={isNormal ? "normal" : "af"} />
               <p
-                className={`text-[15px] font-semibold ${
+                className={`text-[0.9375rem] font-semibold ${
                   isNormal ? "text-primary-500" : "text-af-700"
                 }`}
               >
@@ -78,17 +78,17 @@ export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
           <dl className="grid gap-4 sm:grid-cols-3">
             {facts.map((fact) => (
               <div key={fact.label}>
-                <dt className="text-[14px] font-medium text-primary-900/75">
+                <dt className="text-[0.875rem] font-medium text-primary-900/75">
                   {fact.label}
                 </dt>
-                <dd className="mt-1 text-[16px] font-semibold break-words text-primary-900">
+                <dd className="mt-1 text-[1rem] font-semibold break-words text-primary-900">
                   {fact.value}
                 </dd>
               </div>
             ))}
           </dl>
 
-          <p className="text-[16px] leading-[1.55] text-primary-900/80">
+          <p className="text-[1rem] leading-[1.55] text-primary-900/80">
             {isUnknown
               ? "Rekaman ini belum memiliki hasil analisis AI."
               : isNormal
