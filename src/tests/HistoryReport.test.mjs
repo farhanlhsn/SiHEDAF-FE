@@ -259,3 +259,9 @@ test("nothing on the dashboard counts beats", async () => {
     assert.doesNotMatch(code, /\bbpm\b|peak|denyut per menit|detak per menit/i, file);
   }
 });
+
+test("the report's six-column event table scrolls sideways on phones and fits print", async () => {
+  const report = await read("components/dashboard/DoctorReportView.tsx");
+  assert.match(report, /<ScrollArea\s+className="mt-3 w-full print:overflow-visible"/);
+  assert.match(report, /<table className="w-full min-w-\[640px\] border-collapse text-left print:min-w-0">/);
+});

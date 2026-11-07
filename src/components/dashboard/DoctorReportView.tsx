@@ -19,6 +19,7 @@ import { useDoctorReport } from "@/components/dashboard/hooks/UseDoctorReport";
 import { toDateRange } from "@/components/dashboard/ReportRange";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { DataErrorState } from "@/components/ui/DataErrorState";
+import { ScrollArea } from "@/components/ui/ScrollArea";
 import { PulseLoader } from "@/components/ui/PulseLoader";
 
 type DoctorReportViewProps = {
@@ -166,60 +167,66 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                     </p>
                   )
                 ) : (
-                  <table className="mt-3 w-full border-collapse text-left">
-                    <thead>
-                      <tr className="border-b border-primary-900/10 text-[0.875rem] font-semibold text-primary-900/75">
-                        <th className="w-12 pb-2 font-semibold">No</th>
-                        <th className="pb-2 font-semibold">Jenis</th>
-                        <th className="pb-2 font-semibold">Waktu</th>
-                        <th className="pb-2 font-semibold">Durasi</th>
-                        <th className="pb-2 font-semibold">Keyakinan AI</th>
-                        <th className="w-[30%] pb-2 font-semibold">Grafik</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {report.afEvents.map((item, index) => (
-                        <tr
-                          className="print-avoid-break border-b border-primary-900/[0.07]"
-                          key={item.id}
-                        >
-                          <td className="py-3 text-[0.9375rem] tabular-nums text-primary-900">
-                            {index + 1}
-                          </td>
-                          <td className="py-3 text-[0.9375rem] font-semibold text-af-700">
-                            <span className="flex items-center gap-2">
-                              <StatusMark
-                                label={RESULT_COPY[classifyResult(item)].label}
-                                size="small"
-                                status="af"
-                              />
-                              <span>
-                                {classifyResult(item) === "flutter" ? "AFL" : "AF"}
-                              </span>
-                            </span>
-                          </td>
-                          <td className="py-3 text-[0.9375rem] text-primary-900">
-                            {formatWib(item.requestedAt) ?? "—"}
-                          </td>
-                          <td className="py-3 text-[0.9375rem] tabular-nums text-primary-900">
-                            {recordingDuration(item.ppgResult?.rawPpgData) ?? "—"}
-                          </td>
-                          <td className="py-3 text-[0.9375rem] text-primary-900">
-                            {formatConfidence(item.confidenceLevel) ?? "—"}
-                          </td>
-                          <td className="py-3">
-                            <PpgTrace
-                              className="h-12 w-full"
-                              data={item.ppgResult?.rawPpgData}
-                              label={`Grafik PPG kejadian nomor ${index + 1}`}
-                              sampleRate={SAMPLE_RATE_HZ}
-                              tone="pink"
-                            />
-                          </td>
+                  // Six columns do not fit a phone: scroll sideways there; print fits A4.
+                  <ScrollArea
+                    className="mt-3 w-full print:overflow-visible"
+                    viewportClassName="pb-2 print:pb-0"
+                  >
+                    <table className="w-full min-w-[640px] border-collapse text-left print:min-w-0">
+                      <thead>
+                        <tr className="border-b border-primary-900/10 text-[0.875rem] font-semibold text-primary-900/75">
+                          <th className="w-12 pb-2 font-semibold">No</th>
+                          <th className="pb-2 font-semibold">Jenis</th>
+                          <th className="pb-2 font-semibold">Waktu</th>
+                          <th className="pb-2 font-semibold">Durasi</th>
+                          <th className="pb-2 font-semibold">Keyakinan AI</th>
+                          <th className="w-[30%] pb-2 font-semibold">Grafik</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {report.afEvents.map((item, index) => (
+                          <tr
+                            className="print-avoid-break border-b border-primary-900/[0.07]"
+                            key={item.id}
+                          >
+                            <td className="py-3 text-[0.9375rem] tabular-nums text-primary-900">
+                              {index + 1}
+                            </td>
+                            <td className="py-3 text-[0.9375rem] font-semibold text-af-700">
+                              <span className="flex items-center gap-2">
+                                <StatusMark
+                                  label={RESULT_COPY[classifyResult(item)].label}
+                                  size="small"
+                                  status="af"
+                                />
+                                <span>
+                                  {classifyResult(item) === "flutter" ? "AFL" : "AF"}
+                                </span>
+                              </span>
+                            </td>
+                            <td className="py-3 text-[0.9375rem] text-primary-900">
+                              {formatWib(item.requestedAt) ?? "—"}
+                            </td>
+                            <td className="py-3 text-[0.9375rem] tabular-nums text-primary-900">
+                              {recordingDuration(item.ppgResult?.rawPpgData) ?? "—"}
+                            </td>
+                            <td className="py-3 text-[0.9375rem] text-primary-900">
+                              {formatConfidence(item.confidenceLevel) ?? "—"}
+                            </td>
+                            <td className="py-3">
+                              <PpgTrace
+                                className="h-12 w-full"
+                                data={item.ppgResult?.rawPpgData}
+                                label={`Grafik PPG kejadian nomor ${index + 1}`}
+                                sampleRate={SAMPLE_RATE_HZ}
+                                tone="pink"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </ScrollArea>
                 )}
                 {report.truncated ? (
                   <p className="mt-3 text-[0.875rem] text-primary-900/80">
