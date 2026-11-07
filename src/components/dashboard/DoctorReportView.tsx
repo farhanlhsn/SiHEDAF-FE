@@ -10,6 +10,10 @@ import {
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { classifyResult, RESULT_COPY } from "@/components/dashboard/ResultKind";
 import { PpgTrace } from "@/components/dashboard/PpgTrace";
+import {
+  recordingDuration,
+  SAMPLE_RATE_HZ,
+} from "@/components/dashboard/Signal";
 import { StatusMark } from "@/components/dashboard/StatusMark";
 import { useDoctorReport } from "@/components/dashboard/hooks/UseDoctorReport";
 import { toDateRange } from "@/components/dashboard/ReportRange";
@@ -168,8 +172,9 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                         <th className="w-12 pb-2 font-semibold">No</th>
                         <th className="pb-2 font-semibold">Jenis</th>
                         <th className="pb-2 font-semibold">Waktu</th>
+                        <th className="pb-2 font-semibold">Durasi</th>
                         <th className="pb-2 font-semibold">Keyakinan AI</th>
-                        <th className="w-[34%] pb-2 font-semibold">Grafik</th>
+                        <th className="w-[30%] pb-2 font-semibold">Grafik</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -196,6 +201,9 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                           <td className="py-3 text-[0.9375rem] text-primary-900">
                             {formatWib(item.requestedAt) ?? "—"}
                           </td>
+                          <td className="py-3 text-[0.9375rem] tabular-nums text-primary-900">
+                            {recordingDuration(item.ppgResult?.rawPpgData) ?? "—"}
+                          </td>
                           <td className="py-3 text-[0.9375rem] text-primary-900">
                             {formatConfidence(item.confidenceLevel) ?? "—"}
                           </td>
@@ -204,6 +212,7 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                               className="h-12 w-full"
                               data={item.ppgResult?.rawPpgData}
                               label={`Grafik PPG kejadian nomor ${index + 1}`}
+                              sampleRate={SAMPLE_RATE_HZ}
                               tone="pink"
                             />
                           </td>
@@ -223,7 +232,7 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
           ) : null}
 
           <p className="print-avoid-break mt-8 rounded-[16px] bg-paper p-4 text-[0.875rem] leading-[1.55] text-primary-900/80">
-            Hasil berasal dari klasifikasi AI atas sinyal PPG wearable dan bukan diagnosis. Mohon dievaluasi oleh tenaga kesehatan. Grafik ditampilkan tanpa skala waktu.
+            Hasil berasal dari klasifikasi AI atas sinyal PPG wearable dan bukan diagnosis. Mohon dievaluasi oleh tenaga kesehatan. Durasi dan skala waktu grafik dihitung dari laju sampel 50 Hz.
           </p>
         </article>
       </div>

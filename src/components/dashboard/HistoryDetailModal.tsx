@@ -15,6 +15,10 @@ import {
 import { DashboardModal } from "@/components/dashboard/DashboardModal";
 import { PpgTrace } from "@/components/dashboard/PpgTrace";
 import {
+  recordingDuration,
+  SAMPLE_RATE_HZ,
+} from "@/components/dashboard/Signal";
+import {
   rangeEndingOn,
   reportHref,
 } from "@/components/dashboard/ReportRange";
@@ -48,6 +52,10 @@ export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
   const facts = item
     ? [
         { label: "Waktu", value: formatWib(item.requestedAt) ?? "—" },
+        {
+          label: "Durasi rekaman",
+          value: recordingDuration(item.ppgResult?.rawPpgData) ?? "—",
+        },
         {
           label: "Keyakinan AI",
           value: formatConfidence(item.confidenceLevel) ?? "Tidak tersedia",
@@ -91,10 +99,11 @@ export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
             className="h-40 w-full rounded-[16px] bg-paper"
             data={item.ppgResult?.rawPpgData}
             label={`Grafik sinyal PPG, ${TRACE_PHRASE[result]}`}
+            sampleRate={SAMPLE_RATE_HZ}
             tone={isAlert ? "pink" : "blue"}
           />
 
-          <dl className="grid gap-4 sm:grid-cols-3">
+          <dl className="grid gap-4 sm:grid-cols-2">
             {facts.map((fact) => (
               <div key={fact.label}>
                 <dt className="text-[0.875rem] font-medium text-primary-900/75">

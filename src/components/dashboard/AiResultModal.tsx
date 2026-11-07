@@ -22,6 +22,10 @@ import {
 } from "@/components/dashboard/ResultKind";
 import { PpgTrace } from "@/components/dashboard/PpgTrace";
 import {
+  recordingDuration,
+  SAMPLE_RATE_HZ,
+} from "@/components/dashboard/Signal";
+import {
   rangeEndingOn,
   reportHref,
 } from "@/components/dashboard/ReportRange";
@@ -164,6 +168,7 @@ function ResultBody({
   const measuredAt = formatWib(
     data?.completedAt ?? data?.updatedAt ?? data?.createdAt,
   );
+  const duration = recordingDuration(data?.ppgResult?.rawPpgData);
 
   const historyLink = (
     <Link
@@ -242,14 +247,21 @@ function ResultBody({
         className="h-36 w-full rounded-[18px] bg-paper"
         data={data?.ppgResult?.rawPpgData}
         label="Grafik sinyal PPG"
+        sampleRate={SAMPLE_RATE_HZ}
         tone={isAlert ? "pink" : "blue"}
       />
 
-      <dl className="grid gap-4 rounded-[18px] bg-paper p-5 text-[0.9375rem] sm:grid-cols-3">
+      <dl className="grid gap-4 rounded-[18px] bg-paper p-5 text-[0.9375rem] sm:grid-cols-2">
         <div>
           <dt className="text-primary-900/75">Waktu</dt>
           <dd className="mt-1 font-semibold text-primary-900">
             {measuredAt ?? "—"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-primary-900/75">Durasi rekaman</dt>
+          <dd className="mt-1 font-semibold tabular-nums text-primary-900">
+            {duration ?? "—"}
           </dd>
         </div>
         <div>

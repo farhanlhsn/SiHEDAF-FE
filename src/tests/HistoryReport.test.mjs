@@ -65,7 +65,7 @@ test("doctor report view carries the required copy and states", async () => {
     "rekaman pertama pada periode ini",
     "Angka ringkasan hanya mencakup rekaman tersebut",
     "bukan diagnosis",
-    "Grafik ditampilkan tanpa skala waktu",
+    "Durasi dan skala waktu grafik dihitung dari laju sampel 50 Hz.",
     "<PpgTrace",
     "<PulseLoader",
     "<DataErrorState",
@@ -209,4 +209,53 @@ test("dashboard modal moves focus into the dialog and restores it on close", asy
   assert.match(modal, /\.focus\(/);
   assert.ok(modal.includes("tabIndex={-1}"));
   assert.match(modal, /isConnected/);
+});
+
+test("recording durations and trace ticks come from the 50 Hz sample count", async () => {
+  const [detail, modal, report, trace, chart] = await Promise.all([
+    read("components/dashboard/HistoryDetailModal.tsx"),
+    read("components/dashboard/AiResultModal.tsx"),
+    read("components/dashboard/DoctorReportView.tsx"),
+    read("components/dashboard/PpgTrace.tsx"),
+    read("components/dashboard/SignalChart.tsx"),
+  ]);
+
+  // The "Durasi rekaman" fact, "—" when unknown.
+  assert.match(detail, /label: "Durasi rekaman",\s*value: recordingDuration\(item\.ppgResult\?\.rawPpgData\) \?\? "—"/);
+  assert.match(modal, /const duration = recordingDuration\(data\?\.ppgResult\?\.rawPpgData\);/);
+  assert.match(modal, /Durasi rekaman<\/dt>[\s\S]{0,160}\{duration \?\? "—"\}/);
+  // A "Durasi" column in the report's event table.
+  assert.match(report, /<th className="pb-2 font-semibold">Durasi<\/th>/);
+  assert.match(report, /\{recordingDuration\(item\.ppgResult\?\.rawPpgData\) \?\? "—"\}/);
+  assert.doesNotMatch(report, /tanpa skala waktu/);
+
+  // The three traces of a single recording get time ticks at 50 Hz.
+  for (const [name, source] of [["detail", detail], ["modal", modal], ["report", report]]) {
+    assert.match(source, /<PpgTrace[^>]*sampleRate=\{SAMPLE_RATE_HZ\}/s, `${name} trace lacks ticks`);
+  }
+  assert.match(trace, /sampleRate\?: number;/);
+  assert.match(trace, /traceTicks\(data\?\.length \?\? 0, sampleRate\)/);
+  assert.match(trace, /aria-hidden="true"[\s\S]{0,120}text-\[0\.8125rem\]/);
+  assert.match(trace, /if \(ticks === null\) return trace;/);
+
+  // The live chart concatenates sessions: it keeps its minute labels.
+  assert.doesNotMatch(chart, /sampleRate|SAMPLE_RATE_HZ|Signal"/);
+  assert.match(chart, /minutesLabel\(rangeMinutes\)/);
+});
+
+test("nothing on the dashboard counts beats", async () => {
+  for (const file of [
+    "components/dashboard/Signal.ts",
+    "components/dashboard/PpgTrace.tsx",
+    "components/dashboard/HistoryDetailModal.tsx",
+    "components/dashboard/AiResultModal.tsx",
+    "components/dashboard/DoctorReportView.tsx",
+    "components/dashboard/DashboardOverview.tsx",
+    "components/dashboard/SignalChart.tsx",
+  ]) {
+    const source = await read(file);
+    // Signal.ts may say so in its doc comment; nothing else names beats or peaks.
+    const code = source.replace(/\/\*\*[\s\S]*?\*\//g, "");
+    assert.doesNotMatch(code, /\bbpm\b|peak|denyut per menit|detak per menit/i, file);
+  }
 });
