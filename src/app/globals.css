@@ -19,6 +19,14 @@
   --color-primary-700: #004297;
   --color-primary-800: #003171;
   --color-primary-900: #002758;
+  --color-paper: #f5f3ee;
+  --color-paper-deep: #ebe6dc;
+  --color-warn-50: #fff7e6;
+  --color-warn-500: #c98613;
+  --color-warn-700: #8a5a00;
+  --color-af-50: #ffe8ee;
+  --color-af-500: #ff4572;
+  --color-af-700: #c8264f;
 }
 
 @theme inline {
@@ -98,7 +106,7 @@ footer[id] {
 }
 
 .rdp-root {
-  --rdp-accent-color: #006efb;
+  --rdp-accent-color: #002758;
   --rdp-accent-background-color: #e8f1ff;
   --rdp-day-height: 36px;
   --rdp-day-width: 36px;
@@ -107,12 +115,12 @@ footer[id] {
   --rdp-day_button-border-radius: 999px;
   --rdp-range_middle-background-color: #e8f1ff;
   --rdp-range_middle-color: #003171;
-  --rdp-range_start-background: #006efb;
-  --rdp-range_end-background: #006efb;
+  --rdp-range_start-background: #002758;
+  --rdp-range_end-background: #002758;
   margin: 0;
-  color: #252b31;
+  color: #002758;
   font-family: var(--font-switzer), Arial, Helvetica, sans-serif;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .rdp-months {
@@ -120,15 +128,15 @@ footer[id] {
 }
 
 .rdp-month_caption {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .rdp-button_previous,
 .rdp-button_next {
-  border: 1px solid #e1e5e9;
+  border: 1.5px solid rgb(0 39 88 / 0.2);
   border-radius: 999px;
-  color: #003171;
+  color: #002758;
 }
 
 .rdp-range_start>.rdp-day_button,
@@ -331,6 +339,433 @@ footer[id] {
   animation-delay: 250ms;
 }
 
+/* ------------------------------------------------------------------ */
+/* Landing page: "satu garis" — one PPG line threads the whole story   */
+/* ------------------------------------------------------------------ */
+
+.live-dot {
+  position: relative;
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 999px;
+  background: #ff4572;
+}
+
+.live-dot::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  content: "";
+  animation: live-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes live-ping {
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+/* Lub-dub at ~72 bpm */
+@keyframes heartbeat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  14% {
+    transform: scale(1.16);
+  }
+
+  28% {
+    transform: scale(1);
+  }
+
+  42% {
+    transform: scale(1.08);
+  }
+
+  70% {
+    transform: scale(1);
+  }
+}
+
+.heartbeat {
+  animation: heartbeat 0.83s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes watch-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.watch-float {
+  animation: watch-float 6s ease-in-out infinite;
+}
+
+@keyframes af-tag-in {
+  from {
+    opacity: 0;
+    transform: translate(-6px, 10px) scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-6px, 0) scale(1);
+  }
+}
+
+.af-tag {
+  animation: af-tag-in 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: left bottom;
+}
+
+.btn-primary {
+  box-shadow: 0 12px 28px rgb(0 39 88 / 0.18);
+  transition:
+    transform 400ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 400ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 300ms ease;
+}
+
+.btn-primary:hover {
+  background-color: #003171;
+  box-shadow: 0 18px 36px rgb(0 39 88 / 0.24);
+  transform: translateY(-1.5px);
+}
+
+.btn-primary:focus-visible,
+.link-underline:focus-visible,
+.nav-pulse:focus-visible,
+.footer-link:focus-visible {
+  outline: 2px solid #006efb;
+  outline-offset: 4px;
+}
+
+.link-underline {
+  padding-bottom: 3px;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 1.5px;
+  border-radius: 2px;
+  transition: background-size 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.link-underline:hover {
+  background-position: 100% 100%;
+  background-size: 0% 1.5px;
+}
+
+.footer-link {
+  border-radius: 2px;
+  background-image: linear-gradient(#006efb, #006efb);
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 0% 1.5px;
+  transition: background-size 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.footer-link:hover {
+  background-size: 100% 1.5px;
+}
+
+/* Navigation links underline with a tiny pulse blip on hover / when active. */
+.nav-pulse {
+  position: relative;
+  border-radius: 4px;
+}
+
+.nav-pulse::after {
+  position: absolute;
+  right: 0;
+  bottom: -9px;
+  left: 0;
+  height: 8px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 8' preserveAspectRatio='none'%3E%3Cpath d='M0 5h17l2.5-4 3 7 3-5.5 2 2.5H48' fill='none' stroke='%23006efb' stroke-width='1.4' stroke-linejoin='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E")
+    center / 100% 100% no-repeat;
+  clip-path: inset(0 100% 0 0);
+  content: "";
+  transition: clip-path 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nav-pulse:hover::after,
+.nav-pulse[aria-current="page"]::after {
+  clip-path: inset(0 0 0 0);
+}
+
+/* Header bar turns from transparent to frosted paper once the page scrolls. */
+.header-bar {
+  border-color: rgb(0 39 88 / 0.1);
+  background-color: #f5f3ee;
+}
+
+@media (min-width: 768px) {
+  .header-bar {
+    background-color: rgb(245 243 238 / 0.88);
+    backdrop-filter: blur(18px);
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .header-bar {
+      animation: header-solidify linear both;
+      animation-range: 0 160px;
+      animation-timeline: scroll(root);
+    }
+  }
+}
+
+@keyframes header-solidify {
+  from {
+    border-color: rgb(0 39 88 / 0);
+    background-color: rgb(245 243 238 / 0);
+    backdrop-filter: blur(0);
+  }
+
+  to {
+    border-color: rgb(0 39 88 / 0.1);
+    background-color: rgb(245 243 238 / 0.88);
+    backdrop-filter: blur(18px);
+  }
+}
+
+/* The scroll-drawn thread */
+.thread-line,
+.thread-trail {
+  fill: none;
+  stroke: #006efb;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.thread-line {
+  stroke-width: 2.5;
+}
+
+.thread-trail {
+  opacity: 0.28;
+  stroke-dasharray: 1.5 7;
+  stroke-width: 1.5;
+}
+
+.thread-head {
+  fill: #006efb;
+  transition: opacity 200ms ease;
+}
+
+.thread-head-glow {
+  opacity: 0.18;
+}
+
+.thread-station-dot {
+  transform: scale(0);
+  transition: transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.thread-station[data-reached="true"] .thread-station-dot {
+  transform: scale(1);
+}
+
+/* Registered so it can be animated (auth line-art draws itself on load). */
+@property --thread-progress {
+  inherits: true;
+  initial-value: 1;
+  syntax: "<number>";
+}
+
+@keyframes autodraw {
+  from {
+    --thread-progress: 0;
+  }
+
+  to {
+    --thread-progress: 1;
+  }
+}
+
+.autodraw {
+  animation: autodraw 2.6s cubic-bezier(0.65, 0, 0.35, 1) 350ms both;
+}
+
+.btn-primary:disabled {
+  background-color: rgb(0 39 88 / 0.1);
+  box-shadow: none;
+  color: rgb(0 39 88 / 0.75);
+  transform: none;
+}
+
+/* Line-art drawn in sync with the thread: each stroke takes its turn. */
+.line-art .stroke {
+  fill: none;
+  stroke: currentColor;
+  stroke-dasharray: 1;
+  stroke-dashoffset: clamp(0, calc(1 - (var(--thread-progress, 1) * var(--n, 1) - var(--i, 0))), 1);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+}
+
+/* Reveals a strip left → right in sync with a thread span. */
+.wipe-progress {
+  clip-path: inset(-20% calc((1 - var(--thread-progress, 1)) * 100%) -20% 0);
+}
+
+/* Fades an element in once a thread span passes `--at`. */
+.appear-at {
+  opacity: clamp(0, calc((var(--thread-progress, 1) - var(--at, 0)) * 14), 1);
+}
+
+/* 24-hour dial: readings light up as the thread loops around the day. */
+.dial-progress {
+  -webkit-mask-image: conic-gradient(#000 calc(var(--thread-progress, 1) * 1turn), transparent 0);
+  mask-image: conic-gradient(#000 calc(var(--thread-progress, 1) * 1turn), transparent 0);
+}
+
+.hatch-af {
+  background: repeating-linear-gradient(135deg, #ff4572 0 2px, transparent 2px 5px);
+  box-shadow: inset 0 0 0 1px rgb(255 69 114 / 0.6);
+}
+
+/* Dashboard monitor: a sweep head passes over the live PPG trace. */
+.monitor-sweep {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(
+    to right,
+    transparent calc(100% - 96px),
+    rgb(0 110 251 / 0.12) calc(100% - 2px),
+    #006efb calc(100% - 2px)
+  );
+  pointer-events: none;
+  animation: monitor-sweep 3.2s linear infinite;
+}
+
+@keyframes monitor-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Loading: a short signal travels along a PPG trace. */
+.pulse-loader-track,
+.pulse-loader-line {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.pulse-loader-track {
+  stroke: rgb(0 39 88 / 0.1);
+}
+
+.pulse-loader-line {
+  animation: pulse-loader 1.4s linear infinite;
+  stroke: #006efb;
+  stroke-dasharray: 0.32 0.68;
+}
+
+@keyframes pulse-loader {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* 404 / error: the trace drops out, then picks up again. */
+.signal-lost-wave {
+  animation: signal-lost-draw 1.4s cubic-bezier(0.65, 0, 0.35, 1) 200ms both;
+  stroke: #006efb;
+  stroke-dasharray: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.signal-lost-wave-late {
+  animation-delay: 1.5s;
+}
+
+.signal-lost-gap {
+  animation: signal-lost-scan 1.6s ease-in-out 1.4s infinite;
+  stroke: rgb(0 39 88 / 0.35);
+  stroke-dasharray: 2 14;
+  stroke-linecap: round;
+  stroke-width: 3;
+}
+
+@keyframes signal-lost-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes signal-lost-scan {
+  50% {
+    stroke: rgb(0 110 251 / 0.7);
+  }
+}
+
+/* In-view reveals. `InView` sets data-play once the block scrolls in. */
+.reveal {
+  transition:
+    opacity 700ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+
+.grow-x {
+  transform-origin: left center;
+  transition: transform 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: calc(var(--i, 0) * 160ms + 300ms);
+}
+
+.pop {
+  transition:
+    opacity 360ms ease-out,
+    transform 460ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition-delay: calc(var(--i, 0) * 12ms + 250ms);
+}
+
+@media (scripting: enabled) {
+  [data-play="false"] .reveal {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  [data-play="false"] .grow-x {
+    transform: scaleX(0);
+  }
+
+  [data-play="false"] .pop {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -343,5 +778,38 @@ footer[id] {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* Landing: skip loops and show every illustration in its final frame. */
+  .heartbeat,
+  .live-dot::after,
+  .watch-float,
+  .header-bar {
+    animation: none !important;
+  }
+
+  .monitor-sweep {
+    display: none;
+  }
+
+  .pulse-loader-line,
+  .signal-lost-wave,
+  .signal-lost-gap {
+    animation: none !important;
+    stroke-dasharray: none;
+  }
+
+  .signal-lost-gap {
+    stroke-dasharray: 2 14;
+  }
+
+  [data-play="false"] .reveal,
+  [data-play="false"] .pop {
+    opacity: 1;
+    transform: none;
+  }
+
+  [data-play="false"] .grow-x {
+    transform: none;
   }
 }

@@ -35,9 +35,7 @@ export function HashRouteRedirect() {
     } else {
       // Token invalid or expired — send to email form with error context
       const message = params.get("message");
-      const query = message
-        ? `?error=${encodeURIComponent(message)}`
-        : "";
+      const query = message ? `?error=${encodeURIComponent(message)}` : "";
       router.replace(`/lupa-kata-sandi${query}`);
     }
   }, [router]);

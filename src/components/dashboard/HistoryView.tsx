@@ -1,12 +1,22 @@
 "use client";
 
 import type { DateRange } from "@daypicker/react";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
+import {
+  formatConfidence,
+  formatWib,
+  isNormalResult,
+  shareOf,
+} from "@/components/dashboard/DashboardFormat";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { Sparkline } from "@/components/dashboard/Sparkline";
 import { StatusMark } from "@/components/dashboard/StatusMark";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { useHistoryView } from "@/components/dashboard/hooks/UseHistoryView";
+
+const pagerButtonClassName =
+  "flex h-11 items-center justify-center gap-1 rounded-full border-[1.5px] border-primary-900/20 bg-white px-3 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300 disabled:cursor-not-allowed disabled:border-primary-900/10 disabled:bg-transparent disabled:text-primary-900/70 sm:px-4";
 
 export function HistoryView() {
   const {
@@ -33,106 +43,178 @@ export function HistoryView() {
     setCurrentPage(1);
   }
 
-  const dateFormatter = new Intl.DateTimeFormat("id-ID", {
-
-    timeZone: "Asia/Jakarta",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const [total, afCount] = summaries.map((summary) => summary.value);
+  const afShare = shareOf(afCount, total);
+  const normalShare = total > 0 ? 100 - afShare : 0;
 
   return (
-    <section className="px-4 py-7 sm:px-7 lg:px-9 lg:py-9">
-      <div className="mx-auto max-w-[1360px]">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+    <section className="px-4 py-8 sm:px-7 lg:px-10 lg:py-10">
+      <div className="mx-auto max-w-[1180px]">
+        <div className="flex flex-wrap items-end justify-between gap-5">
           <div>
-            <h1 className="text-[22px] font-semibold text-[#161b20]">Riwayat Analisis</h1>
-            <p className="mt-2 text-[13px] text-[#989da6]">
-              Lihat semua riwayat analisis dan hasil monitoring perangkat SiHEDAF kamu
+            <h1 className="text-[clamp(2.2rem,3.8vw,3.4rem)] leading-[1] font-bold tracking-[-0.05em] text-primary-900">
+              Riwayat Analisis
+            </h1>
+            <p className="mt-3 max-w-[560px] text-[17px] leading-[1.55] text-primary-900/80">
+              Semua hasil analisis AI dari perangkat SiHEDAF-mu, urut dari yang
+              terbaru.
             </p>
           </div>
           <DateRangePicker onChange={handleRangeChange} value={dateRange} />
         </div>
 
-        <div className="mt-7 grid gap-5 sm:grid-cols-3">
-          {summaries.map((summary) => (
-            <article
-              className="rounded-[22px] border border-[#edf0f3] bg-white px-7 py-6"
+        <div className="mt-10 grid grid-cols-3 border-y border-primary-900/10 py-6 sm:py-8">
+          {summaries.map((summary, index) => (
+            <div
+              className="border-l border-primary-900/10 px-3 first:border-l-0 first:pl-0 sm:px-8"
               key={summary.label}
             >
-              <p className="text-[28px] font-semibold tracking-[-0.04em] text-[#171c21]">
+              <p
+                className={`text-[clamp(2rem,4vw,3.5rem)] leading-none font-bold tracking-[-0.05em] tabular-nums ${
+                  index === 1
+                    ? "text-af-500"
+                    : index === 2
+                      ? "text-primary-300"
+                      : "text-primary-900"
+                }`}
+              >
                 {summary.value}
               </p>
-              <p className="mt-2 text-[12px] text-[#9298a1]">{summary.label}</p>
-            </article>
+              <p className="mt-2 text-[14px] leading-[1.35] font-medium text-primary-900/80 sm:text-[15px]">
+                {summary.label}
+              </p>
+            </div>
           ))}
         </div>
 
-        <article className="mt-6 overflow-hidden rounded-[24px] border border-[#edf0f3] bg-white">
+        <figure className="mt-6">
+          <div
+            aria-label={`${normalShare}% ritme normal, ${afShare}% terdeteksi AF`}
+            className="flex h-4 overflow-hidden rounded-full bg-primary-900/10"
+            role="img"
+          >
+            {total > 0 ? (
+              <>
+                <span
+                  className="h-full bg-primary-300"
+                  style={{ width: `${normalShare}%` }}
+                />
+                <span
+                  className="ml-[2px] h-full bg-af-500"
+                  style={{ width: `${afShare}%` }}
+                />
+              </>
+            ) : null}
+          </div>
+          <figcaption className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-[14px] font-medium text-primary-900/80">
+            <span className="inline-flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className="size-3 rounded-full bg-primary-300"
+              />
+              Ritme normal {normalShare}%
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className="size-3 rounded-full bg-af-500"
+              />
+              Terdeteksi AF {afShare}%
+            </span>
+          </figcaption>
+        </figure>
+
+        <article className="mt-10 overflow-hidden rounded-[24px] border border-primary-900/10 bg-white">
           <div className="px-5 py-5 sm:px-7 sm:py-6">
-            <h2 className="text-[16px] font-semibold">Daftar Riwayat</h2>
+            <h2 className="text-[20px] font-bold tracking-[-0.03em] text-primary-900">
+              Daftar Riwayat
+            </h2>
           </div>
 
           <ScrollArea className="w-full" viewportClassName="pb-2">
             <table className="w-full min-w-[680px] table-fixed border-collapse text-left">
               <thead>
-                <tr className="border-b border-[#edf0f3] text-[12px] font-medium text-[#6e7580]">
-                  <th className="w-[38%] px-6 pb-3 font-medium">Waktu Analisis</th>
-                  <th className="w-[34%] px-4 pb-3 font-medium">Hasil Klasifikasi</th>
-                  <th className="w-[28%] px-6 pb-3 font-medium">Detail Hasil</th>
+                <tr className="border-b border-primary-900/10 text-[14px] font-semibold text-primary-900/75">
+                  <th className="w-[32%] px-6 pb-3 font-semibold">
+                    Waktu Analisis
+                  </th>
+                  <th className="w-[30%] px-4 pb-3 font-semibold">
+                    Hasil Klasifikasi
+                  </th>
+                  <th className="w-[14%] px-4 pb-3 font-semibold">
+                    Keyakinan AI
+                  </th>
+                  <th className="w-[24%] px-6 pb-3 font-semibold">
+                    Detail Hasil
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={3} className="px-6 py-12 text-center text-[13px] text-[#9298a1]">
+                    <td
+                      className="px-6 py-12 text-center text-[15px] text-primary-900/75"
+                      colSpan={4}
+                    >
                       Memuat riwayat...
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={3} className="px-6 py-12 text-center text-[13px] text-red-500">
+                    <td
+                      className="px-6 py-12 text-center text-[15px] font-medium text-af-700"
+                      colSpan={4}
+                    >
                       {error}
                     </td>
                   </tr>
                 ) : (
                   historyData.map((row) => {
-                    const isNormal = row.resultLabel?.toLowerCase().includes("normal");
-                    const statusVal = isNormal ? "normal" : "af";
-                    const tone = isNormal ? "blue" : "pink";
-                    const hasDate = Boolean(row.requestedAt);
-                    const reqDate = hasDate ? new Date(row.requestedAt!) : null;
-                    const formattedDateStr = reqDate
-                      ? `${dateFormatter.format(reqDate)}\u00A0 • \u00A0${reqDate.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" })} WIB`
-                      : "-";
+                    const isNormal = isNormalResult(row.resultLabel) ?? true;
 
                     return (
                       <tr
-                        className="stagger-item border-b border-[#f0f2f4] last:border-b-0"
+                        className="stagger-item border-b border-primary-900/[0.07] last:border-b-0"
                         key={row.id}
                       >
-                        <td className="px-6 py-4 text-[12px] text-[#989da5]">
-                          {formattedDateStr}
+                        <td className="px-6 py-4">
+                          <p className="text-[15px] font-semibold text-primary-900">
+                            {formatWib(row.requestedAt, "date") ?? "—"}
+                          </p>
+                          <p className="mt-0.5 text-[14px] text-primary-900/75">
+                            {formatWib(row.requestedAt, "time") ?? ""}
+                          </p>
                         </td>
-                        <td className="px-4 py-2.5">
+                        <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <StatusMark size="small" status={statusVal} />
+                            <StatusMark
+                              size="small"
+                              status={isNormal ? "normal" : "af"}
+                            />
                             <div>
                               <p
-                                className={`text-[12px] font-medium ${
-                                  isNormal ? "text-[#43b956]" : "text-[#ff4572]"
+                                className={`text-[15px] font-semibold ${
+                                  isNormal ? "text-primary-500" : "text-af-700"
                                 }`}
                               >
-                                {isNormal ? "Normal Rythm" : "Terdeteksi AF"}
+                                {isNormal ? "Normal Rhythm" : "Terdeteksi AF"}
                               </p>
-                              <p className="mt-1 text-[12px] text-[#a1a6ae]">
-                                {isNormal ? "Tidak ditemukan pola AF" : "Pola AF teridentifikasi"}
+                              <p className="mt-0.5 text-[14px] text-primary-900/75">
+                                {isNormal
+                                  ? "Tidak ditemukan pola AF"
+                                  : "Pola AF teridentifikasi"}
                               </p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-2.5">
-                          <Sparkline tone={tone} data={row.ppgResult?.rawPpgData} />
+                        <td className="px-4 py-3 text-[15px] font-semibold tabular-nums text-primary-900">
+                          {formatConfidence(row.confidenceLevel) ?? "—"}
+                        </td>
+                        <td className="px-6 py-3">
+                          <Sparkline
+                            data={row.ppgResult?.rawPpgData}
+                            tone={isNormal ? "blue" : "pink"}
+                          />
                         </td>
                       </tr>
                     );
@@ -141,62 +223,77 @@ export function HistoryView() {
               </tbody>
             </table>
             {!isLoading && !error && historyData.length === 0 ? (
-              <p className="px-6 py-12 text-center text-[13px] text-[#9298a1]">
+              <p className="px-6 py-12 text-center text-[15px] text-primary-900/75">
                 Tidak ada riwayat pada rentang tanggal ini.
               </p>
             ) : null}
           </ScrollArea>
 
-          <div className="flex flex-col gap-5 border-t border-[#edf0f3] px-5 py-6 sm:flex-row sm:items-center sm:justify-between sm:py-4">
+          <div className="flex flex-col gap-5 border-t border-primary-900/10 px-5 py-6 sm:flex-row sm:items-center sm:justify-between sm:py-5">
             <nav
               aria-label="Pagination riwayat"
-              className="flex w-full items-center justify-between gap-1 text-[12px] sm:w-auto sm:justify-start sm:gap-2"
+              className="flex w-full items-center justify-between gap-1 sm:w-auto sm:justify-start sm:gap-2"
             >
               <button
-                className="flex h-8 items-center justify-center rounded-full border border-[#e1e5e9] px-3 text-[#6f7680] transition-colors hover:border-primary-200 hover:text-primary-300 disabled:cursor-not-allowed disabled:text-[#b3b8bf] disabled:hover:border-[#e1e5e9] sm:px-4"
+                aria-label="Halaman sebelumnya"
+                className={pagerButtonClassName}
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                 type="button"
               >
-                ‹<span className="hidden sm:inline">&nbsp; Sebelumnya</span>
+                <ChevronLeft
+                  aria-hidden="true"
+                  className="size-4"
+                  strokeWidth={2.5}
+                />
+                <span className="hidden sm:inline">Sebelumnya</span>
               </button>
-              
-              <div className="flex items-center gap-1 sm:gap-1.5 sm:mx-2">
+
+              <div className="flex items-center gap-1 sm:mx-1 sm:gap-1.5">
                 {(() => {
-                  type PageItem = { val: number | "..."; hiddenOnMobile?: boolean };
+                  type PageItem = {
+                    val: number | "...";
+                    hiddenOnMobile?: boolean;
+                  };
                   const pages: PageItem[] = [];
-                  
+
                   if (totalPages <= 3) {
                     for (let i = 1; i <= totalPages; i++) {
-                      pages.push({ 
-                        val: i, 
-                        hiddenOnMobile: (i === 3 || i === 4) && i !== currentPage && i !== totalPages 
+                      pages.push({
+                        val: i,
+                        hiddenOnMobile:
+                          (i === 3 || i === 4) &&
+                          i !== currentPage &&
+                          i !== totalPages,
                       });
                     }
                   } else {
                     if (currentPage <= 3) {
                       pages.push(
-                        { val: 1 }, 
-                        { val: 2 }, 
-                        { val: 3, hiddenOnMobile: currentPage !== 3 }, 
-                        { val: "..." }, 
-                        { val: totalPages }
+                        { val: 1 },
+                        { val: 2 },
+                        { val: 3, hiddenOnMobile: currentPage !== 3 },
+                        { val: "..." },
+                        { val: totalPages },
                       );
                     } else if (currentPage >= totalPages - 2) {
                       pages.push(
-                        { val: 1 }, 
-                        { val: "..." }, 
-                        { val: totalPages - 2, hiddenOnMobile: currentPage !== totalPages - 2 }, 
-                        { val: totalPages - 1 }, 
-                        { val: totalPages }
+                        { val: 1 },
+                        { val: "..." },
+                        {
+                          val: totalPages - 2,
+                          hiddenOnMobile: currentPage !== totalPages - 2,
+                        },
+                        { val: totalPages - 1 },
+                        { val: totalPages },
                       );
                     } else {
                       pages.push(
-                        { val: 1 }, 
-                        { val: "..." }, 
-                        { val: currentPage }, 
-                        { val: "..." }, 
-                        { val: totalPages }
+                        { val: 1 },
+                        { val: "..." },
+                        { val: currentPage },
+                        { val: "..." },
+                        { val: totalPages },
                       );
                     }
                   }
@@ -204,9 +301,9 @@ export function HistoryView() {
                   return pages.map((page, index) => {
                     if (page.val === "...") {
                       return (
-                        <span 
-                          key={`ellipsis-${index}`} 
-                          className={`px-0.5 text-[#9298a1] sm:px-1 ${page.hiddenOnMobile ? 'hidden sm:block' : 'block'}`}
+                        <span
+                          className={`px-1 text-[15px] text-primary-900/75 ${page.hiddenOnMobile ? "hidden sm:block" : "block"}`}
+                          key={`ellipsis-${index}`}
                         >
                           ...
                         </span>
@@ -215,13 +312,15 @@ export function HistoryView() {
 
                     return (
                       <button
-                        aria-current={page.val === currentPage ? "page" : undefined}
-                        className={`h-8 w-8 place-items-center rounded-full border transition-colors ${
-                          page.hiddenOnMobile ? 'hidden sm:grid' : 'grid'
+                        aria-current={
+                          page.val === currentPage ? "page" : undefined
+                        }
+                        className={`h-11 min-w-11 place-items-center rounded-full px-2 text-[15px] font-semibold tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-primary-300 ${
+                          page.hiddenOnMobile ? "hidden sm:grid" : "grid"
                         } ${
                           page.val === currentPage
-                            ? "border-primary-300 bg-primary-300 text-white"
-                            : "border-transparent text-[#6f7680] hover:border-[#e1e5e9]"
+                            ? "bg-primary-900 text-white"
+                            : "text-primary-900 hover:bg-paper-deep"
                         }`}
                         key={page.val}
                         onClick={() => setCurrentPage(page.val as number)}
@@ -235,29 +334,46 @@ export function HistoryView() {
               </div>
 
               <button
-                className="flex h-8 items-center justify-center rounded-full border border-[#e1e5e9] px-3 text-[#6f7680] transition-colors hover:border-primary-200 hover:text-primary-300 disabled:cursor-not-allowed disabled:text-[#b3b8bf] disabled:hover:border-[#e1e5e9] sm:px-4"
+                aria-label="Halaman berikutnya"
+                className={pagerButtonClassName}
                 disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                onClick={() =>
+                  setCurrentPage((page) => Math.min(totalPages, page + 1))
+                }
                 type="button"
               >
-                <span className="hidden sm:inline">Selanjutnya &nbsp;</span>›
+                <span className="hidden sm:inline">Selanjutnya</span>
+                <ChevronRight
+                  aria-hidden="true"
+                  className="size-4"
+                  strokeWidth={2.5}
+                />
               </button>
             </nav>
 
-            <label className="flex w-full items-center justify-between gap-3 text-[12px] text-[#9aa0a9] sm:w-auto sm:justify-start">
+            <label className="flex w-full items-center justify-between gap-3 text-[15px] text-primary-900/80 sm:w-auto sm:justify-start">
               <span>Tampilkan</span>
-              <select
-                aria-label="Jumlah riwayat per halaman"
-                className="h-8 rounded-full border border-[#e2e6ea] bg-white px-3 pr-8 text-[#555c65] outline-none appearance-none focus:border-primary-300 focus-visible:ring-2 focus-visible:ring-primary-200 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%239aa0a9%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_10px_center]"
-                onChange={(event) => handleItemsPerPageChange(Number(event.target.value))}
-                value={itemsPerPage}
-              >
-                {[5, 10, 20].map((amount) => (
-                  <option key={amount} value={amount}>
-                    {amount}
-                  </option>
-                ))}
-              </select>
+              <span className="relative">
+                <select
+                  aria-label="Jumlah riwayat per halaman"
+                  className="h-11 appearance-none rounded-full border-[1.5px] border-primary-900/20 bg-white pr-9 pl-4 text-[15px] font-semibold text-primary-900 outline-none focus:border-primary-300 focus-visible:ring-4 focus-visible:ring-primary-100"
+                  onChange={(event) =>
+                    handleItemsPerPageChange(Number(event.target.value))
+                  }
+                  value={itemsPerPage}
+                >
+                  {[5, 10, 20].map((amount) => (
+                    <option key={amount} value={amount}>
+                      {amount}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-primary-900"
+                  strokeWidth={2.25}
+                />
+              </span>
               <span>per halaman</span>
             </label>
           </div>

@@ -65,10 +65,10 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
           aria-hidden="true"
           className="mx-auto size-10 animate-spin text-primary-300"
         />
-        <h1 className="mt-6 text-[30px] font-medium tracking-[-0.04em] text-primary-900">
+        <h1 className="mt-6 text-[28px] font-bold tracking-[-0.04em] text-primary-900">
           Memeriksa Tautan
         </h1>
-        <p className="mt-3 text-[14px] font-medium text-primary-900/50">
+        <p className="mt-3 text-[16px] text-primary-900/80">
           Tunggu sebentar, kami sedang memverifikasi tautan reset kamu.
         </p>
       </div>
@@ -78,21 +78,21 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   if (status === "invalid") {
     return (
       <div className="text-center sm:text-left">
-        <div className="mx-auto grid size-14 place-items-center rounded-full bg-[#FFE8EE] text-[#FF4572] sm:mx-0">
+        <div className="mx-auto grid size-14 place-items-center rounded-full bg-af-50 text-af-700 sm:mx-0">
           <CircleAlert aria-hidden="true" className="size-7" />
         </div>
-        <p className="mt-6 text-[13px] font-semibold text-[#FF4572]">
+        <p className="mt-6 text-[15px] font-semibold text-af-700">
           Tautan Tidak Valid
         </p>
-        <h1 className="mt-2.5 text-[34px] font-medium tracking-[-0.045em] text-primary-900 sm:text-[36px]">
+        <h1 className="mt-3 text-[clamp(2.1rem,3vw,2.75rem)] leading-[1.02] font-bold tracking-[-0.045em] text-primary-900">
           Minta Tautan Baru
         </h1>
-        <p className="mt-4 max-w-[500px] text-[14px] leading-6 font-medium text-primary-900/55">
+        <p className="mt-4 max-w-[500px] text-[17px] leading-[1.6] text-primary-900/80">
           {verificationError?.message ??
             "Tautan reset kata sandi tidak valid atau sudah kedaluwarsa."}
         </p>
         <Link
-          className="mt-9 inline-flex h-14 items-center justify-center rounded-full bg-primary-300 px-8 text-[14px] font-semibold text-white shadow-[0_10px_24px_rgba(0,110,251,0.16)] transition-colors hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400"
+          className="btn-primary mt-9 inline-flex h-14 items-center justify-center rounded-full bg-primary-900 px-8 text-[16px] font-semibold text-white"
           href="/lupa-kata-sandi"
         >
           Kirim Ulang Tautan
@@ -104,20 +104,20 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   if (isComplete) {
     return (
       <div className="text-center sm:text-left">
-        <div className="mx-auto grid size-14 place-items-center rounded-full bg-[#E6F7E9] text-[#43B956] sm:mx-0">
+        <div className="mx-auto grid size-14 place-items-center rounded-full bg-[#E6F7E9] text-[#2E7D3A] sm:mx-0">
           <CheckCircle2 aria-hidden="true" className="size-7" />
         </div>
-        <p className="mt-6 text-[13px] font-semibold text-[#43B956]">
+        <p className="mt-6 text-[15px] font-semibold text-[#2E7D3A]">
           Berhasil
         </p>
-        <h1 className="mt-2.5 text-[34px] font-medium tracking-[-0.045em] text-primary-900 sm:text-[36px]">
+        <h1 className="mt-3 text-[clamp(2.1rem,3vw,2.75rem)] leading-[1.02] font-bold tracking-[-0.045em] text-primary-900">
           Kata Sandi Diperbarui
         </h1>
-        <p className="mt-4 max-w-[500px] text-[14px] leading-6 font-medium text-primary-900/55">
+        <p className="mt-4 max-w-[500px] text-[17px] leading-[1.6] text-primary-900/80">
           Kata sandi baru sudah aktif. Silakan masuk kembali ke akun SiHEDAF.
         </p>
         <Link
-          className="mt-9 inline-flex h-14 items-center justify-center rounded-full bg-primary-300 px-8 text-[14px] font-semibold text-white shadow-[0_10px_24px_rgba(0,110,251,0.16)] transition-colors hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-400"
+          className="btn-primary mt-9 inline-flex h-14 items-center justify-center rounded-full bg-primary-900 px-8 text-[16px] font-semibold text-white"
           href="/login"
         >
           Masuk ke Akun
@@ -128,13 +128,13 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
   return (
     <div>
-      <p className="text-[13px] font-semibold text-primary-300">
+      <p className="text-[15px] font-semibold text-primary-500">
         Pemulihan Akun
       </p>
-      <h1 className="mt-2.5 text-[34px] font-medium tracking-[-0.045em] text-primary-900 sm:text-[36px]">
+      <h1 className="mt-3 text-[clamp(2.1rem,3vw,2.75rem)] leading-[1.02] font-bold tracking-[-0.045em] text-primary-900">
         Buat Kata Sandi Baru
       </h1>
-      <p className="mt-3 max-w-[500px] text-[14px] leading-6 font-medium text-primary-900/50">
+      <p className="mt-3 max-w-[500px] text-[17px] leading-[1.6] text-primary-900/80">
         Gunakan minimal 8 karakter dengan huruf besar, huruf kecil, angka, dan
         simbol.
       </p>
@@ -187,11 +187,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         />
 
         <button
-          className={`mt-2 h-14 w-full rounded-full text-[14px] font-semibold transition-[background-color,box-shadow,opacity] duration-200 ${
-            isValid && !isPending
-              ? "bg-primary-300 text-white shadow-[0_10px_24px_rgba(0,110,251,0.16)] hover:bg-primary-400"
-              : "cursor-not-allowed bg-primary-300 text-white opacity-50"
-          }`}
+          className="btn-primary mt-2 h-14 w-full rounded-full bg-primary-900 text-[16px] font-semibold text-white"
           disabled={!isValid || isPending}
           type="submit"
         >

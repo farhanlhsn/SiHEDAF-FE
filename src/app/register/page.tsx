@@ -11,10 +11,10 @@ export const metadata: Metadata = {
 export default function RegisterPage() {
   return (
     <AuthShell
-      accent="Stroke"
-      description="Buat akun untuk mulai memantau risiko stroke melalui Atrial Fibrillation secara cerdas."
-      titleLabel="Langkah Awal Pencegahan Stroke"
-      titleLines={["Langkah Awal", "Pencegahan"]}
+      description="Buat akun untuk mulai memantau risiko stroke melalui deteksi Atrial Fibrillation."
+      illustration="wear"
+      journeyStep={0}
+      title={{ strong: "Langkah awal pencegahan", light: "dimulai dari sini." }}
     >
       <RegisterForm />
     </AuthShell>

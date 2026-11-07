@@ -1,7 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { DashboardIcon, type DashboardIconName } from "@/components/dashboard/DashboardIcon";
+import {
+  DashboardIcon,
+  type DashboardIconName,
+} from "@/components/dashboard/DashboardIcon";
 
 type DashboardSidebarProps = {
   collapsed: boolean;
@@ -19,23 +22,33 @@ const navigation: Array<{
   { href: "/profil", icon: "profile", label: "Profil" },
 ];
 
+/**
+ * Navigation drawn as stops on one line, echoing the landing page thread:
+ * the current page is the filled stop.
+ */
 export function DashboardSidebar({
   collapsed,
   onNavigate,
   pathname,
 }: DashboardSidebarProps) {
   return (
-    <div className="flex h-full flex-col bg-white">
+    <div className="flex h-full flex-col bg-paper">
       <Link
         aria-label="SiHEDAF"
-        className={`flex h-[72px] shrink-0 items-center overflow-hidden border-b border-[#edf0f3] ${
-          collapsed ? "justify-center px-3" : "px-7"
+        className={`flex h-[72px] shrink-0 items-center overflow-hidden border-b border-primary-900/10 ${
+          collapsed ? "justify-center px-3" : "px-6"
         }`}
         href="/dashboard"
       >
-        <Image alt="Logo SiHEDAF" height={27} priority src="/logo.png" width={27} />
+        <Image
+          alt="Logo SiHEDAF"
+          height={30}
+          preload
+          src="/logo.png"
+          width={30}
+        />
         <span
-          className={`ml-3 whitespace-nowrap text-[17px] font-semibold tracking-[-0.04em] text-primary-900 transition-[opacity,max-width,margin] duration-300 ${
+          className={`ml-3 text-[19px] font-bold tracking-[-0.035em] whitespace-nowrap text-primary-900 transition-[opacity,max-width,margin] duration-300 ${
             collapsed ? "ml-0 max-w-0 opacity-0" : "max-w-28 opacity-100"
           }`}
         >
@@ -43,51 +56,69 @@ export function DashboardSidebar({
         </span>
       </Link>
 
-      <nav aria-label="Navigasi dashboard" className="space-y-2 px-3 py-7">
-        {navigation.map((item) => {
-          const isActive =
-            item.href === "/profil"
-              ? pathname.startsWith("/profil")
-              : pathname === item.href;
+      <nav aria-label="Navigasi dashboard" className="relative px-4 py-8">
+        <span
+          aria-hidden="true"
+          className={`absolute top-[60px] h-[128px] w-[2px] rounded-full bg-primary-900/15 transition-[left] duration-300 ${
+            collapsed ? "left-[41px]" : "left-[45px]"
+          }`}
+          data-rail
+        />
+        <ul className="relative space-y-2">
+          {navigation.map((item) => {
+            const isActive =
+              item.href === "/profil"
+                ? pathname.startsWith("/profil")
+                : pathname === item.href;
 
-          return (
-            <Link
-              aria-current={isActive ? "page" : undefined}
-              className={`group relative flex h-12 items-center rounded-xl text-[13px] transition-colors duration-200 ${
-                collapsed ? "justify-center px-2" : "gap-3 px-4"
-              } ${
-                isActive
-                  ? "bg-primary-50 text-primary-300"
-                  : "text-[#222831] hover:bg-[#f5f7fa] hover:text-primary-500"
-              }`}
-              href={item.href}
-              key={item.href}
-              onClick={onNavigate}
-              title={collapsed ? item.label : undefined}
-            >
-              {isActive ? (
-                <span className="absolute inset-y-2 left-0 w-0.5 rounded-r-full bg-primary-300" />
-              ) : null}
-              <DashboardIcon className="h-5 w-5 shrink-0" name={item.icon} />
-              <span
-                className={`overflow-hidden whitespace-nowrap transition-[opacity,max-width] duration-300 ${
-                  collapsed ? "max-w-0 opacity-0" : "max-w-36 opacity-100"
-                }`}
-              >
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
+            return (
+              <li key={item.href}>
+                <Link
+                  aria-current={isActive ? "page" : undefined}
+                  className={`group flex h-14 items-center rounded-[14px] transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-primary-300 ${
+                    collapsed ? "justify-center px-0" : "gap-3.5 px-3"
+                  } ${isActive ? "bg-white" : "hover:bg-paper-deep"}`}
+                  href={item.href}
+                  onClick={onNavigate}
+                  title={collapsed ? item.label : undefined}
+                >
+                  <span
+                    className={`grid size-9 shrink-0 place-items-center rounded-full border-2 transition-colors duration-200 ${
+                      isActive
+                        ? "border-primary-900 bg-primary-900 text-white"
+                        : "border-primary-900/20 bg-paper text-primary-900 group-hover:border-primary-900/40"
+                    }`}
+                  >
+                    <DashboardIcon
+                      className="h-[18px] w-[18px]"
+                      name={item.icon}
+                    />
+                  </span>
+                  <span
+                    className={`overflow-hidden text-[15px] whitespace-nowrap transition-[opacity,max-width] duration-300 ${
+                      collapsed ? "max-w-0 opacity-0" : "max-w-40 opacity-100"
+                    } ${
+                      isActive
+                        ? "font-bold text-primary-900"
+                        : "font-medium text-primary-900/75 group-hover:text-primary-900"
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
 
-      <div className="mt-auto px-5 pb-5">
+      <div className="mt-auto px-6 pb-6">
         <p
-          className={`overflow-hidden whitespace-nowrap text-[12px] text-[#b1b6bf] transition-opacity duration-200 ${
+          className={`overflow-hidden text-[13px] whitespace-nowrap text-primary-900/70 transition-opacity duration-200 ${
             collapsed ? "opacity-0" : "opacity-100"
           }`}
         >
-          © 2026 SiHEDAF
+          Bukan pengganti diagnosis dokter.
         </p>
       </div>
     </div>

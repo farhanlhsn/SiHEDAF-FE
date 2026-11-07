@@ -62,8 +62,8 @@ export function RegisterForm() {
 
   return (
     <div>
-      <p className="text-[13px] font-semibold text-primary-300">Buat Akun</p>
-      <h1 className="mt-2.5 text-[36px] font-medium tracking-[-0.045em] text-primary-900">
+      <p className="text-[15px] font-semibold text-primary-500">Buat Akun</p>
+      <h1 className="mt-3 text-[clamp(2.1rem,3vw,2.75rem)] leading-[1.02] font-bold tracking-[-0.045em] text-primary-900">
         Daftar Akun
       </h1>
 
@@ -150,11 +150,7 @@ export function RegisterForm() {
         />
 
         <button
-          className={`h-14 w-full rounded-full text-[14px] font-semibold transition-[background-color,transform,box-shadow,opacity] duration-200 ${
-            isValid && !isPending
-              ? "bg-primary-300 text-white shadow-[0_10px_24px_rgba(0,110,251,0.16)] hover:bg-primary-400"
-              : "cursor-not-allowed bg-primary-300 text-white opacity-50 disabled:hover:bg-primary-300"
-          }`}
+          className="btn-primary h-14 w-full rounded-full bg-primary-900 text-[16px] font-semibold text-white"
           disabled={!isValid || isPending}
           type="submit"
         >
@@ -162,9 +158,12 @@ export function RegisterForm() {
         </button>
       </form>
 
-      <p className="mt-7 text-center text-[12px] font-medium text-primary-900/35">
+      <p className="mt-7 text-center text-[15px] text-primary-900/75">
         Sudah punya akun?{" "}
-        <Link className="font-semibold text-primary-300" href="/login">
+        <Link
+          className="font-semibold text-primary-500 underline-offset-4 hover:underline"
+          href="/login"
+        >
           Masuk sekarang
         </Link>
       </p>

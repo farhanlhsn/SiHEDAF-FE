@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # SiHEDAF Project Guide
 
-Terakhir diperbarui: 2 Juli 2026.
+Terakhir diperbarui: 6 November 2026.
 
 ## Gambaran Project
 
@@ -16,13 +16,14 @@ Bahasa utama antarmuka adalah Bahasa Indonesia. Implementasi saat ini berfokus p
 
 ## Tech Stack
 
-- Next.js `16.2.10` dengan App Router dan Turbopack.
-- React dan React DOM `19.2.4`.
-- TypeScript 5.
+- Next.js `16.4.5` dengan App Router dan Turbopack.
+- React dan React DOM `19.3.1`.
+- TypeScript 6 (`~6.0.3`). TypeScript 7 belum dipakai karena `typescript-eslint` baru mendukung `<6.1` dan TS 7 tidak lagi menyediakan API compiler lama.
 - Tailwind CSS 4 melalui `@tailwindcss/postcss`.
 - Lucide React untuk ikon kontrol panel yang semantic dan konsisten.
 - `@daypicker/react` untuk calendar range picker yang terkontrol dan mudah dipetakan ke parameter API.
-- ESLint 9 dengan `eslint-config-next`.
+- ESLint 9 dengan `eslint-config-next`. ESLint 10 belum dipakai karena `eslint-plugin-react` (dependensi `eslint-config-next`) masih membatasi peer ke ESLint 9.
+- `date-fns` 4 sebagai dependensi eksplisit (dipakai langsung oleh panel notifikasi).
 - Node.js native test runner untuk source-contract tests.
 - Tidak menggunakan UI kit atau chart library eksternal; ikon dan grafik dibuat dengan SVG lokal.
 
@@ -37,13 +38,24 @@ Sebelum mengubah API, route, layout, metadata, atau convention Next.js, baca pan
 - Logo, gambar wearable utama, dan wearable dashboard tersedia di folder `public`.
 - Global selection color, smooth scroll, typography, motion dashboard, dan dukungan `prefers-reduced-motion` sudah disiapkan.
 
-### Landing page
+### Landing page — konsep "satu garis"
 
-- Header/navigation responsif.
-- Hero deteksi dini stroke dengan visual smartwatch dan garis sinyal.
-- Section ancaman stroke, fitur teknologi, cara kerja, CTA, dan footer.
-- Link navigasi menuju Tentang, Fitur, Cara Kerja, Tim Kami, Daftar, dan Masuk.
-- Setiap section dipisahkan ke komponen PascalCase di `src/components/sections`.
+- Satu garis PPG biru (`ScrollThread`) digambar mengikuti scroll dari hero sampai CTA, melewati "stasiun" bernomor di tiap section (01 Masalahnya, 02 Berjaga 24 jam, 03 Cara kerja).
+- Rute garis dibaca dari anchor `ThreadPoint` / `ThreadStation` di DOM; geometrinya dihitung oleh modul murni `ThreadPath.ts` (curve, line, jump, wave, loop) sehingga mengikuti layout di setiap breakpoint. Di bawah `lg` garis berjalan lurus di rail kiri.
+- Elemen yang diberi `data-thread-for="<target>"` menerima CSS variable `--thread-progress` (0–1) untuk animasi yang sinkron dengan garis: baris "Bisa bedakan?", jam 24 jam, line-art empat langkah, dan hati di CTA.
+- Hero memakai `LivePulseMonitor` (canvas, sweep seperti monitor pasien) dengan episode AF ilustratif; label "Ilustrasi sinyal PPG" wajib tetap ada.
+- Gelombang PPG normal/AF dibuat deterministik oleh `PulseWaveform.ts` (seed), jadi server dan client menghasilkan bentuk yang sama.
+- Komponen section tetap Server Component; logika client ada di hook `src/components/landing/hooks` (`UseScrollThread`, `UseLivePulse`, `UseInView`, `UseReducedMotion`).
+- Footer gelap memuat kepanjangan SiHEDAF dan disclaimer bahwa SiHEDAF bukan pengganti diagnosis dokter.
+- Setiap section dipisahkan ke komponen PascalCase di `src/components/sections`; elemen visual landing ada di `src/components/landing`.
+
+### Halaman sistem dan metadata
+
+- `app/not-found.tsx` (404 "Sinyal hilang") dan `app/error.tsx` (memakai `unstable_retry` dari Next 16) memakai visual `SignalLost`: garis PPG yang terputus lalu tersambung lagi.
+- `app/(dashboard)/loading.tsx`, gerbang sesi di `ProfileProvider`, dan skeleton profil memakai `PulseLoader` (sinyal pendek berjalan di atas garis PPG, `role="status"`).
+- Tidak ada `alert()` bawaan browser; error memakai toast (`sonner`) yang ditema dengan token `primary`, `af`, dan `warn`.
+- Metadata root berisi deskripsi, Open Graph (`locale: "id_ID"`), dan Twitter `summary_large_image`; `app/opengraph-image.tsx` membuat gambar pratinjau 1200×630 dengan garis PPG normal → AF, dan `app/icon.svg` adalah favicon line-art.
+- Set `SIHEDAF_SITE_URL` (server-only, lihat `.env.example`) di production agar URL gambar pratinjau absolut; tanpa itu Next memakai `localhost` dan memberi peringatan saat build.
 
 ### Tim Kami
 
@@ -54,8 +66,10 @@ Sebelum mengubah API, route, layout, metadata, atau convention Next.js, baca pan
 ### Authentication dan perangkat
 
 - Route `/login`, `/register`, dan `/hubungkan-perangkat`.
-- Split-screen auth layout yang responsif.
-- Visual panel auth memakai vertical flex flow; logo, copy, dan smartwatch tidak boleh kembali menggunakan absolute offsets yang dapat saling overlap.
+- Split-screen auth layout di atas latar `paper`, dengan header (logo + tautan Beranda) dan footer berisi disclaimer.
+- `AuthVisualPanel` menampilkan judul kontras tebal–tipis, `AuthJourney` (peta langkah Daftar → Masuk → Hubungkan perangkat → Dashboard dengan `aria-current="step"`), lalu ilustrasi: line-art yang menggambar diri (`autodraw`) atau foto jam untuk langkah perangkat. Di mobile journey menjadi progress bar ringkas.
+- Visual panel auth memakai vertical flex flow; copy, journey, dan ilustrasi tidak boleh kembali menggunakan absolute offsets yang dapat saling overlap.
+- `AuthInput`: label 15px, teks input 16px (mencegah zoom iOS), error dengan ikon + `role="alert"`, opsi `mono` dan `hint` untuk Device ID. Tombol utama memakai `btn-primary` navy; state disabled tetap terbaca.
 - Active/inactive form state, validasi kelengkapan sederhana, dan toggle password.
 - Login mengarahkan pengguna ke penyambungan perangkat.
 - Register mengarahkan pengguna kembali ke login.
@@ -78,6 +92,10 @@ Sebelum mengubah API, route, layout, metadata, atau convention Next.js, baca pan
 - Edit profil memiliki field terkontrol, upload/preview foto maksimal 2 MB, Device ID disabled, cancel navigation, serta modal sukses setelah penyimpanan.
 - Nama, email, dan avatar edit profil disimpan sementara melalui adapter `ProfileStorage.ts` berbasis `localStorage`; adapter ini adalah batas yang perlu diganti dengan query/mutation backend.
 - Primitive `DashboardModal.tsx` dipakai bersama untuk dialog akun dan hasil aksi; modal dapat ditutup melalui backdrop, tombol close, atau tombol Escape.
+- Tampilan dashboard memakai bahasa visual landing: latar `paper`, sidebar berupa rel dengan "stasiun" (halaman aktif = lingkaran navy terisi), ringkasan dibuka dengan kalimat status besar ("Irama terakhirmu normal/tidak teratur.") plus saran konsultasi dokter saat AF, grafik PPG bergaya monitor dengan sweep saat monitoring aktif, notifikasi sebagai timeline per hari, dan riwayat dengan angka besar + bar proporsi Normal/AF.
+- Format data lewat `DashboardFormat.ts` (`formatConfidence`, `formatWib`, `isNormalResult`, `shareOf`); fungsi ini mengembalikan `null` alih-alih mengarang nilai, jadi UI menampilkan "—" bila API tidak mengirim data (tidak ada lagi fallback keyakinan 95%, baterai 92%, atau ID perangkat `PPG001`).
+- `UseMyDevice.ts` adalah satu-satunya sumber data perangkat (`/api/v1/measurement/my-device`) untuk ringkasan, profil, dan edit profil.
+- Komponen dashboard hanya memakai token warna (tanpa hex mentah), teks minimal 13px, dan teks navy minimal 70% opacity; ini dijaga oleh `DashboardRedesign.test.mjs`.
 - Page entry, sidebar, notification rail, chart draw, staggered rows, dan tombol menggunakan motion ringan.
 - Card dan information surface statis tidak memakai hover-lift agar tidak memberi affordance klik palsu; motion hover hanya dipakai pada kontrol yang benar-benar interaktif.
 
@@ -114,9 +132,15 @@ Sebelum mengubah API, route, layout, metadata, atau convention Next.js, baca pan
 | `primary-800` | `#003171` | Heading biru gelap |
 | `primary-900` | `#002758` | Foreground utama dan logo text |
 
+Token permukaan halaman publik:
+
+- `paper` `#F5F3EE` (latar landing, tim, dan header) dan `paper-deep` `#EBE6DC` (aksen/area tidur di jam 24 jam).
+
 Semantic colors yang konsisten dipakai pada dashboard:
 
-- AF/error: `#FF4572` dengan background `#FFE8EE`.
+- AF/error: `#FF4572` (`af-500`) dengan background `#FFE8EE` (`af-50`); teks kecil AF memakai `#C8264F` (`af-700`) agar kontrasnya lolos AA.
+- Peringatan non-medis (toast warning): `warn-50` `#FFF7E6`, `warn-500` `#C98613`, `warn-700` `#8A5A00`.
+- Di visual landing, irama normal memakai biru `primary-300`, bukan hijau: pasangan hijau–pink gagal uji buta warna (deutan ΔE 2.7), sedangkan biru–pink lolos. Status selalu disertai ikon/label.
 - Normal/success: sekitar `#43B956`–`#4BC35A` dengan background `#E6F7E9`.
 - App background: `#F7F7F8`; card background: `#FFFFFF`.
 - Border netral: sekitar `#E1E5E9`–`#EDF0F3`.
@@ -131,7 +155,8 @@ Gunakan token `primary-*` untuk warna brand. Warna semantic health boleh memakai
 - Sidebar: transisi width/transform selama `300ms`.
 - Stagger list: jeda bertahap `50ms`.
 - Hover motion hanya digunakan pada kontrol interaktif; card informasi statis tidak memakai lift atau shadow hover.
-- Semua motion non-esensial harus tetap mengikuti `prefers-reduced-motion`.
+- Landing: garis scroll, line-art, dan jam 24 jam digerakkan oleh scroll (bukan timer). Monitor hero berhenti saat di luar layar atau tab tidak aktif.
+- Semua motion non-esensial harus tetap mengikuti `prefers-reduced-motion`; di landing, mode ini menampilkan semua ilustrasi dalam keadaan akhir yang lengkap.
 
 ## Route Map
 

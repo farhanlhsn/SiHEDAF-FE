@@ -32,7 +32,10 @@ export default async function ConnectDevicePage() {
         }
       }
     } catch (e) {
-      console.error("Gagal memeriksa status perangkat di Hubungkan Perangkat:", e);
+      console.error(
+        "Gagal memeriksa status perangkat di Hubungkan Perangkat:",
+        e,
+      );
     }
   }
 
@@ -42,10 +45,10 @@ export default async function ConnectDevicePage() {
 
   return (
     <AuthShell
-      accent="SiHEDAF"
-      description="Masukkan Device ID yang tertera pada perangkatmu."
-      titleLabel="Hubungkan Perangkat SiHEDAF"
-      titleLines={["Hubungkan", "Perangkat"]}
+      description="Masukkan Device ID yang tertera pada perangkatmu supaya sinyalnya terhubung ke akunmu."
+      illustration="device"
+      journeyStep={2}
+      title={{ strong: "Satu langkah lagi:", light: "hubungkan perangkatmu." }}
     >
       <ConnectDeviceForm />
     </AuthShell>

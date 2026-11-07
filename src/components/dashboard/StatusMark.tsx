@@ -5,8 +5,8 @@ type StatusMarkProps = {
 
 const sizes = {
   large: "h-[86px] w-[86px]",
-  medium: "h-10 w-10",
-  small: "h-8 w-8",
+  medium: "h-11 w-11",
+  small: "h-9 w-9",
 };
 
 export function StatusMark({ size = "medium", status }: StatusMarkProps) {
@@ -16,12 +16,16 @@ export function StatusMark({ size = "medium", status }: StatusMarkProps) {
     <span
       aria-label={isNormal ? "Normal Rhythm" : "Terdeteksi AF"}
       className={`${sizes[size]} relative inline-grid shrink-0 place-items-center rounded-full ${
-        isNormal ? "bg-[#e6f7e9] text-[#4bc35a]" : "bg-[#ffe8ee] text-[#ff4572]"
+        isNormal ? "bg-primary-50 text-primary-300" : "bg-af-50 text-af-500"
       }`}
       role="img"
     >
       {size === "large" ? (
-        <span className="absolute inset-[-13px] rounded-full border border-primary-200/70" />
+        <span
+          className={`absolute inset-[-12px] rounded-full border-2 border-dashed ${
+            isNormal ? "border-primary-200" : "border-af-500/40"
+          }`}
+        />
       ) : null}
       <svg
         aria-hidden="true"

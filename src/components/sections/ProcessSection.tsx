@@ -1,25 +1,36 @@
-import { SectionLabel } from "@/components/ui/SectionLabel";
+import {
+  AnalyseDrawing,
+  NotifyDrawing,
+  RecordDrawing,
+  WearDrawing,
+} from "@/components/landing/LineArt";
+import { ThreadPoint } from "@/components/landing/ThreadPoint";
+import { ThreadStation } from "@/components/landing/ThreadStation";
 
 const steps = [
   {
-    title: "Kenakan Wristband SiHEDAF",
+    title: "Kenakan wristband SiHEDAF",
     description:
-      "Pasang wearable device SiHEDAF pada pergelangan tangan. Sensor PPG otomatis aktif dan mulai merekam sinyal jantung.",
+      "Pasang di pergelangan tangan seperti jam biasa. Sensor PPG langsung aktif membaca perubahan aliran darah.",
+    Drawing: WearDrawing,
   },
   {
-    title: "Rekam Sinyal PPG Berkala",
+    title: "Sinyal direkam berkala",
     description:
-      "Perangkat merekam sinyal PPG setiap 3 menit dan mengirim data terkompresi ke server via koneksi nirkabel hemat energi.",
+      "Setiap 3 menit perangkat merekam sinyal PPG, lalu mengirimnya dalam bentuk terkompresi lewat koneksi nirkabel hemat energi.",
+    Drawing: RecordDrawing,
   },
   {
-    title: "Analisis AI Klasifikasi AF",
+    title: "AI memeriksa iramanya",
     description:
-      "Model AI memproses fitur temporal dari sinyal PPG dan mengklasifikasikan setiap segmen sebagai Normal atau AF Detected.",
+      "Model AI membaca jarak antar detak di setiap rekaman dan mengelompokkannya: Normal atau AF terdeteksi.",
+    Drawing: AnalyseDrawing,
   },
   {
-    title: "Evaluasi Risiko & Notifikasi",
+    title: "Kamu dapat peringatan",
     description:
-      "Hasil analisis tampil di dashboard. Jika AF terdeteksi, sistem mengirim notifikasi peringatan untuk tindakan pencegahan segera.",
+      "Hasil tampil di dashboard. Jika AF terdeteksi, notifikasi dikirim supaya kamu bisa segera berkonsultasi ke dokter.",
+    Drawing: NotifyDrawing,
   },
 ];
 
@@ -27,43 +38,84 @@ export function ProcessSection() {
   return (
     <section
       aria-labelledby="process-title"
-      className="section-reveal bg-[#fbfbfb] px-5 py-24 sm:px-8 lg:px-10 lg:py-36"
+      className="relative py-28 lg:py-36"
       id="cara-kerja"
     >
-      <div className="mx-auto max-w-[1440px]">
-        <SectionLabel>Cara Kerja</SectionLabel>
+      <div className="mx-auto max-w-[1440px] px-5 lg:px-10">
+        <ThreadStation index="03" label="Cara kerja" />
+
         <h2
-          className="mt-9 max-w-[760px] text-[clamp(2.5rem,3.55vw,3.75rem)] leading-[1.02] font-medium tracking-[-0.055em] text-primary-900"
+          className="mt-10 max-w-[980px] pl-10 text-[clamp(2.4rem,4.7vw,4.75rem)] leading-[0.96] tracking-[-0.05em] text-primary-900 lg:pl-14"
           id="process-title"
         >
-          Langkah Sederhana,
-          <span className="block">
-            <span className="font-serif font-normal italic text-primary-300">
-              Perlindungan
-            </span>{" "}
-            Maksimal
+          <span className="font-bold">Langkah sederhana,</span>{" "}
+          <span className="font-extralight">
+            dari pergelangan tangan sampai peringatan.
           </span>
         </h2>
 
-        <ol className="mt-20 grid gap-12 lg:grid-cols-4 lg:gap-0">
-          {steps.map((step, index) => (
-            <li
-              className="child-reveal relative border-primary-900/10 lg:min-h-[330px] lg:border-l lg:px-10 first:lg:border-l-0 first:lg:pl-0 last:lg:pr-0"
-              key={step.title}
-              style={{ "--child": index } as React.CSSProperties}
-            >
-              <span className="inline-flex h-10 items-center rounded-full border border-primary-300/60 px-5 text-[12px] font-semibold text-primary-300">
-                Langkah {index + 1}
-              </span>
-              <h3 className="mt-12 max-w-[250px] text-[21px] leading-[1.2] font-semibold tracking-[-0.035em] text-primary-900">
-                {step.title}
-              </h3>
-              <p className="mt-5 max-w-[280px] text-[14px] leading-[1.7] font-medium text-primary-900/42">
-                {step.description}
-              </p>
-            </li>
-          ))}
-        </ol>
+        <div className="relative mt-20 lg:mt-40">
+          {/* Clear the heading on the rail before crossing to the first drawing. */}
+          <ThreadPoint
+            className="-top-10 left-[11px] hidden lg:block"
+            dir="down"
+          />
+
+          <ol className="space-y-24 pl-10 lg:space-y-36 lg:pl-14">
+            {steps.map((step, index) => {
+              const drawingOnRight = index % 2 === 0;
+              const target = `step-${index + 1}`;
+
+              return (
+                <li
+                  className="relative grid items-center gap-8 lg:grid-cols-12 lg:gap-10"
+                  key={step.title}
+                >
+                  <ThreadPoint
+                    className="top-0 -left-[29px] lg:hidden"
+                    target={target}
+                    to="line"
+                  />
+
+                  <div
+                    className={`relative flex justify-center lg:col-span-5 ${
+                      drawingOnRight ? "lg:order-2 lg:col-start-8" : ""
+                    }`}
+                    data-thread-for={target}
+                  >
+                    <ThreadPoint
+                      className="top-0 left-1/2 hidden lg:block"
+                      target={target}
+                      to="jump"
+                    />
+                    <step.Drawing className="size-[190px] lg:size-[250px]" />
+                    <ThreadPoint className="bottom-0 left-1/2 hidden lg:block" />
+                  </div>
+
+                  <div
+                    className={`lg:col-span-5 ${
+                      drawingOnRight
+                        ? "lg:order-1 lg:col-start-1"
+                        : "lg:col-start-7"
+                    }`}
+                  >
+                    <p className="text-[clamp(3rem,5vw,4.75rem)] leading-none font-extralight tracking-[-0.06em] text-primary-300 tabular-nums">
+                      0{index + 1}
+                    </p>
+                    <h3 className="mt-4 text-[clamp(1.6rem,2.3vw,2.2rem)] leading-[1.1] font-bold tracking-[-0.035em] text-primary-900">
+                      {step.title}
+                    </h3>
+                    <p className="mt-3 max-w-[460px] text-[18px] leading-[1.6] text-primary-900/80">
+                      {step.description}
+                    </p>
+                  </div>
+
+                  <ThreadPoint className="bottom-0 -left-[29px] lg:hidden" />
+                </li>
+              );
+            })}
+          </ol>
+        </div>
       </div>
     </section>
   );

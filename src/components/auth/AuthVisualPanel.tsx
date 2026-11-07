@@ -1,61 +1,79 @@
 import Image from "next/image";
 
-import { BrandLogo } from "@/components/ui/BrandLogo";
+import { AuthJourney, type JourneyStep } from "@/components/auth/AuthJourney";
+import {
+  HeartDrawing,
+  LockDrawing,
+  WearDrawing,
+} from "@/components/landing/LineArt";
+
+export type AuthIllustration = "heart" | "wear" | "lock" | "device";
+
+export type AuthTitle = {
+  strong: string;
+  light: string;
+};
 
 type AuthVisualPanelProps = {
-  titleLines: string[];
-  titleLabel: string;
-  accent: string;
+  title: AuthTitle;
   description: string;
+  journeyStep?: JourneyStep;
+  illustration: AuthIllustration;
+};
+
+const drawings = {
+  heart: HeartDrawing,
+  wear: WearDrawing,
+  lock: LockDrawing,
 };
 
 export function AuthVisualPanel({
-  titleLines,
-  titleLabel,
-  accent,
+  title,
   description,
+  journeyStep,
+  illustration,
 }: AuthVisualPanelProps) {
-  const leadingTitleLines = titleLines.slice(0, -1);
-  const finalTitleLine = titleLines.at(-1);
+  const Drawing = illustration === "device" ? null : drawings[illustration];
 
   return (
-    <aside className="w-full overflow-hidden bg-[linear-gradient(135deg,#f5f8ff_0%,#eaf2ff_55%,#d9e9fb_100%)] lg:min-h-0 lg:w-1/2">
-      <div className="flex h-full flex-col px-6 py-10 sm:px-10 lg:px-[clamp(3rem,7vw,7rem)] lg:py-[clamp(1.5rem,4vh,3.5rem)]">
-        <div className="shrink-0">
-          <BrandLogo />
-        </div>
+    <aside className="w-full border-b border-primary-900/10 lg:w-[44%] lg:border-r lg:border-b-0">
+      <div className="flex h-full flex-col px-5 py-8 sm:px-10 lg:px-14 lg:py-14 xl:px-20">
+        <h2 className="hero-stagger text-[clamp(2.1rem,3.6vw,3.6rem)] leading-[0.98] tracking-[-0.05em] text-primary-900">
+          <span className="font-bold">{title.strong}</span>{" "}
+          <span className="font-extralight">{title.light}</span>
+        </h2>
+        <p
+          className="hero-stagger mt-5 max-w-[440px] text-[17px] leading-[1.6] text-primary-900/80"
+          style={{ "--stagger": 1 } as React.CSSProperties}
+        >
+          {description}
+        </p>
 
-        <div className="mt-8 max-w-[500px] shrink-0 lg:mt-[clamp(1.75rem,6vh,5.5rem)]">
-          <h2
-            aria-label={titleLabel}
-            className="text-[clamp(2rem,2.6vw,3.25rem)] leading-[1.02] font-medium tracking-[-0.055em] text-primary-900"
+        {journeyStep !== undefined ? (
+          <div
+            className="hero-stagger mt-8 lg:mt-12"
+            style={{ "--stagger": 2 } as React.CSSProperties}
           >
-            {leadingTitleLines.map((line) => (
-              <span className="block" key={line}>
-                {line}
-              </span>
-            ))}
-            <span className="block">
-              {finalTitleLine}{" "}
-              <span className="font-serif font-normal italic text-primary-300">
-                {accent}
-              </span>
-            </span>
-          </h2>
-          <p className="mt-6 max-w-[410px] text-[13px] leading-[1.65] font-medium text-primary-900/43 2xl:text-[14px]">
-            {description}
-          </p>
-        </div>
+            <AuthJourney current={journeyStep} />
+          </div>
+        ) : null}
 
-        <div className="hidden lg:mt-auto lg:flex min-h-0 flex-1 items-end justify-center pt-4">
-          <Image
-            alt="Jam tangan pintar SiHEDAF"
-            className="h-full max-h-[42vh] w-auto max-w-[clamp(150px,18vw,240px)] object-contain drop-shadow-[0_24px_30px_rgba(0,49,113,0.16)]"
-            height={443}
-            priority
-            src="/watch.png"
-            width={277}
-          />
+        <div className="mt-auto hidden min-h-0 justify-center pt-10 lg:flex">
+          {Drawing ? (
+            <Drawing
+              className="autodraw h-auto max-h-[30vh] w-[min(240px,70%)]"
+              connectors={false}
+            />
+          ) : (
+            <Image
+              alt="Jam tangan pintar SiHEDAF"
+              className="watch-float h-auto max-h-[28vh] w-auto object-contain drop-shadow-[0_24px_30px_rgba(0,49,113,0.18)]"
+              height={443}
+              preload
+              src="/watch.png"
+              width={277}
+            />
+          )}
         </div>
       </div>
     </aside>

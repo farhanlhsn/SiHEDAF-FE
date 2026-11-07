@@ -11,10 +11,10 @@ export const metadata: Metadata = {
 export default function LoginPage() {
   return (
     <AuthShell
-      accent="Stroke"
-      description="Pantau irama jantungmu dengan teknologi wearable dan dukungan AI untuk mencegah stroke."
-      titleLabel="Deteksi Dini Risiko Stroke"
-      titleLines={["Deteksi Dini", "Risiko"]}
+      description="Masuk untuk melihat hasil pemantauan irama jantungmu dan riwayat analisis AI."
+      illustration="heart"
+      journeyStep={1}
+      title={{ strong: "Selamat datang", light: "kembali." }}
     >
       <LoginForm />
     </AuthShell>

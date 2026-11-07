@@ -20,10 +20,9 @@ export default async function ResetPasswordPage({
 
   return (
     <AuthShell
-      accent="Aman"
       description="Buat kata sandi baru untuk menjaga akses dan data pemantauan kesehatanmu tetap terlindungi."
-      titleLabel="Keamanan Akun SiHEDAF"
-      titleLines={["Lindungi", "Akun"]}
+      illustration="lock"
+      title={{ strong: "Akunmu", light: "tetap terlindungi." }}
     >
       <ResetPasswordForm token={token} />
     </AuthShell>

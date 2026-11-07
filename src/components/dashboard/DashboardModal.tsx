@@ -47,7 +47,7 @@ export function DashboardModal({
     <div className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto px-4 py-8">
       <button
         aria-label="Tutup dialog"
-        className="modal-backdrop fixed inset-0 bg-[#0d1520]/25"
+        className="modal-backdrop fixed inset-0 bg-primary-900/40 backdrop-blur-[2px]"
         onClick={onClose}
         type="button"
       />
@@ -55,13 +55,13 @@ export function DashboardModal({
         aria-describedby={description ? descriptionId : undefined}
         aria-labelledby={titleId}
         aria-modal="true"
-        className="modal-enter relative z-10 w-full max-w-[460px] rounded-[24px] bg-white p-6 text-[#171c22] shadow-[0_0_0_1px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,20,60,0.08),0_24px_64px_rgba(0,20,60,0.14)] sm:p-8"
+        className="modal-enter relative z-10 w-full max-w-[480px] rounded-[28px] bg-white p-6 text-primary-900 shadow-[0_24px_64px_rgba(0,39,88,0.2)] sm:p-8"
         role="dialog"
       >
         {showCloseButton ? (
           <button
             aria-label="Tutup"
-            className="absolute right-5 top-5 grid h-8 w-8 place-items-center rounded-full text-[#a0a7b0] transition-all hover:bg-[#f0f2f5] hover:text-[#505962] focus-visible:outline-2 focus-visible:outline-primary-300"
+            className="absolute top-5 right-5 grid h-10 w-10 place-items-center rounded-full text-primary-900/75 transition-colors hover:bg-paper hover:text-primary-900 focus-visible:outline-2 focus-visible:outline-primary-300"
             onClick={onClose}
             type="button"
           >
@@ -69,11 +69,17 @@ export function DashboardModal({
           </button>
         ) : null}
 
-        <h2 className="pr-12 text-[21px] font-semibold tracking-[-0.035em]" id={titleId}>
+        <h2
+          className="pr-12 text-[24px] leading-[1.15] font-bold tracking-[-0.035em]"
+          id={titleId}
+        >
           {title}
         </h2>
         {description ? (
-          <p className="mt-2 pr-10 text-[13px] leading-5 text-[#8f969f]" id={descriptionId}>
+          <p
+            className="mt-2 pr-10 text-[16px] leading-[1.55] text-primary-900/80"
+            id={descriptionId}
+          >
             {description}
           </p>
         ) : null}
@@ -82,4 +88,3 @@ export function DashboardModal({
     </div>
   );
 }
-

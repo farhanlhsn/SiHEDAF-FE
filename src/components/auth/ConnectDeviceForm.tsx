@@ -48,31 +48,39 @@ export function ConnectDeviceForm() {
   }
 
   return (
-    <form className="space-y-9" onSubmit={handleSubmit}>
-      <AuthInput
-        autoComplete="off"
-        label="Masukkan Device ID"
-        name="deviceId"
-        onChange={(val) => {
-          setDeviceId(val);
-          setError("");
-        }}
-        placeholder="Contoh: 308398DC47BC"
-        required
-        value={deviceId}
-        error={error}
-      />
-      <button
-        className={`h-14 w-full rounded-full text-[14px] font-semibold transition-[background-color,transform,box-shadow,opacity] duration-200 ${
-          isComplete
-            ? "bg-primary-300 text-white shadow-[0_10px_24px_rgba(0,110,251,0.16)] hover:bg-primary-400"
-            : "cursor-not-allowed bg-primary-300 text-white opacity-50 disabled:hover:bg-primary-300"
-        }`}
-        disabled={!isComplete}
-        type="submit"
-      >
-        {isSubmitting ? "Menghubungkan..." : "Hubungkan perangkat"}
-      </button>
-    </form>
+    <div>
+      <p className="text-[15px] font-semibold text-primary-500">Perangkat</p>
+      <h1 className="mt-3 text-[clamp(2.1rem,3vw,2.75rem)] leading-[1.02] font-bold tracking-[-0.045em] text-primary-900">
+        Hubungkan Perangkat
+      </h1>
+      <p className="mt-3 max-w-[500px] text-[17px] leading-[1.6] text-primary-900/80">
+        Setelah terhubung, hasil pemantauan langsung muncul di dashboard.
+      </p>
+
+      <form className="mt-9 space-y-8" onSubmit={handleSubmit}>
+        <AuthInput
+          autoComplete="off"
+          hint="Ketik persis seperti yang tertera pada perangkatmu."
+          label="Masukkan Device ID"
+          mono
+          name="deviceId"
+          onChange={(val) => {
+            setDeviceId(val);
+            setError("");
+          }}
+          placeholder="308398DC47BC"
+          required
+          value={deviceId}
+          error={error}
+        />
+        <button
+          className="btn-primary h-14 w-full rounded-full bg-primary-900 text-[16px] font-semibold text-white"
+          disabled={!isComplete}
+          type="submit"
+        >
+          {isSubmitting ? "Menghubungkan..." : "Hubungkan perangkat"}
+        </button>
+      </form>
+    </div>
   );
 }
