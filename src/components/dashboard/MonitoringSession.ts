@@ -39,16 +39,26 @@ export function formatElapsed(ms: number): string {
   return hours > 0 ? `${hours}:${mm}:${ss}` : `${mm}:${ss}`;
 }
 
+/** Overtime longer than this without a result: tell the reader to press Stop. */
+export const OVERTIME_HINT_AFTER_MS = 30_000;
+
 export type RecordingClock =
   | { overtime: false; elapsed: string; limit: string; text: string }
-  | { overtime: true };
+  | { overtime: true; stalled: boolean };
 
 /**
  * The recording status: "01:12 / 03:00" up to the 3-minute limit, then
- * overtime (the wristband has stopped and the result is on its way).
+ * overtime (the wristband has stopped and the result is on its way). Overtime
+ * is `stalled` once it has lasted more than 30 s: the wristband may have lost
+ * the session, and only Stop finishes it then.
  */
 export function recordingClock(elapsedMs: number): RecordingClock {
-  if (elapsedMs >= MAX_RECORDING_MS) return { overtime: true };
+  if (elapsedMs >= MAX_RECORDING_MS) {
+    return {
+      overtime: true,
+      stalled: elapsedMs > MAX_RECORDING_MS + OVERTIME_HINT_AFTER_MS,
+    };
+  }
 
   const elapsed = formatElapsed(elapsedMs);
   const limit = formatElapsed(MAX_RECORDING_MS);
@@ -274,19 +284,20 @@ export type ToggleBlock =
   | "device-unavailable"
   | null;
 
+/**
+ * Only starting depends on the wristband. Stop is always possible while a
+ * session runs (also in overtime): the backend's stop does not check the
+ * device, and a lost wristband leaves the session open until Stop.
+ */
 export function toggleBlock(
   phase: MonitoringPhase,
   { device, networkOnline }: { device: DeviceState; networkOnline: boolean },
 ): ToggleBlock {
   if (!networkOnline) return "no-network";
+  if (phase === "recording" || phase === "analysing") return null;
   // Stale may still start: the backend decides, and its refusal gets a toast.
   if (device === "online" || device === "stale") return null;
-  // Stopping does not need the wristband's state; starting does.
-  if (device === "error") {
-    return phase === "recording" || phase === "analysing"
-      ? null
-      : "device-unknown";
-  }
+  if (device === "error") return "device-unknown";
 
   return "device-unavailable";
 }
@@ -295,20 +306,24 @@ export function toggleBlock(
  * Where to go when a start/stop request timed out, from what /latest reports
  * now: a running session keeps recording; after a stop anything else is
  * being analysed; after a start anything else means it did not start.
+ * After a start, `running` (the newest history row, see runningSessionFrom)
+ * counts too: the real /latest only returns COMPLETED rows, so a session that
+ * did start shows up there. A stop ignores it; the analysing poll decides.
  */
 export function afterToggleTimeout(
   action: "start" | "stop",
   latest: { status?: string } | null | undefined,
+  running: RunningSession | null = null,
 ): { phase: "recording" | "analysing" | "idle"; tookEffect: boolean } {
-  const running = latest?.status?.toUpperCase() === "IN_PROGRESS";
+  const latestRunning = latest?.status?.toUpperCase() === "IN_PROGRESS";
 
   if (action === "start") {
-    return running
+    return running !== null || latestRunning
       ? { phase: "recording", tookEffect: true }
       : { phase: "idle", tookEffect: false };
   }
 
-  return running
+  return latestRunning
     ? { phase: "recording", tookEffect: false }
     : { phase: "analysing", tookEffect: true };
 }

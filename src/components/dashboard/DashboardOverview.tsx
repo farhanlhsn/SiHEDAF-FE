@@ -32,6 +32,7 @@ import { useDashboardOverview } from "@/components/dashboard/hooks/UseDashboardO
 const panelClassName = "rounded-[24px] border border-primary-900/10 bg-white";
 const labelClassName = "text-[0.875rem] font-medium text-primary-900/75";
 const toggleHintId = "monitoring-toggle-hint";
+const stalledHintId = "monitoring-stalled-hint";
 const valueClassName = "mt-1 text-[1rem] font-semibold text-primary-900";
 
 export function DashboardOverview() {
@@ -85,6 +86,12 @@ export function DashboardOverview() {
       : toggleBlocked === "device-unknown"
         ? "Status perangkat belum bisa dimuat."
         : null;
+  // Overtime for more than 30 s without a result: only Stop finishes it now.
+  const isStalled = isMonitoringActive && clock.overtime && clock.stalled;
+  const toggleDescribedBy =
+    [toggleHint ? toggleHintId : null, isStalled ? stalledHintId : null]
+      .filter(Boolean)
+      .join(" ") || undefined;
 
   return (
     <section className="min-h-[calc(100dvh-72px)] min-w-0 px-4 py-8 sm:px-7 lg:px-10 lg:py-10">
@@ -253,6 +260,15 @@ export function DashboardOverview() {
                     : "Pembaruan dihentikan sementara"}
                 </span>
               </div>
+              {/* Not live: it appears once and is tied to the Stop button instead. */}
+              {isStalled ? (
+                <p
+                  className="mt-2 max-w-[560px] text-[0.9375rem] leading-[1.55] font-medium text-primary-900/80"
+                  id={stalledHintId}
+                >
+                  {"Belum ada hasil dari wristband. Tekan Hentikan Monitoring untuk menyelesaikan rekaman."}
+                </p>
+              ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-2.5">
               <label className="relative block">
@@ -281,7 +297,7 @@ export function DashboardOverview() {
                     ? "border-[1.5px] border-primary-900/20 bg-white text-primary-900 hover:bg-paper-deep"
                     : "btn-primary bg-primary-900 text-white"
                 }`}
-                aria-describedby={toggleHint ? toggleHintId : undefined}
+                aria-describedby={toggleDescribedBy}
                 disabled={
                   toggleBlocked !== null || isTogglingAction || isAnalysing
                 }

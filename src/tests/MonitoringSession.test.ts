@@ -4,6 +4,7 @@ import { SessionExpiredError } from "../features/auth/session/client/ApiFetch";
 import {
   EMPTY_BASELINE,
   MAX_RECORDING_MS,
+  OVERTIME_HINT_AFTER_MS,
   POLL_INTERVAL_MS,
   POLL_MAX_ATTEMPTS,
   RECORDING_WATCH_INTERVAL_MS,
@@ -278,13 +279,6 @@ test("restartAction lets a stale wristband try again: the backend decides", () =
   assert.equal(restartAction("recording", { device: "stale", busy: false }), "hidden");
 });
 
-test("toggleBlock lets a stale wristband start; a refusal comes back from the backend", () => {
-  assert.equal(toggleBlock("idle", { device: "stale", networkOnline: true }), null);
-  assert.equal(toggleBlock("result", { device: "stale", networkOnline: true }), null);
-  assert.equal(toggleBlock("timeout", { device: "stale", networkOnline: true }), null);
-  assert.equal(toggleBlock("idle", { device: "stale", networkOnline: false }), "no-network");
-});
-
 test("toggleBlock says why Mulai/Hentikan Monitoring is unavailable", () => {
   assert.equal(toggleBlock("idle", { device: "online", networkOnline: true }), null);
   assert.equal(toggleBlock("recording", { device: "online", networkOnline: true }), null);
@@ -296,11 +290,24 @@ test("toggleBlock says why Mulai/Hentikan Monitoring is unavailable", () => {
   assert.equal(toggleBlock("result", { device: "error", networkOnline: true }), "device-unknown");
   assert.equal(toggleBlock("timeout", { device: "error", networkOnline: true }), "device-unknown");
   assert.equal(toggleBlock("recording", { device: "error", networkOnline: true }), null);
-  // Loading, offline or no device: unavailable (explained by the device card).
+  // Loading, offline or no device: starting is unavailable (explained by the device card).
   for (const device of ["loading", "offline", "none"] as const) {
     assert.equal(toggleBlock("idle", { device, networkOnline: true }), "device-unavailable");
-    assert.equal(toggleBlock("recording", { device, networkOnline: true }), "device-unavailable");
   }
+});
+
+test("toggleBlock never blocks Stop for the wristband's sake: the backend's stop does not check it", () => {
+  for (const device of ["online", "stale", "offline", "none", "loading", "error"] as const) {
+    assert.equal(toggleBlock("recording", { device, networkOnline: true }), null, `Stop blocked for ${device}`);
+    assert.equal(toggleBlock("recording", { device, networkOnline: false }), "no-network");
+  }
+});
+
+test("toggleBlock lets a stale wristband start; a refusal comes back from the backend", () => {
+  assert.equal(toggleBlock("idle", { device: "stale", networkOnline: true }), null);
+  assert.equal(toggleBlock("result", { device: "stale", networkOnline: true }), null);
+  assert.equal(toggleBlock("timeout", { device: "stale", networkOnline: true }), null);
+  assert.equal(toggleBlock("idle", { device: "stale", networkOnline: false }), "no-network");
 });
 
 function fakeClock() {
@@ -470,6 +477,24 @@ test("afterToggleTimeout adopts the state that /latest reports", () => {
   assert.deepEqual(afterToggleTimeout("stop", null), { phase: "analysing", tookEffect: true });
 });
 
+test("afterToggleTimeout adopts a session the history reports after a start timed out", () => {
+  // The real /latest only returns COMPLETED rows: the newest history row tells a started session.
+  const running = { id: 77, createdAt: "2026-11-07T03:00:00Z", startedAt: Date.parse("2026-11-07T03:00:00Z") };
+  const done = { status: "COMPLETED", resultClass: 0, resultLabel: "Normal (N)", confidenceLevel: 0.9 };
+
+  assert.deepEqual(afterToggleTimeout("start", done, running), { phase: "recording", tookEffect: true });
+  assert.deepEqual(afterToggleTimeout("start", null, running), { phase: "recording", tookEffect: true });
+  assert.deepEqual(afterToggleTimeout("start", done, null), { phase: "idle", tookEffect: false });
+  assert.deepEqual(afterToggleTimeout("start", null, null), { phase: "idle", tookEffect: false });
+  // The old /latest IN_PROGRESS path still works without a history answer.
+  assert.deepEqual(
+    afterToggleTimeout("start", { status: "IN_PROGRESS" }, null),
+    { phase: "recording", tookEffect: true },
+  );
+  // A stop never reads the history: the analysing poll decides.
+  assert.deepEqual(afterToggleTimeout("stop", done, running), { phase: "analysing", tookEffect: true });
+});
+
 test("start and stop wait longer than polls; timeouts are told apart from failures", () => {
   assert.equal(TOGGLE_TIMEOUT_MS, 30_000);
   assert.ok(TOGGLE_TIMEOUT_MS > REQUEST_TIMEOUT_MS);
@@ -509,8 +534,15 @@ test("recordingClock counts up to 03:00, then reports overtime", () => {
   assert.deepEqual(recordingClock(0), { overtime: false, elapsed: "00:00", limit: "03:00", text: "00:00 / 03:00" });
   assert.deepEqual(recordingClock(72_000), { overtime: false, elapsed: "01:12", limit: "03:00", text: "01:12 / 03:00" });
   assert.deepEqual(recordingClock(179_999), { overtime: false, elapsed: "02:59", limit: "03:00", text: "02:59 / 03:00" });
-  assert.deepEqual(recordingClock(180_000), { overtime: true });
-  assert.deepEqual(recordingClock(3_600_000), { overtime: true });
+  assert.deepEqual(recordingClock(180_000), { overtime: true, stalled: false });
+  assert.deepEqual(recordingClock(3_600_000), { overtime: true, stalled: true });
+});
+
+test("recordingClock asks for Stop once overtime has lasted more than 30 s", () => {
+  assert.equal(OVERTIME_HINT_AFTER_MS, 30_000);
+  assert.deepEqual(recordingClock(MAX_RECORDING_MS + 29_999), { overtime: true, stalled: false });
+  assert.deepEqual(recordingClock(MAX_RECORDING_MS + 30_000), { overtime: true, stalled: false });
+  assert.deepEqual(recordingClock(MAX_RECORDING_MS + 30_001), { overtime: true, stalled: true });
 });
 
 test("recordingClock never shows a negative or broken time", () => {

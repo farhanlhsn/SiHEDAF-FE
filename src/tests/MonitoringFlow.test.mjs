@@ -125,7 +125,7 @@ test("a slow first /latest still teaches the baseline before it is ignored", () 
 test("start/stop wait 30 s and re-read /latest after a timeout", () => {
   assert.match(sessionHook, /requestSignal\(lifetime, TOGGLE_TIMEOUT_MS\)/);
   assert.match(sessionHook, /isTimeoutError\(error\)/);
-  assert.match(sessionHook, /afterToggleTimeout\(action, latest\)/);
+  assert.match(sessionHook, /afterToggleTimeout\(\s*action,\s*latest,\s*running,\s*\)/);
   assert.match(sessionHook, /toast\.error\(TOGGLE_ERROR\)/);
 });
 
@@ -214,4 +214,41 @@ test("a refused start gets a fixed wristband hint and no server text reaches a t
     assert.match(arg, /^(?:TOGGLE_FAILED|TOGGLE_ERROR|START_REFUSED)$/, `toast shows ${arg}`);
   }
   assert.doesNotMatch(sessionHook, /\.message\b|\.errors\b/, "server text is never read");
+});
+
+test("Stop stays possible while recording, whatever the wristband state", () => {
+  const session = read("components/dashboard/MonitoringSession.ts");
+  const block = session.slice(session.indexOf("export function toggleBlock("));
+  const body = block.slice(0, block.indexOf("\n}\n"));
+  // Only the network can block a running session's Stop; the device check comes after.
+  assert.ok(
+    body.indexOf('if (phase === "recording" || phase === "analysing") return null;') <
+      body.indexOf('device === "online"'),
+  );
+  assert.match(overview, /disabled=\{\s*toggleBlocked !== null \|\| isTogglingAction \|\| isAnalysing\s*\}/);
+});
+
+test("overtime longer than 30 s tells the reader to press Stop, once and not live", () => {
+  const text = "Belum ada hasil dari wristband. Tekan Hentikan Monitoring untuk menyelesaikan rekaman.";
+  assert.ok(overview.includes(text));
+  assert.match(overview, /const isStalled = isMonitoringActive && clock\.overtime && clock\.stalled;/);
+  const at = overview.indexOf(text);
+  const paragraph = overview.slice(overview.lastIndexOf("<p", at), at);
+  assert.doesNotMatch(paragraph, /aria-live|role="(?:status|alert)"/);
+  assert.match(paragraph, /text-\[0\.9375rem\]/);
+  assert.match(paragraph, /text-primary-900\/80/);
+  assert.match(paragraph, /id=\{stalledHintId\}/);
+  // The Stop button points to it for screen readers.
+  assert.match(overview, /aria-describedby=\{toggleDescribedBy\}/);
+  assert.match(overview, /isStalled \? stalledHintId : null/);
+});
+
+test("a start that timed out adopts a running session from the newest history row", () => {
+  assert.match(sessionHook, /if \(action === "start"\) running = await fetchRunningSession\(lifetime\);/);
+  assert.match(sessionHook, /if \(!running\) latest = await fetchLatest\(lifetime\);/);
+  assert.match(sessionHook, /afterToggleTimeout\(\s*action,\s*latest,\s*running,\s*\)/);
+  assert.match(
+    sessionHook,
+    /next === "recording" && running\) \{[\s\S]{0,160}rememberSession\(baselineRef\.current, running\);\s*beginRecording\(running\.startedAt \?\? Date\.now\(\)\);/,
+  );
 });

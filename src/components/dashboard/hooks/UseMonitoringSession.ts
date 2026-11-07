@@ -312,12 +312,18 @@ export function useMonitoringSession({
     [pollForResult],
   );
 
-  /** A start/stop timed out: read /latest once and adopt what it reports. */
+  /**
+   * A start/stop timed out: look before reporting. After a start the newest
+   * history row tells a session that did begin (the real /latest only returns
+   * COMPLETED rows); otherwise /latest is read once. Adopt what they report.
+   */
   const recoverFromTimeout = useCallback(
     async (action: ToggleAction, lifetime: AbortSignal) => {
-      let latest: MeasurementData | null;
+      let latest: MeasurementData | null = null;
+      let running: RunningSession | null = null;
       try {
-        latest = await fetchLatest(lifetime);
+        if (action === "start") running = await fetchRunningSession(lifetime);
+        if (!running) latest = await fetchLatest(lifetime);
       } catch (error) {
         if (error instanceof SessionExpiredError) return;
         if (!lifetime.aborted) toast.error(TOGGLE_ERROR);
@@ -325,8 +331,16 @@ export function useMonitoringSession({
       }
       if (lifetime.aborted) return;
 
-      const { phase: next, tookEffect } = afterToggleTimeout(action, latest);
-      if (next === "recording" && latest) {
+      const { phase: next, tookEffect } = afterToggleTimeout(
+        action,
+        latest,
+        running,
+      );
+      if (next === "recording" && running) {
+        // Its own result will count as fresh once the server completes it.
+        baselineRef.current = rememberSession(baselineRef.current, running);
+        beginRecording(running.startedAt ?? Date.now());
+      } else if (next === "recording" && latest) {
         baselineRef.current = rememberResult(baselineRef.current, latest);
         beginRecording(sessionStartFrom(latest) ?? Date.now());
       } else if (next === "analysing") {
