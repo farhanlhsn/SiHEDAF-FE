@@ -60,7 +60,8 @@ export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
           label: "Keyakinan AI",
           value: formatConfidence(item.confidenceLevel) ?? "Tidak tersedia",
         },
-        { label: "Device ID", value: item.deviceId || "—" },
+        // The paired ID the reader typed in, never the internal device UUID.
+        { label: "Device ID", value: item.device?.deviceNumber || "—" },
       ]
     : [];
 
@@ -131,7 +132,7 @@ export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
             {isAlert ? (
               <Link
                 className={`${actionClassName} bg-primary-900 text-white hover:bg-primary-800`}
-                href={reportHref(rangeEndingOn(item.requestedAt))}
+                href={reportHref(rangeEndingOn(item.completedAt ?? item.requestedAt))}
               >
                 Buat laporan dokter
               </Link>

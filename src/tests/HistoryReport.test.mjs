@@ -62,7 +62,8 @@ test("doctor report view carries the required copy and states", async () => {
     "Tanpa hasil",
     "Jenis",
     "Belum ada rekaman pada periode ini.",
-    "rekaman pertama pada periode ini",
+    // History is newest first, so a cut-off report scanned the newest rows.
+    "rekaman terbaru pada periode ini",
     "Angka ringkasan hanya mencakup rekaman tersebut",
     "bukan diagnosis",
     "Durasi dan skala waktu grafik dihitung dari laju sampel 50 Hz.",
@@ -264,4 +265,24 @@ test("the report's six-column event table scrolls sideways on phones and fits pr
   const report = await read("components/dashboard/DoctorReportView.tsx");
   assert.match(report, /<ScrollArea\s+className="mt-3 w-full print:overflow-visible"/);
   assert.match(report, /<table className="w-full min-w-\[640px\] border-collapse text-left print:min-w-0">/);
+});
+
+test("a cut-off report names the scanned rows as the newest, never the first", async () => {
+  const source = await read("components/dashboard/DoctorReportView.tsx");
+  assert.ok(source.includes("dari {report.scanned} rekaman terbaru pada periode ini."));
+  assert.doesNotMatch(source, /rekaman pertama/);
+});
+
+test("detail Device ID is the paired number; the doctor report window and Waktu follow completedAt", async () => {
+  const detail = await read("components/dashboard/HistoryDetailModal.tsx");
+  assert.match(detail, /\{ label: "Device ID", value: item\.device\?\.deviceNumber \|\| "—" \}/);
+  assert.doesNotMatch(detail, /item\.deviceId/);
+  assert.match(detail, /reportHref\(\s*rangeEndingOn\(item\.completedAt \?\? item\.requestedAt\),?\s*\)/);
+
+  const hook = await read("components/dashboard/hooks/UseHistoryView.ts");
+  assert.match(hook, /device\?: \{ deviceNumber\?: string \} \| null;/);
+
+  const report = await read("components/dashboard/DoctorReportView.tsx");
+  assert.match(report, /formatWib\(item\.completedAt \?\? item\.requestedAt\)/);
+  assert.doesNotMatch(report, /formatWib\(item\.requestedAt\)/);
 });

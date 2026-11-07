@@ -204,8 +204,9 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                                 </span>
                               </span>
                             </td>
+                            {/* The report filters on completedAt, so it shows that time. */}
                             <td className="py-3 text-[0.9375rem] text-primary-900">
-                              {formatWib(item.requestedAt) ?? "—"}
+                              {formatWib(item.completedAt ?? item.requestedAt) ?? "—"}
                             </td>
                             <td className="py-3 text-[0.9375rem] tabular-nums text-primary-900">
                               {recordingDuration(item.ppgResult?.rawPpgData) ?? "—"}
@@ -230,7 +231,7 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                 )}
                 {report.truncated ? (
                   <p className="mt-3 text-[0.875rem] text-primary-900/80">
-                    Menampilkan kejadian AF dan AFL dari {report.scanned} rekaman pertama pada periode ini.
+                    Menampilkan kejadian AF dan AFL dari {report.scanned} rekaman terbaru pada periode ini.
                     Angka ringkasan hanya mencakup rekaman tersebut. Persempit periode laporan untuk melihat semuanya.
                   </p>
                 ) : null}

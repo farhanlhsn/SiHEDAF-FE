@@ -20,7 +20,9 @@ export type HistoryItem = {
   confidenceLevel?: number;
   requestedAt?: string;
   completedAt?: string;
+  /** Internal device UUID: never shown; the paired ID is device.deviceNumber. */
   deviceId?: string;
+  device?: { deviceNumber?: string } | null;
   ppgData?: number[];
   ppgResult?: { rawPpgData?: number[] };
 };
