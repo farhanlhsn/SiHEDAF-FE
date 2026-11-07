@@ -41,7 +41,8 @@ export function classifyResult(m: ClassifiableResult): ResultKind {
   // resultClass missing: fall back to the label.
   if (label.includes("flutter") || label.startsWith("afl")) return "flutter";
   if (label.includes("fibrillation") || label.startsWith("af")) return "af";
-  if (label.includes("normal")) {
+  // A whole word, so "abnormal" never reads as normal.
+  if (/\bnormal\b/.test(label)) {
     return hasConfidence(m.confidenceLevel) ? "normal" : "unavailable";
   }
 

@@ -132,7 +132,11 @@ export function DashboardOverview() {
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.9375rem] text-primary-900/80">
               {isNeutral ? null : (
-                <StatusMark size="small" status={isAlert ? "af" : "normal"} />
+                <StatusMark
+                  label={copy.label}
+                  size="small"
+                  status={isAlert ? "af" : "normal"}
+                />
               )}
               <span className="font-semibold text-primary-900">
                 Hasil Analisis Terakhir
@@ -366,7 +370,11 @@ export function DashboardOverview() {
               <div className="mt-5 flex-1">
                 <p className="flex items-center gap-3">
                   {isNeutral ? null : (
-                    <StatusMark size="small" status={isAlert ? "af" : "normal"} />
+                    <StatusMark
+                      label={copy.label}
+                      size="small"
+                      status={isAlert ? "af" : "normal"}
+                    />
                   )}
                   <span
                     className={`text-[0.9375rem] font-semibold ${

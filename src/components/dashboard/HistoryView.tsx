@@ -239,6 +239,7 @@ export function HistoryView() {
                           <div className="flex items-center gap-3">
                             {isNeutral ? null : (
                               <StatusMark
+                                label={copy.label}
                                 size="small"
                                 status={isNormal ? "normal" : "af"}
                               />
@@ -258,7 +259,7 @@ export function HistoryView() {
                               {isNeutral ? null : (
                                 <p className="mt-0.5 text-[0.875rem] text-primary-900/75">
                                   {isNormal
-                                    ? "Tidak ditemukan pola AF"
+                                    ? "Tidak ditemukan pola AF atau AFL"
                                     : result === "flutter"
                                       ? "Pola AFL teridentifikasi"
                                       : "Pola AF teridentifikasi"}

@@ -57,7 +57,7 @@ test("isFreshResult treats every COMPLETED kind as final and pending never", () 
   assert.equal(isFreshResult({ id: 6, ...done }, 5), false);
 });
 
-test("isFreshResult requires a labelled result that differs from the previous one", () => {
+test("isFreshResult requires a final result that differs from the previous one", () => {
   assert.equal(isFreshResult({ id: 6, resultLabel: "Normal" }, 5), true);
   assert.equal(isFreshResult({ id: 5, resultLabel: "Normal" }, 5), false);
   assert.equal(isFreshResult({ id: 6 }, 5), false);
@@ -174,7 +174,7 @@ test("rememberResult tracks the shown result and a resumed session", () => {
     sessionCreatedAt: "2026-11-06T10:00:00Z",
   });
 
-  // A labelled result with an id becomes the new baseline and ends the session check.
+  // A final result with an id becomes the new baseline and ends the session check.
   assert.deepEqual(rememberResult(resumed, { id: 42, resultLabel: "Normal" }), {
     previousResultId: 42,
     previousTimestamp: null,
@@ -202,8 +202,34 @@ test("rememberResult tracks the shown result and a resumed session", () => {
     false,
   );
 
-  // A finished, unlabelled row changes nothing.
+  // A COMPLETED row with no result at all (pending) changes nothing.
   assert.equal(rememberResult(idless, { id: 9, status: "COMPLETED" }), idless);
+});
+
+test("short, unavailable and flutter rows become the baseline, so an old one is not fresh after Stop", () => {
+  const done = { status: "COMPLETED" };
+  const rows = [
+    { id: 30, ...done, resultClass: 0, resultLabel: "Not Enough Data", confidenceLevel: 0 },
+    { id: 31, ...done, resultClass: 0, resultLabel: "Normal (N)", confidenceLevel: 0 },
+    { id: 32, ...done, resultClass: 2, resultLabel: "Atrial Flutter", confidenceLevel: 0.8 },
+  ];
+
+  for (const row of rows) {
+    const baseline = rememberResult(EMPTY_BASELINE, row);
+    assert.deepEqual(baseline, { ...EMPTY_BASELINE, previousResultId: row.id });
+    // The same row polled again after Stop is not the new session's result…
+    assert.equal(isFreshResult(row, baseline.previousResultId, baseline), false);
+    // …the next one is.
+    assert.equal(isFreshResult({ ...row, id: row.id + 100 }, baseline.previousResultId, baseline), true);
+    // The first /latest teaches the same baseline.
+    assert.deepEqual(rememberInitial(EMPTY_BASELINE, row), baseline);
+  }
+
+  // Without an id, the timestamp of a short row is remembered instead.
+  const idless = { ...done, resultClass: 0, resultLabel: "Not Enough Data", confidenceLevel: 0, completedAt: "2026-11-07T03:00:05Z" };
+  const remembered = rememberResult(EMPTY_BASELINE, idless);
+  assert.equal(remembered.previousTimestamp, "2026-11-07T03:00:05Z");
+  assert.equal(isFreshResult(idless, remembered.previousResultId, remembered), false);
 });
 
 test("restartAction offers a restart only once no session is running", () => {

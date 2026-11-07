@@ -68,9 +68,9 @@ type ResultRecord = {
 
 /** What is known about results shown before the session that is being analysed. */
 export type ResultBaseline = {
-  /** Id of the last labelled result. */
+  /** Id of the last final result (any COMPLETED kind, see classifyResult). */
   previousResultId: number | null;
-  /** completedAt ?? createdAt of the last labelled result when it had no id. */
+  /** completedAt ?? createdAt of the last final result when it had no id. */
   previousTimestamp: string | null;
   /** The IN_PROGRESS row a reloaded page resumed, until its result arrives. */
   sessionId: number | null;

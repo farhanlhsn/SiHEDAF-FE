@@ -10,6 +10,7 @@ import {
   classifyResult,
   isAlertKind,
   RESULT_COPY,
+  type ResultKind,
 } from "@/components/dashboard/ResultKind";
 import { DashboardModal } from "@/components/dashboard/DashboardModal";
 import { PpgTrace } from "@/components/dashboard/PpgTrace";
@@ -24,6 +25,16 @@ type HistoryDetailModalProps = Readonly<{
   item: HistoryItem | null;
   onClose: () => void;
 }>;
+
+// Read after "Grafik sinyal PPG, " so the trace names what it shows, in Indonesian.
+const TRACE_PHRASE: Record<ResultKind, string> = {
+  normal: "irama normal",
+  af: "terdeteksi AF",
+  flutter: "terdeteksi AFL",
+  short: "belum ada hasil",
+  unavailable: "belum ada hasil",
+  pending: "belum ada hasil",
+};
 
 const actionClassName =
   "inline-flex h-12 items-center justify-center rounded-full px-6 text-[1rem] font-semibold focus-visible:outline-2 focus-visible:outline-primary-300";
@@ -57,7 +68,11 @@ export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
         <div className="space-y-6">
           <div className="flex items-center gap-3">
             {isNeutral ? null : (
-              <StatusMark size="small" status={isNormal ? "normal" : "af"} />
+              <StatusMark
+                label={copy.label}
+                size="small"
+                status={isNormal ? "normal" : "af"}
+              />
             )}
             <p
               className={`text-[0.9375rem] font-semibold ${
@@ -75,7 +90,7 @@ export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
           <PpgTrace
             className="h-40 w-full rounded-[16px] bg-paper"
             data={item.ppgResult?.rawPpgData}
-            label={`Grafik sinyal PPG${isNeutral ? "" : `, ${copy.label.toLowerCase()}`}`}
+            label={`Grafik sinyal PPG, ${TRACE_PHRASE[result]}`}
             tone={isAlert ? "pink" : "blue"}
           />
 

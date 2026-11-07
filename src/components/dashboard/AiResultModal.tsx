@@ -226,7 +226,11 @@ function ResultBody({
       <div className="flex items-start gap-4">
         {isNeutral ? null : (
           <div className="shrink-0">
-            <StatusMark size="large" status={isAlert ? "af" : "normal"} />
+            <StatusMark
+              label={RESULT_COPY[kind].label}
+              size="large"
+              status={isAlert ? "af" : "normal"}
+            />
           </div>
         )}
         <p className="text-[1rem] leading-[1.55] text-primary-900/80">

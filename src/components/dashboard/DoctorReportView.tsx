@@ -183,8 +183,12 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                           </td>
                           <td className="py-3 text-[0.9375rem] font-semibold text-af-700">
                             <span className="flex items-center gap-2">
-                              <StatusMark size="small" status="af" />
-                              <span aria-label={RESULT_COPY[classifyResult(item)].label}>
+                              <StatusMark
+                                label={RESULT_COPY[classifyResult(item)].label}
+                                size="small"
+                                status="af"
+                              />
+                              <span>
                                 {classifyResult(item) === "flutter" ? "AFL" : "AF"}
                               </span>
                             </span>

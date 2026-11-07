@@ -50,6 +50,10 @@ test("without resultClass the label decides", () => {
   assert.equal(kind({ resultLabel: "Atrial Flutter" }), "flutter");
   assert.equal(kind({ resultLabel: "AFL (F)" }), "flutter");
   assert.equal(kind({ resultLabel: "something else" }), "pending");
+  // "normal" must be a whole word: an abnormal label is never a normal result.
+  assert.equal(kind({ resultLabel: "Abnormal", confidenceLevel: 0.9 }), "pending");
+  assert.equal(kind({ resultLabel: "abnormal rhythm", confidenceLevel: 0.9 }), "pending");
+  assert.equal(kind({ resultLabel: "NORMAL", confidenceLevel: 0.9 }), "normal");
   assert.equal(kind({ resultLabel: "" }), "pending");
   assert.equal(kind({}), "pending");
   assert.equal(kind({ resultLabel: null, resultClass: null }), "pending");
