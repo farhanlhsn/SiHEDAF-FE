@@ -4,6 +4,7 @@ import {
   useEffect,
   useId,
   useRef,
+  useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
@@ -16,6 +17,11 @@ function subscribeNoop() {
 
 type DashboardModalProps = Readonly<{
   children: ReactNode;
+  /**
+   * A new key swaps in a fresh dialog element (focus moves to it and its
+   * title is announced) while the backdrop and the opener to restore stay.
+   */
+  contentKey?: string;
   description?: string;
   onClose: () => void;
   open: boolean;
@@ -26,6 +32,7 @@ type DashboardModalProps = Readonly<{
 
 export function DashboardModal({
   children,
+  contentKey,
   description,
   onClose,
   open,
@@ -64,7 +71,18 @@ export function DashboardModal({
   const dialogRef = useRef<HTMLElement>(null);
   const isShown = open && mounted;
 
-  // Move focus into the dialog once it exists and give it back on close.
+  // The content key the modal opened with. A later key is a swap, which skips
+  // the enter animation so the dialog does not look as if it reopened.
+  const [openedKey, setOpenedKey] = useState(contentKey);
+  const [wasShown, setWasShown] = useState(isShown);
+  if (wasShown !== isShown) {
+    setWasShown(isShown);
+    setOpenedKey(contentKey);
+  }
+  const isSwap = contentKey !== openedKey;
+
+  // Move focus into the dialog once it exists and give it back on close. The
+  // opener is captured only when the modal opens, never on a content swap.
   useEffect(() => {
     if (!isShown) return;
 
@@ -75,6 +93,14 @@ export function DashboardModal({
       if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
     };
   }, [isShown]);
+
+  // A content swap mounts a new dialog element: move focus into it so its
+  // title is announced.
+  useEffect(() => {
+    if (!isShown) return;
+
+    dialogRef.current?.focus();
+  }, [contentKey, isShown]);
 
   if (!isShown) return null;
 
@@ -90,9 +116,10 @@ export function DashboardModal({
         aria-describedby={description ? descriptionId : undefined}
         aria-labelledby={titleId}
         aria-modal="true"
+        key={contentKey}
         ref={dialogRef}
         tabIndex={-1}
-        className={`modal-enter outline-none relative z-10 w-full ${size === "wide" ? "max-w-[760px]" : "max-w-[480px]"} rounded-[28px] bg-white p-6 text-primary-900 shadow-[0_24px_64px_rgba(0,39,88,0.2)] sm:p-8`}
+        className={`${isSwap ? "" : "modal-enter "}outline-none relative z-10 w-full ${size === "wide" ? "max-w-[760px]" : "max-w-[480px]"} rounded-[28px] bg-white p-6 text-primary-900 shadow-[0_24px_64px_rgba(0,39,88,0.2)] sm:p-8`}
         role="dialog"
       >
         {showCloseButton ? (

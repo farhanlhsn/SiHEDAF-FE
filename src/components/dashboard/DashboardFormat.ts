@@ -13,6 +13,19 @@ export function isNormalResult(label?: string | null) {
   return label.toLowerCase().includes("normal");
 }
 
+export type ResultStatus = "normal" | "af" | "unknown";
+
+/** Single source of truth for how a result label is shown. */
+export function resultStatus(label?: string | null): ResultStatus {
+  const normal = isNormalResult(label);
+
+  if (normal === null) {
+    return "unknown";
+  }
+
+  return normal ? "normal" : "af";
+}
+
 /** Accepts a 0–1 ratio or a 0–100 percentage, returns e.g. "96,4%". */
 export function formatConfidence(value?: number | null) {
   if (value == null || !Number.isFinite(value) || value <= 0) {
@@ -77,6 +90,39 @@ export function shareOf(part: number, total: number) {
   }
 
   return Math.round((part / total) * 100);
+}
+
+/**
+ * Whole-number percentages of `total` for each part (largest-remainder
+ * method). Any part of `total` not covered by `parts` joins the allocation as
+ * an implicit last part that is not returned, so the full set sums to 100.
+ * Parts that add up to more than `total` are shared out of their own sum.
+ */
+export function splitShares(parts: ReadonlyArray<number>, total: number) {
+  if (!(total > 0)) {
+    return parts.map(() => 0);
+  }
+
+  const amounts = parts.map((part) => (part > 0 ? part : 0));
+  const covered = amounts.reduce((sum, part) => sum + part, 0);
+  const base = Math.max(total, covered);
+  const rest = base - covered;
+  const all = rest > 0 ? [...amounts, rest] : amounts;
+  const exact = all.map((amount) => (amount / base) * 100);
+  const shares = exact.map(Math.floor);
+  let left = 100 - shares.reduce((sum, share) => sum + share, 0);
+
+  const order = exact
+    .map((value, index) => ({ index, remainder: value - Math.floor(value) }))
+    .sort((a, b) => b.remainder - a.remainder || a.index - b.index);
+
+  for (const { index } of order) {
+    if (left <= 0) break;
+    shares[index] += 1;
+    left -= 1;
+  }
+
+  return shares.slice(0, parts.length);
 }
 
 const formatCoordinate = (value: number) =>

@@ -94,7 +94,7 @@ test("never interrupts people with native browser alerts", async () => {
     );
   }
   assert.match(
-    await readSource("components/dashboard/hooks/UseDashboardOverview.ts"),
+    await readSource("components/dashboard/hooks/UseMonitoringSession.ts"),
     /toast\.error/,
   );
 });

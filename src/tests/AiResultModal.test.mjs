@@ -24,9 +24,9 @@ test("verifies AiResultModal component structure and theme integration", async (
   assert.match(modalSource, /^["']use client["'];/);
   assert.match(modalSource, /DashboardModal/);
   assert.match(modalSource, /StatusMark/);
-  assert.match(modalSource, /Tingkat Keyakinan AI/);
+  assert.match(modalSource, /Keyakinan AI/);
   assert.match(modalSource, /confidenceLevel/);
-  assert.match(modalSource, /COMPLETED/);
+  assert.match(modalSource, /analysisStatusLabel\(/);
   assert.match(modalSource, /Irama Jantung Normal/);
   assert.match(modalSource, /Terdeteksi Potensi AF/);
   assert.match(modalSource, /Lihat Riwayat/);
@@ -38,6 +38,6 @@ test("verifies AiResultModal component structure and theme integration", async (
   assert.match(overviewSource, /confidenceLevel/);
   assert.match(overviewSource, /Keyakinan AI/);
   assert.match(overviewSource, /isAiModalOpen/);
-  assert.match(overviewSource, /setIsAiModalOpen/);
-  assert.match(overviewSource, /Detail Diagnosa AI/);
+  assert.match(overviewSource, /closeAiModal/);
+  assert.match(overviewSource, /Detail Hasil AI/);
 });

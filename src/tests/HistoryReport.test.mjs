@@ -120,9 +120,9 @@ test("report only claims no AF when the summary agrees", async () => {
   assert.ok(source.includes("Ringkasan mencatat ${report.summary.totalAfib} kejadian AF, tetapi rinciannya tidak tersedia."));
 });
 
-test("report normal share comes from the normal count, not 100 minus AF", async () => {
+test("report normal share comes from the normal count, via splitShares, not 100 minus AF", async () => {
   const source = await read("components/dashboard/DoctorReportView.tsx");
-  assert.match(source, /shareOf\(summary\?\.totalNormal \?\? 0, total\)/);
+  assert.match(source, /splitShares\(\s*\[summary\?\.totalNormal \?\? 0, summary\?\.totalAfib \?\? 0\],\s*total,?\s*\)/);
   assert.doesNotMatch(source, /100 - afShare/);
 });
 
@@ -149,7 +149,7 @@ test("first-run guide shows only after the latest data loaded and is empty", asy
   const guide = await read("components/dashboard/FirstRunGuide.tsx");
 
   assert.match(hook, /hasLoadedLatest/);
-  assert.match(hook, /finally\s*\{\s*setHasLoadedLatest\(true\)/);
+  assert.match(hook, /finally\s*\{\s*if \(!cancelled\) setHasLoadedLatest\(true\)/);
   assert.match(overview, /showFirstRun\s*\?\s*\(\s*<FirstRunGuide/);
   assert.match(hook, /showFirstRun = hasLoadedLatest && !isDeviceLoading && !latestData/);
   assert.match(overview, /<article[^>]*id="monitor"/);

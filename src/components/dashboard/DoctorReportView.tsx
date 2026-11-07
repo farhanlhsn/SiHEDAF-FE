@@ -5,7 +5,7 @@ import { Printer } from "lucide-react";
 import {
   formatConfidence,
   formatWib,
-  shareOf,
+  splitShares,
 } from "@/components/dashboard/DashboardFormat";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { PpgTrace } from "@/components/dashboard/PpgTrace";
@@ -37,8 +37,10 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
 
   const summary = report?.summary;
   const total = summary?.totalData ?? 0;
-  const afShare = shareOf(summary?.totalAfib ?? 0, total);
-  const normalShare = shareOf(summary?.totalNormal ?? 0, total);
+  const [normalShare, afShare] = splitShares(
+    [summary?.totalNormal ?? 0, summary?.totalAfib ?? 0],
+    total,
+  );
 
   return (
     <section className="px-4 py-8 sm:px-7 lg:px-10 lg:py-10 print:p-0">

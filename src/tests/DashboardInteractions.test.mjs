@@ -58,7 +58,7 @@ test("toggles monitoring between pause and play states with matching UI", async 
   assert.match(overviewSource, /\bPause\b/);
   assert.match(overviewSource, /\bPlay\b/);
   assert.match(overviewSource, /aria-pressed/);
-  assert.match(overviewSource, /setIsMonitoringActive/);
+  assert.match(overviewSource, /useMonitoringSession/);
   assert.match(overviewSource, /Hentikan Monitoring/);
   assert.match(overviewSource, /Mulai Monitoring/);
   assert.match(chartSource, /isActive/);
