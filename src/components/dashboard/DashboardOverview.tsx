@@ -255,9 +255,10 @@ export function DashboardOverview() {
                     </>
                   ) : null}
                 </span>
+                {/* /signals only holds finished recordings: never imply live data. */}
                 <span className="text-primary-900/75">
                   {isMonitoringActive
-                    ? `Pembaruan otomatis selama ${monitoringRange} menit`
+                    ? "Grafik menampilkan rekaman yang sudah selesai; rekaman ini tampil setelah selesai."
                     : "Pembaruan dihentikan sementara"}
                 </span>
               </div>

@@ -15,8 +15,9 @@ function minutesLabel(minutes: number) {
 }
 
 /**
- * Latest PPG signal on a monitor strip. While monitoring is active a sweep
- * line passes over the trace, like a bedside monitor.
+ * Latest PPG signal on a monitor strip. The data comes from finished
+ * recordings only (the backend's /signals), so the strip stays static, also
+ * while a recording runs: no sweep or draw that would suggest live data.
  */
 export function SignalChart({
   isActive = true,
@@ -39,7 +40,7 @@ export function SignalChart({
         <svg
           aria-label={
             isActive
-              ? "Grafik sinyal PPG terbaru sedang aktif"
+              ? "Grafik sinyal PPG dari rekaman yang sudah selesai"
               : "Grafik sinyal PPG dijeda"
           }
           className={`absolute inset-x-0 top-1/2 h-[140px] w-full -translate-y-1/2 overflow-visible transition-[color,opacity] duration-300 ${
@@ -51,7 +52,6 @@ export function SignalChart({
           viewBox="0 0 760 112"
         >
           <path
-            className={isActive ? "signal-draw" : undefined}
             d={tracePath(data, 760, 112, 8) ?? placeholderPath}
             stroke="currentColor"
             strokeLinecap="round"
@@ -60,9 +60,6 @@ export function SignalChart({
             vectorEffect="non-scaling-stroke"
           />
         </svg>
-        {isActive ? (
-          <span aria-hidden="true" className="monitor-sweep" />
-        ) : null}
         {!hasData ? (
           <p className="absolute inset-0 grid place-items-center text-[0.9375rem] font-medium text-primary-900/75">
             Belum ada sinyal pada rentang ini.
