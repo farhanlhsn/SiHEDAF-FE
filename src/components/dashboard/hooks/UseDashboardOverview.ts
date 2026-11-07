@@ -40,6 +40,7 @@ export type MeasurementData = {
   resultLabel?: string;
   resultClass?: number;
   confidenceLevel?: number;
+  requestedAt?: string;
   completedAt?: string;
   updatedAt?: string;
   createdAt?: string;

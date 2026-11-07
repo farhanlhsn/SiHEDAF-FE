@@ -252,3 +252,36 @@ test("a start that timed out adopts a running session from the newest history ro
     /next === "recording" && running\) \{[\s\S]{0,160}rememberSession\(baselineRef\.current, running\);\s*beginRecording\(running\.startedAt \?\? Date\.now\(\)\);/,
   );
 });
+
+test("the auto-finish note is shown only for a session that ran (almost) 3 minutes", () => {
+  assert.match(
+    sessionHook,
+    /const note =\s*automatic &&\s*showsAutoFinishNote\(data, started === null \? null : Date\.now\(\) - started\);\s*setAutoFinished\(note\);/,
+  );
+  // Every recording start goes through one clock, which the note's fallback reads.
+  assert.match(sessionHook, /startedAtRef\.current = startedAtMs;\s*setStartedAt\(startedAtMs\);/);
+  assert.equal((sessionHook.match(/setStartedAt\(/g) ?? []).length, 1);
+});
+
+test("an analysis that timed out checks the newest history row before reporting the delay", () => {
+  const start = sessionHook.indexOf("const pollForResult = useCallback(");
+  const body = sessionHook.slice(start, sessionHook.indexOf("\n  );\n", start));
+  assert.match(body, /running = await fetchRunningSession\(run\.signal\);/);
+  assert.match(body, /if \(error instanceof SessionExpiredError\) return;/);
+  // Abort-safe: nothing happens once the poll or the page is gone.
+  assert.match(body, /\}\s*if \(isCancelled\(\)\) return;\s*pollRef\.current = null;\s*if \(afterAnalysisTimeout\(running\)/);
+  assert.match(
+    body,
+    /afterAnalysisTimeout\(running\) === "recording" && running\) \{\s*baselineRef\.current = rememberSession\(baselineRef\.current, running\);\s*setIsModalOpen\(false\);\s*beginRecording\(running\.startedAt \?\? Date\.now\(\)\);\s*toast\.error\(TOGGLE_ERROR\);\s*\} else \{\s*setEndedAt\(Date\.now\(\)\);\s*setPhase\("timeout"\);\s*setModalView\("timeout"\);/,
+  );
+});
+
+test("a resumed session's start is counted on this device's clock via the Date header", () => {
+  const start = sessionHook.indexOf("async function fetchRunningSession(");
+  const body = sessionHook.slice(start, sessionHook.indexOf("\n}\n", start));
+  assert.match(body, /const answeredLocally = Date\.now\(\);/);
+  assert.match(
+    body,
+    /startedAt: toLocalTime\(\s*running\.startedAt,\s*res\.headers\.get\("date"\),\s*answeredLocally,\s*\)/,
+  );
+});

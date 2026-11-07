@@ -14,6 +14,7 @@ import {
   POLL_MAX_ATTEMPTS,
   RECORDING_WATCH_INTERVAL_MS,
   TOGGLE_TIMEOUT_MS,
+  afterAnalysisTimeout,
   afterStopRefused,
   afterToggleTimeout,
   isFreshResult,
@@ -26,6 +27,8 @@ import {
   requestSignal,
   runningSessionFrom,
   sessionStartFrom,
+  showsAutoFinishNote,
+  toLocalTime,
   toggleAnswer,
   waitFor,
   type MonitoringPhase,
@@ -81,13 +84,30 @@ async function fetchLatest(signal: AbortSignal) {
 /**
  * The session still recording, from the newest history row (any status);
  * /latest only ever returns COMPLETED rows. Throws when the read fails.
+ * Its start is moved onto this device's clock (see toLocalTime), so the
+ * recording clock counts right on a phone whose clock is off.
  */
-async function fetchRunningSession(signal: AbortSignal) {
+async function fetchRunningSession(
+  signal: AbortSignal,
+): Promise<RunningSession | null> {
   const res = await apiFetch("/api/v1/measurement/history?page=1&limit=1", {
     signal: requestSignal(signal),
   });
+  const answeredLocally = Date.now();
+  if (!res.ok) return null;
 
-  return res.ok ? runningSessionFrom(await res.json()) : null;
+  const running = runningSessionFrom(await res.json());
+
+  return running
+    ? {
+        ...running,
+        startedAt: toLocalTime(
+          running.startedAt,
+          res.headers.get("date"),
+          answeredLocally,
+        ),
+      }
+    : null;
 }
 
 /**
@@ -133,6 +153,8 @@ export function useMonitoringSession({
   const [endedAt, setEndedAt] = useState<number | null>(null);
 
   const baselineRef = useRef<ResultBaseline>(EMPTY_BASELINE);
+  // The running session's start (this device's clock), for the auto-finish note.
+  const startedAtRef = useRef<number | null>(null);
   // Once the user started or stopped, a slow first /latest is out of date.
   const userActedRef = useRef(false);
   // Aborted when the component unmounts; every request and loop follows it.
@@ -154,6 +176,13 @@ export function useMonitoringSession({
   const stopWatching = useCallback(() => {
     watchRef.current?.abort();
     watchRef.current = null;
+  }, []);
+
+  /** Start the recording clock at `startedAtMs` (this device's clock). */
+  const startClock = useCallback((startedAtMs: number) => {
+    startedAtRef.current = startedAtMs;
+    setStartedAt(startedAtMs);
+    setNow(Date.now());
   }, []);
 
   /** The fresh-result rules against what is known right now. */
@@ -180,11 +209,9 @@ export function useMonitoringSession({
 
     // Its own result will count as fresh once the server completes it.
     baselineRef.current = rememberSession(baselineRef.current, running);
-    const current = Date.now();
-    setStartedAt(running.startedAt ?? current);
-    setNow(current);
+    startClock(running.startedAt ?? Date.now());
     setPhase("recording");
-  }, []);
+  }, [startClock]);
 
   // Created in the effect body so a StrictMode remount gets a live one again.
   useEffect(() => {
@@ -217,21 +244,27 @@ export function useMonitoringSession({
     if (userActedRef.current) return false;
 
     if (latest.status?.toUpperCase() === "IN_PROGRESS") {
-      const current = Date.now();
-      setStartedAt(sessionStartFrom(latest) ?? current);
-      setNow(current);
+      startClock(sessionStartFrom(latest) ?? Date.now());
       setPhase("recording");
     }
 
     return true;
-  }, []);
+  }, [startClock]);
 
-  /** Show a fresh result; automatic when the wristband ended the session. */
+  /**
+   * Show a fresh result; automatic when it was found without Stop (the
+   * recording watch, a refused Stop). The auto-finish note needs a session
+   * that ran (almost) the full 3 minutes: Stop in another tab lands here too.
+   */
   const showResult = useCallback(
     (data: MeasurementData, { automatic }: { automatic: boolean }) => {
       baselineRef.current = rememberResult(baselineRef.current, data);
       onFreshResultRef.current(data);
-      setAutoFinished(automatic);
+      const started = startedAtRef.current;
+      const note =
+        automatic &&
+        showsAutoFinishNote(data, started === null ? null : Date.now() - started);
+      setAutoFinished(note);
       setEndedAt(Date.now());
       setPhase("result");
       setModalView("result");
@@ -239,6 +272,21 @@ export function useMonitoringSession({
       if (automatic) setIsModalOpen(true);
     },
     [],
+  );
+
+  const beginRecording = useCallback(
+    (startedAtMs: number, session?: MeasurementData | null) => {
+      userActedRef.current = true;
+      cancelPolling();
+      // The new session's own result is fresh even before the first /latest lands.
+      if (session) {
+        baselineRef.current = rememberResult(baselineRef.current, session);
+      }
+      setAutoFinished(false);
+      startClock(startedAtMs);
+      setPhase("recording");
+    },
+    [cancelPolling, startClock],
   );
 
   const pollForResult = useCallback(
@@ -258,17 +306,37 @@ export function useMonitoringSession({
       });
 
       if (outcome.kind === "cancelled" || isCancelled()) return;
-      pollRef.current = null;
 
       if (outcome.kind === "fresh") {
+        pollRef.current = null;
         showResult(outcome.data, { automatic: false });
+        return;
+      }
+
+      // No result in time: when the newest row still records, the stop never
+      // reached the backend (e.g. it timed out on the way) and recording goes on.
+      let running: RunningSession | null = null;
+      try {
+        running = await fetchRunningSession(run.signal);
+      } catch (error) {
+        // Redirecting to /login: show nothing. No network or a timeout: report the delay.
+        if (error instanceof SessionExpiredError) return;
+      }
+      if (isCancelled()) return;
+      pollRef.current = null;
+
+      if (afterAnalysisTimeout(running) === "recording" && running) {
+        baselineRef.current = rememberSession(baselineRef.current, running);
+        setIsModalOpen(false);
+        beginRecording(running.startedAt ?? Date.now());
+        toast.error(TOGGLE_ERROR);
       } else {
         setEndedAt(Date.now());
         setPhase("timeout");
         setModalView("timeout");
       }
     },
-    [cancelPolling, isFreshNow, showResult],
+    [beginRecording, cancelPolling, isFreshNow, showResult],
   );
 
   // The recording watch runs only while recording with no start/stop in
@@ -288,22 +356,6 @@ export function useMonitoringSession({
       if (watchRef.current === watch) watchRef.current = null;
     };
   }, [isFreshNow, isTogglingAction, phase, showResult]);
-
-  const beginRecording = useCallback(
-    (startedAtMs: number, session?: MeasurementData | null) => {
-      userActedRef.current = true;
-      cancelPolling();
-      // The new session's own result is fresh even before the first /latest lands.
-      if (session) {
-        baselineRef.current = rememberResult(baselineRef.current, session);
-      }
-      setAutoFinished(false);
-      setStartedAt(startedAtMs);
-      setNow(Date.now());
-      setPhase("recording");
-    },
-    [cancelPolling],
-  );
 
   const beginAnalysing = useCallback(
     (lifetime: AbortSignal) => {
