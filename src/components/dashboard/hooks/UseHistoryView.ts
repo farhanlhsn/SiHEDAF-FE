@@ -19,6 +19,7 @@ export type HistoryItem = {
   resultClass?: number;
   confidenceLevel?: number;
   requestedAt?: string;
+  completedAt?: string;
   deviceId?: string;
   ppgData?: number[];
   ppgResult?: { rawPpgData?: number[] };

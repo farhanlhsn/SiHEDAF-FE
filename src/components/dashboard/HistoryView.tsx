@@ -86,7 +86,16 @@ export function HistoryView() {
           </div>
         </div>
 
-        <div className="mt-10 grid grid-cols-3 border-y border-primary-900/10 py-6 sm:py-8">
+        <h2 className="mt-10 text-[1.0625rem] font-bold text-primary-900">
+          Ringkasan sepanjang waktu
+        </h2>
+        {dateRange?.from ? (
+          <p className="mt-1 text-[0.875rem] text-primary-900/80">
+            Ringkasan mencakup seluruh riwayat, bukan hanya rentang tanggal yang dipilih.
+          </p>
+        ) : null}
+
+        <div className="mt-4 grid grid-cols-3 border-y border-primary-900/10 py-6 sm:py-8">
           {summaries.map((summary, index) => (
             <div
               className="border-l border-primary-900/10 px-3 first:border-l-0 first:pl-0 sm:px-8"

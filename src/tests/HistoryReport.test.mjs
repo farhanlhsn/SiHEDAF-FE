@@ -57,9 +57,13 @@ test("doctor report view carries the required copy and states", async () => {
     "window.print()",
     "print:hidden",
     "Laporan Pemantauan Irama Jantung",
-    "Tidak ada AF terdeteksi pada periode ini.",
+    "Tidak ada AF atau AFL terdeteksi pada periode ini.",
+    "AFL terdeteksi",
+    "Tanpa hasil",
+    "Jenis",
     "Belum ada rekaman pada periode ini.",
     "rekaman pertama pada periode ini",
+    "Angka ringkasan hanya mencakup rekaman tersebut",
     "bukan diagnosis",
     "Grafik ditampilkan tanpa skala waktu",
     "<PpgTrace",
@@ -107,18 +111,32 @@ test("global print rules target A4 and keep colours", async () => {
   assert.match(source, /print-color-adjust:\s*exact/);
 });
 
-test("report only claims no AF when the summary agrees", async () => {
-  const source = await read("components/dashboard/DoctorReportView.tsx");
-  assert.match(source, /totalAfib === 0\s*\?\s*"Tidak ada AF terdeteksi pada periode ini\."/);
-  assert.ok(source.includes("Ringkasan mencatat ${report.summary.totalAfib} kejadian AF, tetapi kejadian tersebut berada di luar ${report.scanned} rekaman pertama yang ditampilkan. Persempit periode laporan untuk melihatnya."));
-  assert.match(source, /report\.truncated\s*\?\s*`Ringkasan mencatat/);
-  assert.ok(source.includes("Ringkasan mencatat ${report.summary.totalAfib} kejadian AF, tetapi rinciannya tidak tersedia."));
+test("report counts come from the period's items, not the API summary", async () => {
+  const view = await read("components/dashboard/DoctorReportView.tsx");
+  assert.ok(view.includes("Tidak ada AF atau AFL terdeteksi pada periode ini."));
+  assert.match(view, /report\.truncated \? null/);
+  assert.match(view, /summary\?\.af \?\? 0\) \+ \(summary\?\.flutter \?\? 0\)/);
+  assert.match(view, /report\.summary\.other > 0/);
+  assert.doesNotMatch(view, /totalAfib|totalNormal|totalData/);
+  for (const file of ["components/dashboard/hooks/UseDoctorReport.ts", "components/dashboard/ReportData.ts"]) {
+    assert.doesNotMatch(await read(file), /json\.data\.summary|\.summary\?\./, file);
+  }
+  const data = await read("components/dashboard/ReportData.ts");
+  assert.match(data, /addDays\(range\.from, -1\)/);
+  assert.match(data, /jakartaDay\(/);
 });
 
 test("report normal share comes from the normal count, via splitShares, not 100 minus AF", async () => {
   const source = await read("components/dashboard/DoctorReportView.tsx");
-  assert.match(source, /splitShares\(\s*\[summary\?\.totalNormal \?\? 0, summary\?\.totalAfib \?\? 0\],\s*total,?\s*\)/);
+  assert.match(source, /splitShares\(\[summary\?\.normal \?\? 0, alerts\], total\)/);
   assert.doesNotMatch(source, /100 - afShare/);
+});
+
+test("history summary is labelled all-time and notes the date range", async () => {
+  const source = await read("components/dashboard/HistoryView.tsx");
+  assert.ok(source.includes("Ringkasan sepanjang waktu"));
+  assert.ok(source.includes("Ringkasan mencakup seluruh riwayat, bukan hanya rentang tanggal yang dipilih."));
+  assert.match(source, /dateRange\?\.from/);
 });
 
 test("date range picker formats in the runtime's local zone", async () => {

@@ -53,11 +53,6 @@ const fetchHistoryPage: FetchHistoryPage = async (page, pageSize, range) => {
   return {
     items,
     totalPages: json.data.metadata?.totalPages ?? 1,
-    summary: {
-      totalData: json.data.summary?.totalData ?? 0,
-      totalAfib: json.data.summary?.totalAfib ?? 0,
-      totalNormal: json.data.summary?.totalNormal ?? 0,
-    },
   };
 };
 
