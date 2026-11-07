@@ -118,3 +118,18 @@ test("the detail trace label and the normal sub-line speak Indonesian about AF a
   assert.ok(history.includes('"Tidak ditemukan pola AF atau AFL"'));
   assert.doesNotMatch(history, /"Tidak ditemukan pola AF"/);
 });
+
+test("the classifier gets the samples: every call site passes a whole record that carries ppgResult", () => {
+  // A class-0 row without confidence is "short" under 150 samples, so the
+  // classifier must see ppgResult; history items and /latest both carry it.
+  assert.match(kinds, /ppgResult\?: \{ rawPpgData\?: readonly unknown\[\] \| null \} \| null;/);
+  assert.match(kinds, /export const MIN_ANALYSABLE_SAMPLES = 3 \* SAMPLE_RATE_HZ;/);
+  assert.match(historyHook, /ppgResult\?: \{ rawPpgData\?: number\[\] \};/);
+  assert.match(overviewHook, /ppgResult\?: \{\s*rawPpgData\?: number\[\];\s*\};/);
+  const sources = { overview, history, detail, report, modal, reportData, session, overviewHook };
+  for (const [name, source] of Object.entries(sources)) {
+    for (const [, argument] of source.matchAll(/classifyResult\(([^)]*)\)/g)) {
+      assert.match(argument, /^(?:latestData|data|row|item|m)$/, `${name} classifies ${argument}`);
+    }
+  }
+});

@@ -1,7 +1,10 @@
+import { SAMPLE_RATE_HZ } from "@/components/dashboard/Signal";
+
 /**
  * The one place that decides what a measurement result means. The backend
- * writes resultClass 0/1/2 (Normal/AFIB/AFL), "Not Enough Data" for recordings
- * under 3 s and "Normal (N)" with confidence 0 when the AI call failed, so the
+ * writes resultClass 0/1/2 (Normal/AFIB/AFL), "Not Enough Data" for 1–149
+ * samples, and "Normal (N)" with confidence 0 both when the AI call failed and
+ * when there were no samples at all (the AI is never called then), so the
  * label alone is never enough. UI code must not look at label text itself.
  */
 export type ResultKind =
@@ -17,10 +20,26 @@ export type ClassifiableResult = {
   resultClass?: number | null;
   resultLabel?: string | null;
   confidenceLevel?: number | null;
+  /** The recorded samples; history items and /latest carry them. */
+  ppgResult?: { rawPpgData?: readonly unknown[] | null } | null;
 };
+
+/** The backend analyses a recording only from 3 s of samples (150 at 50 Hz). */
+export const MIN_ANALYSABLE_SAMPLES = 3 * SAMPLE_RATE_HZ;
 
 function hasConfidence(value: number | null | undefined) {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+/**
+ * A class-0 row without confidence: too short when it holds fewer than 150
+ * samples (none, or no PPG row: the AI never saw it), else the AI failed.
+ */
+function withoutResult(m: ClassifiableResult): "short" | "unavailable" {
+  const data = m.ppgResult?.rawPpgData;
+  const samples = Array.isArray(data) ? data.length : 0;
+
+  return samples < MIN_ANALYSABLE_SAMPLES ? "short" : "unavailable";
 }
 
 export function classifyResult(m: ClassifiableResult): ResultKind {
@@ -35,7 +54,7 @@ export function classifyResult(m: ClassifiableResult): ResultKind {
   if (m.resultClass === 1) return "af";
   if (m.resultClass === 2) return "flutter";
   if (m.resultClass === 0) {
-    return hasConfidence(m.confidenceLevel) ? "normal" : "unavailable";
+    return hasConfidence(m.confidenceLevel) ? "normal" : withoutResult(m);
   }
 
   // resultClass missing: fall back to the label.
@@ -43,7 +62,7 @@ export function classifyResult(m: ClassifiableResult): ResultKind {
   if (label.includes("fibrillation") || label.startsWith("af")) return "af";
   // A whole word, so "abnormal" never reads as normal.
   if (/\bnormal\b/.test(label)) {
-    return hasConfidence(m.confidenceLevel) ? "normal" : "unavailable";
+    return hasConfidence(m.confidenceLevel) ? "normal" : withoutResult(m);
   }
 
   return "pending";

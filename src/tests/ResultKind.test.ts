@@ -31,19 +31,46 @@ test("resultClass 1 is af and 2 is flutter", () => {
   assert.equal(kind({ resultClass: 2 }), "flutter");
 });
 
-test("class 0 without confidence is unavailable, with confidence normal", () => {
-  assert.equal(kind({ resultClass: 0, resultLabel: "Normal (N)", confidenceLevel: 0 }), "unavailable");
-  assert.equal(kind({ resultClass: 0, confidenceLevel: null }), "unavailable");
-  assert.equal(kind({ resultClass: 0 }), "unavailable");
-  assert.equal(kind({ resultClass: 0, confidenceLevel: -1 }), "unavailable");
+const samples = (count: number) => ({ rawPpgData: Array.from({ length: count }, () => 0) });
+
+test("class 0 without confidence on an analysable recording is unavailable, with confidence normal", () => {
+  const full = samples(150);
+  assert.equal(kind({ resultClass: 0, resultLabel: "Normal (N)", confidenceLevel: 0, ppgResult: full }), "unavailable");
+  assert.equal(kind({ resultClass: 0, confidenceLevel: null, ppgResult: full }), "unavailable");
+  assert.equal(kind({ resultClass: 0, ppgResult: full }), "unavailable");
+  assert.equal(kind({ resultClass: 0, confidenceLevel: -1, ppgResult: full }), "unavailable");
   assert.equal(kind({ resultClass: 0, resultLabel: "Normal (N)", confidenceLevel: 0.96 }), "normal");
+  assert.equal(kind({ resultClass: 0, resultLabel: "Normal (N)", confidenceLevel: 0.96, ppgResult: samples(10) }), "normal");
+});
+
+test("class 0 without confidence and under 150 samples is short: the AI never saw it", () => {
+  // The backend writes "Not Enough Data" only for 1–149 samples; with none it
+  // keeps "Normal (N)", class 0, confidence 0 (Stop pressed within seconds).
+  const zero = { status: "COMPLETED", resultClass: 0, resultLabel: "Normal (N)", confidenceLevel: 0 };
+  assert.equal(kind({ ...zero, ppgResult: samples(0) }), "short");
+  assert.equal(kind({ ...zero, ppgResult: samples(149) }), "short");
+  assert.equal(kind({ ...zero, ppgResult: samples(150) }), "unavailable");
+  assert.equal(kind({ ...zero, ppgResult: samples(9000) }), "unavailable");
+  // No PPG row or no samples at all.
+  assert.equal(kind(zero), "short");
+  assert.equal(kind({ ...zero, ppgResult: null }), "short");
+  assert.equal(kind({ ...zero, ppgResult: {} }), "short");
+  assert.equal(kind({ ...zero, ppgResult: { rawPpgData: null } }), "short");
+  assert.equal(kind({ ...zero, confidenceLevel: null, ppgResult: samples(149) }), "short");
+  // The label fallback follows the same rule.
+  assert.equal(kind({ resultLabel: "Normal (N)", confidenceLevel: 0, ppgResult: samples(149) }), "short");
+  assert.equal(kind({ resultLabel: "Normal (N)", confidenceLevel: 0, ppgResult: samples(150) }), "unavailable");
+  // Alert classes and real confidence never become short.
+  assert.equal(kind({ resultClass: 1, confidenceLevel: 0, ppgResult: samples(0) }), "af");
+  assert.equal(kind({ resultClass: 2, ppgResult: samples(0) }), "flutter");
 });
 
 test("without resultClass the label decides", () => {
+  const full = samples(150);
   assert.equal(kind({ resultLabel: "Normal (N)", confidenceLevel: 0.9 }), "normal");
   assert.equal(kind({ resultLabel: "Normal Rhythm", confidenceLevel: 0.9 }), "normal");
-  assert.equal(kind({ resultLabel: "Normal (N)", confidenceLevel: 0 }), "unavailable");
-  assert.equal(kind({ resultLabel: "Normal (N)" }), "unavailable");
+  assert.equal(kind({ resultLabel: "Normal (N)", confidenceLevel: 0, ppgResult: full }), "unavailable");
+  assert.equal(kind({ resultLabel: "Normal (N)", ppgResult: full }), "unavailable");
   assert.equal(kind({ resultLabel: "AFIB (A)" }), "af");
   assert.equal(kind({ resultLabel: "AF Detected" }), "af");
   assert.equal(kind({ resultLabel: "Atrial Fibrillation" }), "af");
