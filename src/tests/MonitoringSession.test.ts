@@ -10,6 +10,8 @@ import {
   RECORDING_WATCH_INTERVAL_MS,
   REQUEST_TIMEOUT_MS,
   TOGGLE_TIMEOUT_MS,
+  AUTO_FINISH_NOTE_MIN_MS,
+  afterAnalysisTimeout,
   afterStopRefused,
   afterToggleTimeout,
   analysisStatusLabel,
@@ -25,6 +27,8 @@ import {
   restartAction,
   runningSessionFrom,
   sessionStartFrom,
+  showsAutoFinishNote,
+  toLocalTime,
   toggleAnswer,
   toggleBlock,
   waitFor,
@@ -308,6 +312,68 @@ test("toggleBlock lets a stale wristband start; a refusal comes back from the ba
   assert.equal(toggleBlock("result", { device: "stale", networkOnline: true }), null);
   assert.equal(toggleBlock("timeout", { device: "stale", networkOnline: true }), null);
   assert.equal(toggleBlock("idle", { device: "stale", networkOnline: false }), "no-network");
+});
+
+test("a wristband held by a session (recording state) counts as connected for Start and restart", () => {
+  for (const phase of ["idle", "result", "timeout"] as const) {
+    assert.equal(restartAction(phase, { device: "recording", busy: false }), "ready");
+    assert.equal(restartAction(phase, { device: "recording", busy: true }), "busy");
+    assert.equal(restartAction(phase, { device: "recording", busy: false, networkOnline: false }), "no-network");
+    assert.equal(toggleBlock(phase, { device: "recording", networkOnline: true }), null);
+    assert.equal(toggleBlock(phase, { device: "recording", networkOnline: false }), "no-network");
+  }
+  assert.equal(restartAction("recording", { device: "recording", busy: false }), "hidden");
+  assert.equal(restartAction("analysing", { device: "recording", busy: false }), "hidden");
+  assert.equal(toggleBlock("recording", { device: "recording", networkOnline: true }), null);
+});
+
+test("the auto-finish note needs a session that ran (almost) the full 3 minutes", () => {
+  assert.equal(AUTO_FINISH_NOTE_MIN_MS, MAX_RECORDING_MS - 10_000);
+  const start = "2026-11-07T03:00:00.000Z";
+  const after = (ms: number) => new Date(Date.parse(start) + ms).toISOString();
+
+  // The row's own timestamps (one clock, the backend's) decide when present.
+  assert.equal(showsAutoFinishNote({ requestedAt: start, completedAt: after(181_000) }, null), true);
+  assert.equal(showsAutoFinishNote({ requestedAt: start, completedAt: after(170_000) }, null), true);
+  assert.equal(showsAutoFinishNote({ requestedAt: start, completedAt: after(169_999) }, null), false);
+  // Stopped from another tab after a minute: no note, even if this page counted longer.
+  assert.equal(showsAutoFinishNote({ requestedAt: start, completedAt: after(60_000) }, 200_000), false);
+  // createdAt stands in for a missing requestedAt.
+  assert.equal(showsAutoFinishNote({ createdAt: start, completedAt: after(180_500) }, null), true);
+  // Without usable timestamps, this page's own recording clock decides.
+  assert.equal(showsAutoFinishNote({ completedAt: after(180_000) }, 175_000), true);
+  assert.equal(showsAutoFinishNote({ requestedAt: "nope", completedAt: after(180_000) }, 30_000), false);
+  assert.equal(showsAutoFinishNote({}, 170_000), true);
+  // Nothing known: never claim it finished by itself.
+  assert.equal(showsAutoFinishNote({}, null), false);
+  assert.equal(showsAutoFinishNote({ requestedAt: start }, null), false);
+});
+
+test("an analysis that timed out goes back to recording only while the newest row still records", () => {
+  const running = { id: 77, createdAt: "2026-11-07T03:00:00Z", startedAt: Date.parse("2026-11-07T03:00:00Z") };
+  assert.equal(afterAnalysisTimeout(running), "recording");
+  assert.equal(afterAnalysisTimeout({ id: null, createdAt: null, startedAt: null }), "recording");
+  // Finished, failed, unreadable or no history: keep the timeout view.
+  assert.equal(afterAnalysisTimeout(null), "timeout");
+});
+
+test("toLocalTime moves a backend time onto this device's clock with the Date header offset", () => {
+  const serverStart = Date.parse("2026-11-07T03:00:00Z");
+  const header = "Sat, 07 Nov 2026 03:01:00 GMT"; // the proxy answered at 03:01:00
+  // This phone runs 5 minutes fast: the session began 1 minute ago by its own clock.
+  const phoneNow = Date.parse("2026-11-07T03:06:00Z");
+  assert.equal(toLocalTime(serverStart, header, phoneNow), phoneNow - 60_000);
+  // A phone 2 minutes slow.
+  const slowNow = Date.parse("2026-11-07T02:59:00Z");
+  assert.equal(toLocalTime(serverStart, header, slowNow), slowNow - 60_000);
+  // Clocks that agree change nothing.
+  const sameNow = Date.parse("2026-11-07T03:01:00Z");
+  assert.equal(toLocalTime(serverStart, header, sameNow), serverStart);
+  // Missing or unreadable header: the phone clock is all there is.
+  assert.equal(toLocalTime(serverStart, null, phoneNow), serverStart);
+  assert.equal(toLocalTime(serverStart, "nope", phoneNow), serverStart);
+  // No backend time to move.
+  assert.equal(toLocalTime(null, header, phoneNow), null);
 });
 
 function fakeClock() {

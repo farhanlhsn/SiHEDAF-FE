@@ -2,11 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  AFTER_SESSION_RECHECK_MS,
   DEVICE_REFRESH_MS,
   DEVICE_STATUS_LABEL,
   STALE_AFTER_MS,
   answeredAt,
   deviceState,
+  sessionHoldsDevice,
 } from "../components/dashboard/DeviceState";
 
 const noError = null;
@@ -116,5 +118,60 @@ test("the status card names every device state honestly", () => {
     offline: "Terputus",
     none: "Belum ada perangkat",
     error: "Tidak diketahui",
+    recording: "Sedang merekam",
   });
+});
+
+test("while a session holds the wristband it is recording, whatever status and lastSeen say", () => {
+  // The watch stops its idle poll while measuring, so lastSeen freezes and the
+  // backend's sweep may even mark it OFFLINE mid-recording.
+  const devices = [
+    { status: "ONLINE", lastSeen: secondsAgo(2) },
+    { status: "ONLINE", lastSeen: secondsAgo(45) },
+    { status: "ONLINE", lastSeen: secondsAgo(600) },
+    { status: "ONLINE" },
+    { status: "OFFLINE", lastSeen: secondsAgo(120) },
+  ];
+  for (const device of devices) {
+    assert.equal(
+      deviceState({ device, isLoading: false, error: noError, now, sessionActive: true }),
+      "recording",
+      JSON.stringify(device),
+    );
+  }
+  // The running session is the evidence: a loading or failed re-check does not undo it.
+  assert.equal(deviceState({ device: null, isLoading: true, error: noError, now, sessionActive: true }), "recording");
+  assert.equal(
+    deviceState({ device: devices[1], isLoading: false, error: { title: "x", message: "y" }, now, sessionActive: true }),
+    "recording",
+  );
+  // Without a session the same answers are judged as before.
+  assert.equal(deviceState({ device: devices[1], isLoading: false, error: noError, now, sessionActive: false }), "stale");
+  assert.equal(deviceState({ device: devices[4], isLoading: false, error: noError, now }), "offline");
+});
+
+test("a session holds the wristband while it records or is analysed", () => {
+  for (const phase of ["recording", "analysing"] as const) {
+    assert.equal(sessionHoldsDevice({ phase, endedAt: null, answerRequestedAt: null }), true);
+    assert.equal(sessionHoldsDevice({ phase, endedAt: now - 60_000, answerRequestedAt: now }), true);
+  }
+  // No session has ended on this page: the device is judged normally.
+  for (const phase of ["idle", "result", "timeout"] as const) {
+    assert.equal(sessionHoldsDevice({ phase, endedAt: null, answerRequestedAt: null }), false);
+    assert.equal(sessionHoldsDevice({ phase, endedAt: null, answerRequestedAt: now }), false);
+  }
+});
+
+test("after a session ends the hold lasts until an answer requested at least 8 s later", () => {
+  assert.equal(AFTER_SESSION_RECHECK_MS, 8_000);
+  const endedAt = now;
+  for (const phase of ["idle", "result", "timeout"] as const) {
+    // No answer since, or only answers asked for before or soon after the end.
+    assert.equal(sessionHoldsDevice({ phase, endedAt, answerRequestedAt: null }), true);
+    assert.equal(sessionHoldsDevice({ phase, endedAt, answerRequestedAt: endedAt - 20_000 }), true);
+    assert.equal(sessionHoldsDevice({ phase, endedAt, answerRequestedAt: endedAt + 7_999 }), true);
+    // The wristband polls again when idle: an answer asked for 8 s later is judged.
+    assert.equal(sessionHoldsDevice({ phase, endedAt, answerRequestedAt: endedAt + 8_000 }), false);
+    assert.equal(sessionHoldsDevice({ phase, endedAt, answerRequestedAt: endedAt + 30_000 }), false);
+  }
 });

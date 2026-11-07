@@ -1,7 +1,10 @@
 import { SessionExpiredError } from "@/features/auth/session/client/ApiFetch";
 
 import { classifyResult } from "@/components/dashboard/ResultKind";
-import type { DeviceState } from "@/components/dashboard/DeviceState";
+import {
+  answeredAt,
+  type DeviceState,
+} from "@/components/dashboard/DeviceState";
 
 /** Where the monitoring moment is: the signal card and the AI modal follow it. */
 export type MonitoringPhase =
@@ -271,8 +274,11 @@ export function restartAction(
   if (device === "loading") return "busy";
   // The request failed: we do not know whether the wristband is connected.
   if (device === "error") return "device-unknown";
-  // A stale wristband may still start; the backend refuses it if not.
-  if (device !== "online" && device !== "stale") return "offline";
+  // A stale wristband may still start; the backend refuses it if not. One a
+  // session just held ("recording") was working moments ago.
+  if (device !== "online" && device !== "stale" && device !== "recording") {
+    return "offline";
+  }
 
   return busy ? "busy" : "ready";
 }
@@ -296,7 +302,10 @@ export function toggleBlock(
   if (!networkOnline) return "no-network";
   if (phase === "recording" || phase === "analysing") return null;
   // Stale may still start: the backend decides, and its refusal gets a toast.
-  if (device === "online" || device === "stale") return null;
+  // Right after a session ("recording") the wristband is not judged yet.
+  if (device === "online" || device === "stale" || device === "recording") {
+    return null;
+  }
   if (device === "error") return "device-unknown";
 
   return "device-unavailable";
@@ -353,6 +362,58 @@ export function afterStopRefused<T>(
   return latest != null && isFresh(latest)
     ? { kind: "result", data: latest }
     : { kind: "idle" };
+}
+
+/**
+ * After Stop's analysing poll timed out: when the newest history row still
+ * records (see runningSessionFrom), the stop never reached the backend and
+ * recording goes on; otherwise the result is merely late.
+ */
+export function afterAnalysisTimeout(
+  running: RunningSession | null,
+): "recording" | "timeout" {
+  return running !== null ? "recording" : "timeout";
+}
+
+/** "Rekaman selesai otomatis setelah 3 menit." needs a session at least this long. */
+export const AUTO_FINISH_NOTE_MIN_MS = MAX_RECORDING_MS - 10_000;
+
+/**
+ * Whether a result found without Stop (the recording watch, a refused Stop)
+ * ended because the 3 minutes were up, rather than e.g. Stop in another tab.
+ * The row's own requestedAt (or createdAt) to completedAt decides: one clock,
+ * the backend's. Without them, `localElapsedMs` (this page's recording clock)
+ * does; with neither, no claim is made.
+ */
+export function showsAutoFinishNote(
+  result: { requestedAt?: string; createdAt?: string; completedAt?: string },
+  localElapsedMs: number | null,
+): boolean {
+  const started = parseTime(result.requestedAt ?? result.createdAt);
+  const completed = parseTime(result.completedAt);
+  const elapsed =
+    started !== null && completed !== null
+      ? completed - started
+      : localElapsedMs;
+
+  return elapsed !== null && elapsed >= AUTO_FINISH_NOTE_MIN_MS;
+}
+
+/**
+ * A backend time (e.g. a resumed session's requestedAt) on this device's
+ * clock: shifted by how far this device's clock is from the Date header of
+ * the answer that carried it (the Next proxy's clock), so a phone that runs
+ * fast or slow still counts the recording right. Unchanged without a usable
+ * header; null stays null.
+ */
+export function toLocalTime(
+  serverTime: number | null,
+  dateHeader: string | null,
+  localNow: number,
+): number | null {
+  if (serverTime === null) return null;
+
+  return serverTime - (answeredAt(dateHeader, localNow) - localNow);
 }
 
 /** A request that timed out or was aborted, as opposed to one that failed. */
