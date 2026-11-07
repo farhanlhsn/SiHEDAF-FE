@@ -21,6 +21,7 @@ const routeTitles: Record<string, string> = {
   "/profil": "Profil",
   "/profil/ubah": "Profil",
   "/riwayat": "Riwayat",
+  "/riwayat/laporan": "Laporan",
 };
 
 export function DashboardShell({ children, initialUser }: DashboardShellProps) {
@@ -39,11 +40,11 @@ export function DashboardShell({ children, initialUser }: DashboardShellProps) {
 
   return (
     <ProfileProvider initialUser={initialUser}>
-      <div className="min-h-dvh bg-paper text-primary-900">
-        <div className="flex min-h-dvh">
+      <div className="min-h-dvh bg-paper text-primary-900 print:min-h-0 print:bg-white">
+        <div className="flex min-h-dvh print:block print:min-h-0">
           <button
             aria-label="Tutup menu navigasi"
-            className={`fixed inset-0 z-30 bg-primary-900/30 backdrop-blur-[2px] transition-opacity duration-300 lg:hidden ${
+            className={`fixed inset-0 z-30 bg-primary-900/30 backdrop-blur-[2px] transition-opacity duration-300 lg:hidden print:hidden ${
               isMobileOpen
                 ? "pointer-events-auto opacity-100"
                 : "pointer-events-none opacity-0"
@@ -54,7 +55,7 @@ export function DashboardShell({ children, initialUser }: DashboardShellProps) {
           />
 
           <aside
-            className={`fixed inset-y-0 left-0 z-40 w-[260px] shrink-0 border-r border-primary-900/10 bg-paper shadow-[12px_0_40px_rgba(0,39,88,0.12)] transition-[width,transform] duration-300 ease-out lg:sticky lg:top-0 lg:h-dvh lg:translate-x-0 lg:shadow-none ${
+            className={`print:hidden fixed inset-y-0 left-0 z-40 w-[260px] shrink-0 border-r border-primary-900/10 bg-paper shadow-[12px_0_40px_rgba(0,39,88,0.12)] transition-[width,transform] duration-300 ease-out lg:sticky lg:top-0 lg:h-dvh lg:translate-x-0 lg:shadow-none ${
               isMobileOpen ? "translate-x-0" : "-translate-x-full"
             } ${isCollapsed ? "lg:w-[84px]" : "lg:w-[240px]"}`}
           >
@@ -65,8 +66,8 @@ export function DashboardShell({ children, initialUser }: DashboardShellProps) {
             />
           </aside>
 
-          <div className="flex min-w-0 flex-1 flex-col">
-            <header className="sticky top-0 z-20 flex h-[72px] shrink-0 items-center gap-3.5 border-b border-primary-900/10 bg-paper/90 px-4 backdrop-blur-xl sm:px-7">
+          <div className="flex min-w-0 flex-1 flex-col print:block">
+            <header className="print:hidden sticky top-0 z-20 flex h-[72px] shrink-0 items-center gap-3.5 border-b border-primary-900/10 bg-paper/90 px-4 backdrop-blur-xl sm:px-7">
               <button
                 aria-expanded={isMobileOpen}
                 aria-label={
@@ -125,11 +126,11 @@ export function DashboardShell({ children, initialUser }: DashboardShellProps) {
               />
             </header>
 
-            <div className="relative flex min-w-0 flex-1 flex-col xl:flex-row">
+            <div className="relative flex min-w-0 flex-1 flex-col xl:flex-row print:block">
               {isDashboardRoute ? (
                 <button
                   aria-label="Tampilkan notifikasi"
-                  className={`fixed right-5 top-[96px] z-30 h-11 w-11 items-center justify-center rounded-[12px] border border-primary-900/15 bg-white text-primary-900 shadow-[0_10px_24px_rgba(0,39,88,0.08)] transition-all duration-200 sm:right-7 ${
+                  className={`print:hidden fixed right-5 top-[96px] z-30 h-11 w-11 items-center justify-center rounded-[12px] border border-primary-900/15 bg-white text-primary-900 shadow-[0_10px_24px_rgba(0,39,88,0.08)] transition-all duration-200 sm:right-7 ${
                     isNotifOpenMobile ? "hidden" : "flex"
                   } ${isNotifOpenDesktop ? "xl:hidden" : "xl:flex"} ${
                     isMobileOpen
@@ -162,7 +163,7 @@ export function DashboardShell({ children, initialUser }: DashboardShellProps) {
                 <>
                   <button
                     aria-label="Tutup notifikasi"
-                    className={`fixed inset-0 z-30 bg-primary-900/30 backdrop-blur-[2px] transition-opacity duration-300 xl:hidden ${
+                    className={`fixed inset-0 z-30 bg-primary-900/30 backdrop-blur-[2px] transition-opacity duration-300 xl:hidden print:hidden ${
                       isNotifOpenMobile
                         ? "pointer-events-auto opacity-100"
                         : "pointer-events-none opacity-0"
@@ -172,7 +173,7 @@ export function DashboardShell({ children, initialUser }: DashboardShellProps) {
                     type="button"
                   />
                   <div
-                    className={`fixed inset-y-0 right-0 z-40 shrink-0 overflow-hidden bg-paper shadow-[-12px_0_40px_rgba(0,39,88,0.12)] transition-[transform,width,opacity,visibility] duration-300 ease-out xl:sticky xl:top-[72px] xl:h-[calc(100dvh-72px)] xl:shadow-none ${
+                    className={`print:hidden fixed inset-y-0 right-0 z-40 shrink-0 overflow-hidden bg-paper shadow-[-12px_0_40px_rgba(0,39,88,0.12)] transition-[transform,width,opacity,visibility] duration-300 ease-out xl:sticky xl:top-[72px] xl:h-[calc(100dvh-72px)] xl:shadow-none ${
                       isNotifOpenMobile
                         ? "visible w-full max-w-[360px] translate-x-0 opacity-100"
                         : "invisible w-full max-w-[360px] translate-x-full opacity-0"

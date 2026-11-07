@@ -11,7 +11,6 @@ type DateRangePickerProps = Readonly<{
 }>;
 
 const dateFormatter = new Intl.DateTimeFormat("id-ID", {
-  timeZone: "Asia/Jakarta",
   day: "numeric",
   month: "long",
   year: "numeric",

@@ -1,6 +1,7 @@
 "use client";
 
 import type { DateRange } from "@daypicker/react";
+import Link from "next/link";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 import {
@@ -9,11 +10,16 @@ import {
   isNormalResult,
   shareOf,
 } from "@/components/dashboard/DashboardFormat";
+import { HistoryDetailModal } from "@/components/dashboard/HistoryDetailModal";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { Sparkline } from "@/components/dashboard/Sparkline";
 import { StatusMark } from "@/components/dashboard/StatusMark";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { useHistoryView } from "@/components/dashboard/hooks/UseHistoryView";
+import {
+  rangeFromDateRange,
+  reportHref,
+} from "@/components/dashboard/ReportRange";
 
 const pagerButtonClassName =
   "flex h-11 items-center justify-center gap-1 rounded-full border-[1.5px] border-primary-900/20 bg-white px-3 text-[15px] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300 disabled:cursor-not-allowed disabled:border-primary-900/10 disabled:bg-transparent disabled:text-primary-900/70 sm:px-4";
@@ -31,6 +37,8 @@ export function HistoryView() {
     isLoading,
     error,
     summaries,
+    selectedItem,
+    setSelectedItem,
   } = useHistoryView();
 
   function handleRangeChange(range: DateRange | undefined) {
@@ -60,7 +68,15 @@ export function HistoryView() {
               terbaru.
             </p>
           </div>
-          <DateRangePicker onChange={handleRangeChange} value={dateRange} />
+          <div className="flex flex-wrap items-center gap-3">
+            <DateRangePicker onChange={handleRangeChange} value={dateRange} />
+            <Link
+              className="inline-flex h-11 items-center rounded-full bg-primary-900 px-5 text-[15px] font-semibold text-white transition-colors hover:bg-primary-800 focus-visible:outline-2 focus-visible:outline-primary-300"
+              href={reportHref(rangeFromDateRange(dateRange))}
+            >
+              Buat laporan dokter
+            </Link>
+          </div>
         </div>
 
         <div className="mt-10 grid grid-cols-3 border-y border-primary-900/10 py-6 sm:py-8">
@@ -170,40 +186,71 @@ export function HistoryView() {
                   </tr>
                 ) : (
                   historyData.map((row) => {
-                    const isNormal = isNormalResult(row.resultLabel) ?? true;
+                    const result = isNormalResult(row.resultLabel);
+                    const isUnknown = result === null;
+                    const isNormal = result === true;
+                    const dateLabel = formatWib(row.requestedAt, "date");
+                    const timeLabel = formatWib(row.requestedAt, "time");
 
                     return (
                       <tr
-                        className="stagger-item border-b border-primary-900/[0.07] last:border-b-0"
+                        className="stagger-item cursor-pointer hover:bg-paper border-b border-primary-900/[0.07] last:border-b-0"
                         key={row.id}
+                        onClick={() => setSelectedItem(row)}
                       >
                         <td className="px-6 py-4">
-                          <p className="text-[15px] font-semibold text-primary-900">
-                            {formatWib(row.requestedAt, "date") ?? "—"}
-                          </p>
-                          <p className="mt-0.5 text-[14px] text-primary-900/75">
-                            {formatWib(row.requestedAt, "time") ?? ""}
-                          </p>
+                          <button
+                            aria-label={
+                              dateLabel
+                                ? `Lihat detail analisis ${dateLabel} ${timeLabel ?? ""}`.trim()
+                                : "Lihat detail analisis tanpa waktu"
+                            }
+                            className="block rounded-md text-left focus-visible:outline-2 focus-visible:outline-primary-300"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelectedItem(row);
+                            }}
+                            type="button"
+                          >
+                            <span className="block text-[15px] font-semibold text-primary-900">
+                              {dateLabel ?? "—"}
+                            </span>
+                            <span className="mt-0.5 block text-[14px] text-primary-900/75">
+                              {timeLabel ?? ""}
+                            </span>
+                          </button>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            <StatusMark
-                              size="small"
-                              status={isNormal ? "normal" : "af"}
-                            />
+                            {isUnknown ? null : (
+                              <StatusMark
+                                size="small"
+                                status={isNormal ? "normal" : "af"}
+                              />
+                            )}
                             <div>
                               <p
                                 className={`text-[15px] font-semibold ${
-                                  isNormal ? "text-primary-500" : "text-af-700"
+                                  isUnknown
+                                    ? "text-primary-900/70"
+                                    : isNormal
+                                      ? "text-primary-500"
+                                      : "text-af-700"
                                 }`}
                               >
-                                {isNormal ? "Normal Rhythm" : "Terdeteksi AF"}
+                                {isUnknown
+                                  ? "Belum ada hasil"
+                                  : isNormal
+                                    ? "Normal Rhythm"
+                                    : "Terdeteksi AF"}
                               </p>
-                              <p className="mt-0.5 text-[14px] text-primary-900/75">
-                                {isNormal
-                                  ? "Tidak ditemukan pola AF"
-                                  : "Pola AF teridentifikasi"}
-                              </p>
+                              {isUnknown ? null : (
+                                <p className="mt-0.5 text-[14px] text-primary-900/75">
+                                  {isNormal
+                                    ? "Tidak ditemukan pola AF"
+                                    : "Pola AF teridentifikasi"}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -213,7 +260,7 @@ export function HistoryView() {
                         <td className="px-6 py-3">
                           <Sparkline
                             data={row.ppgResult?.rawPpgData}
-                            tone={isNormal ? "blue" : "pink"}
+                            tone={isNormal || isUnknown ? "blue" : "pink"}
                           />
                         </td>
                       </tr>
@@ -379,6 +426,10 @@ export function HistoryView() {
           </div>
         </article>
       </div>
+      <HistoryDetailModal
+        item={selectedItem}
+        onClose={() => setSelectedItem(null)}
+      />
     </section>
   );
 }

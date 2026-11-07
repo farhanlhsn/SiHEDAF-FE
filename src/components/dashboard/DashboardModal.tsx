@@ -1,7 +1,18 @@
 "use client";
 
-import { useEffect, useId, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+
+function subscribeNoop() {
+  return () => {};
+}
 
 type DashboardModalProps = Readonly<{
   children: ReactNode;
@@ -10,6 +21,7 @@ type DashboardModalProps = Readonly<{
   open: boolean;
   title: string;
   showCloseButton?: boolean;
+  size?: "default" | "wide";
 }>;
 
 export function DashboardModal({
@@ -19,9 +31,17 @@ export function DashboardModal({
   open,
   title,
   showCloseButton = false,
+  size = "default",
 }: DashboardModalProps) {
   const titleId = useId();
   const descriptionId = useId();
+  // False during server render and hydration, true on the client afterwards,
+  // so an initially open modal never touches document before mount.
+  const mounted = useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false,
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -41,9 +61,24 @@ export function DashboardModal({
     };
   }, [onClose, open]);
 
-  if (!open) return null;
+  const dialogRef = useRef<HTMLElement>(null);
+  const isShown = open && mounted;
 
-  return (
+  // Move focus into the dialog once it exists and give it back on close.
+  useEffect(() => {
+    if (!isShown) return;
+
+    const opener = document.activeElement;
+    dialogRef.current?.focus();
+
+    return () => {
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    };
+  }, [isShown]);
+
+  if (!isShown) return null;
+
+  return createPortal(
     <div className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto px-4 py-8">
       <button
         aria-label="Tutup dialog"
@@ -55,7 +90,9 @@ export function DashboardModal({
         aria-describedby={description ? descriptionId : undefined}
         aria-labelledby={titleId}
         aria-modal="true"
-        className="modal-enter relative z-10 w-full max-w-[480px] rounded-[28px] bg-white p-6 text-primary-900 shadow-[0_24px_64px_rgba(0,39,88,0.2)] sm:p-8"
+        ref={dialogRef}
+        tabIndex={-1}
+        className={`modal-enter outline-none relative z-10 w-full ${size === "wide" ? "max-w-[760px]" : "max-w-[480px]"} rounded-[28px] bg-white p-6 text-primary-900 shadow-[0_24px_64px_rgba(0,39,88,0.2)] sm:p-8`}
         role="dialog"
       >
         {showCloseButton ? (
@@ -85,6 +122,7 @@ export function DashboardModal({
         ) : null}
         <div className="mt-6">{children}</div>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
