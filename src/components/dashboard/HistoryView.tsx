@@ -7,9 +7,13 @@ import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   formatConfidence,
   formatWib,
-  resultStatus,
   splitShares,
 } from "@/components/dashboard/DashboardFormat";
+import {
+  classifyResult,
+  isAlertKind,
+  RESULT_COPY,
+} from "@/components/dashboard/ResultKind";
 import { HistoryDetailModal } from "@/components/dashboard/HistoryDetailModal";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { Sparkline } from "@/components/dashboard/Sparkline";
@@ -186,9 +190,11 @@ export function HistoryView() {
                   </tr>
                 ) : (
                   historyData.map((row) => {
-                    const result = resultStatus(row.resultLabel);
-                    const isUnknown = result === "unknown";
+                    const result = classifyResult(row);
+                    const copy = RESULT_COPY[result];
+                    const isAlert = isAlertKind(result);
                     const isNormal = result === "normal";
+                    const isNeutral = !isAlert && !isNormal;
                     const dateLabel = formatWib(row.requestedAt, "date");
                     const timeLabel = formatWib(row.requestedAt, "time");
 
@@ -222,7 +228,7 @@ export function HistoryView() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            {isUnknown ? null : (
+                            {isNeutral ? null : (
                               <StatusMark
                                 size="small"
                                 status={isNormal ? "normal" : "af"}
@@ -231,24 +237,22 @@ export function HistoryView() {
                             <div>
                               <p
                                 className={`text-[0.9375rem] font-semibold ${
-                                  isUnknown
+                                  isNeutral
                                     ? "text-primary-900/70"
                                     : isNormal
                                       ? "text-primary-500"
                                       : "text-af-700"
                                 }`}
                               >
-                                {isUnknown
-                                  ? "Belum ada hasil"
-                                  : isNormal
-                                    ? "Normal Rhythm"
-                                    : "Terdeteksi AF"}
+                                {copy.label}
                               </p>
-                              {isUnknown ? null : (
+                              {isNeutral ? null : (
                                 <p className="mt-0.5 text-[0.875rem] text-primary-900/75">
                                   {isNormal
                                     ? "Tidak ditemukan pola AF"
-                                    : "Pola AF teridentifikasi"}
+                                    : result === "flutter"
+                                      ? "Pola AFL teridentifikasi"
+                                      : "Pola AF teridentifikasi"}
                                 </p>
                               )}
                             </div>
@@ -260,7 +264,7 @@ export function HistoryView() {
                         <td className="px-6 py-3">
                           <Sparkline
                             data={row.ppgResult?.rawPpgData}
-                            tone={isNormal || isUnknown ? "blue" : "pink"}
+                            tone={isAlert ? "pink" : "blue"}
                           />
                         </td>
                       </tr>

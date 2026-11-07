@@ -4,28 +4,6 @@
  * dash instead of a made-up number.
  */
 
-/** true = normal rhythm, false = AF, null = no result yet. */
-export function isNormalResult(label?: string | null) {
-  if (!label) {
-    return null;
-  }
-
-  return label.toLowerCase().includes("normal");
-}
-
-export type ResultStatus = "normal" | "af" | "unknown";
-
-/** Single source of truth for how a result label is shown. */
-export function resultStatus(label?: string | null): ResultStatus {
-  const normal = isNormalResult(label);
-
-  if (normal === null) {
-    return "unknown";
-  }
-
-  return normal ? "normal" : "af";
-}
-
 /** Accepts a 0–1 ratio or a 0–100 percentage, returns e.g. "96,4%". */
 export function formatConfidence(value?: number | null) {
   if (value == null || !Number.isFinite(value) || value <= 0) {

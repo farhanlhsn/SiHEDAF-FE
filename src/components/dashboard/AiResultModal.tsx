@@ -6,7 +6,6 @@ import { useId } from "react";
 import {
   formatConfidence,
   formatWib,
-  resultStatus,
 } from "@/components/dashboard/DashboardFormat";
 import { DashboardModal } from "@/components/dashboard/DashboardModal";
 import type { MeasurementData } from "@/components/dashboard/hooks/UseDashboardOverview";
@@ -15,6 +14,11 @@ import {
   type RestartAction,
   type ResultModalView,
 } from "@/components/dashboard/MonitoringSession";
+import {
+  classifyResult,
+  isAlertKind,
+  RESULT_COPY,
+} from "@/components/dashboard/ResultKind";
 import { PpgTrace } from "@/components/dashboard/PpgTrace";
 import {
   rangeEndingOn,
@@ -43,19 +47,6 @@ const actionClassName =
 const primaryActionClassName = `btn-primary ${actionClassName} bg-primary-900 text-white`;
 const secondaryActionClassName = `${actionClassName} border-[1.5px] border-primary-900/20 text-primary-900 transition-colors hover:bg-paper-deep disabled:cursor-not-allowed disabled:border-primary-900/15 disabled:text-primary-900/70 disabled:hover:bg-transparent`;
 
-const titles = {
-  normal: "Irama Jantung Normal",
-  af: "Terdeteksi Potensi AF",
-  unknown: "Hasil analisis belum tersedia",
-} as const;
-
-const copy = {
-  normal:
-    "Jarak antar detak pada rekaman ini terlihat teratur. Tetap pantau secara berkala.",
-  af: "AI menemukan pola tidak teratur yang mirip Atrial Fibrillation. Ini bukan diagnosis; tunjukkan hasil ini ke dokter, terutama bila ada keluhan.",
-  unknown: "Rekaman ini belum memiliki hasil analisis AI.",
-} as const;
-
 export function AiResultModal({
   data,
   onClose,
@@ -64,13 +55,13 @@ export function AiResultModal({
   restart,
   view,
 }: AiResultModalProps) {
-  const status = resultStatus(data?.resultLabel);
+  const kind = data ? classifyResult(data) : "pending";
   const title =
     view === "analysing"
       ? "Menganalisis rekaman"
       : view === "timeout"
         ? "Hasil belum tersedia"
-        : titles[status];
+        : RESULT_COPY[kind].title;
 
   // Each view is a fresh dialog element (contentKey), so focus moves into it
   // and the new title is announced when the result arrives in an open modal;
@@ -159,7 +150,9 @@ function ResultBody({
   restart: RestartAction;
 }>) {
   const restartHintId = useId();
-  const status = resultStatus(data?.resultLabel);
+  const kind = data ? classifyResult(data) : "pending";
+  const isAlert = isAlertKind(kind);
+  const isNeutral = !isAlert && kind !== "normal";
   const confidence = formatConfidence(data?.confidenceLevel);
   const measuredAt = formatWib(
     data?.completedAt ?? data?.updatedAt ?? data?.createdAt,
@@ -175,7 +168,8 @@ function ResultBody({
     </Link>
   );
   // Offered with a result only once no session runs, never while recording.
-  const offersRestart = status !== "unknown" && restart !== "hidden";
+  // Pending has nothing to redo; a short or failed recording is fixed by a new one.
+  const offersRestart = kind !== "pending" && restart !== "hidden";
   const restartHint =
     restart === "no-network"
       ? "Tidak ada koneksi internet."
@@ -198,7 +192,7 @@ function ResultBody({
   const closeButton = (
     <button
       className={
-        status === "normal" ? primaryActionClassName : secondaryActionClassName
+        kind === "normal" ? primaryActionClassName : secondaryActionClassName
       }
       onClick={onClose}
       type="button"
@@ -210,13 +204,13 @@ function ResultBody({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-start gap-4">
-        {status === "unknown" ? null : (
+        {isNeutral ? null : (
           <div className="shrink-0">
-            <StatusMark size="large" status={status} />
+            <StatusMark size="large" status={isAlert ? "af" : "normal"} />
           </div>
         )}
         <p className="text-[1rem] leading-[1.55] text-primary-900/80">
-          {copy[status]}
+          {RESULT_COPY[kind].sentence}
         </p>
       </div>
 
@@ -224,7 +218,7 @@ function ResultBody({
         className="h-36 w-full rounded-[18px] bg-paper"
         data={data?.ppgResult?.rawPpgData}
         label="Grafik sinyal PPG"
-        tone={status === "af" ? "pink" : "blue"}
+        tone={isAlert ? "pink" : "blue"}
       />
 
       <dl className="grid gap-4 rounded-[18px] bg-paper p-5 text-[0.9375rem] sm:grid-cols-3">
@@ -249,7 +243,7 @@ function ResultBody({
       </dl>
 
       <div className={actionsClassName}>
-        {status === "af" ? (
+        {isAlert ? (
           <>
             <Link
               className={primaryActionClassName}
@@ -264,7 +258,7 @@ function ResultBody({
             {restartButton}
             {closeButton}
           </>
-        ) : status === "normal" ? (
+        ) : kind === "normal" ? (
           <>
             {closeButton}
             {historyLink}
@@ -272,6 +266,7 @@ function ResultBody({
           </>
         ) : (
           <>
+            {restartButton}
             {historyLink}
             {closeButton}
           </>

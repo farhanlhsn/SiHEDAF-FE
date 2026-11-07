@@ -17,6 +17,10 @@ import {
   formatConfidence,
   formatWib,
 } from "@/components/dashboard/DashboardFormat";
+import {
+  isAlertKind,
+  RESULT_COPY,
+} from "@/components/dashboard/ResultKind";
 import { DataErrorState } from "@/components/ui/DataErrorState";
 import { DeviceOfflineCard } from "@/components/dashboard/DeviceOfflineCard";
 import { FirstRunGuide } from "@/components/dashboard/FirstRunGuide";
@@ -64,6 +68,9 @@ export function DashboardOverview() {
   } = useDashboardOverview();
 
   const isAnalysing = phase === "analysing";
+  const isAlert = isAlertKind(result);
+  const isNeutral = result === "pending" || result === "short" || result === "unavailable";
+  const copy = RESULT_COPY[result];
 
   const confidence = formatConfidence(latestData?.confidenceLevel);
   const analysedAt = formatWib(
@@ -90,10 +97,12 @@ export function DashboardOverview() {
             <span className="font-bold">Memuat hasil terakhir</span>
           ) : latestError && !latestData ? (
             <span className="font-bold">Hasil terakhir belum bisa dimuat.</span>
-          ) : result === "unknown" && isMonitoringActive ? (
+          ) : result === "pending" && isMonitoringActive ? (
             <span className="font-bold">Monitoring sedang berjalan.</span>
-          ) : result === "unknown" ? (
+          ) : result === "pending" ? (
             <span className="font-bold">Belum ada hasil analisis.</span>
+          ) : result === "short" || result === "unavailable" ? (
+            <span className="font-bold">Rekaman terakhir belum bisa dianalisis.</span>
           ) : (
             <>
               <span className="font-extralight">Irama terakhirmu</span>{" "}
@@ -121,15 +130,15 @@ export function DashboardOverview() {
         {latestData ? (
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.9375rem] text-primary-900/80">
-              {result === "unknown" ? null : (
-                <StatusMark size="small" status={result} />
+              {isNeutral ? null : (
+                <StatusMark size="small" status={isAlert ? "af" : "normal"} />
               )}
               <span className="font-semibold text-primary-900">
                 Hasil Analisis Terakhir
               </span>
-              {result === "unknown" ? (
+              {isNeutral ? (
                 <span className="font-semibold text-primary-900/70">
-                  Belum ada hasil
+                  {copy.label}
                 </span>
               ) : null}
               {analysedAt ? <span>{analysedAt}</span> : null}
@@ -157,7 +166,7 @@ export function DashboardOverview() {
           </div>
         ) : null}
 
-        {result === "af" ? (
+        {isAlert ? (
           <div
             className="mt-6 flex max-w-[760px] gap-3 rounded-[18px] bg-af-50 p-5 text-[1rem] leading-[1.55] text-primary-900"
             role="note"
@@ -168,7 +177,10 @@ export function DashboardOverview() {
               strokeWidth={2.25}
             />
             <p>
-              AI menemukan pola yang mirip Atrial Fibrillation. Hasil ini bukan
+              {result === "flutter"
+                ? "AI menemukan pola yang mirip Atrial Flutter."
+                : "AI menemukan pola yang mirip Atrial Fibrillation."}{" "}
+              Hasil ini bukan
               diagnosis; pertimbangkan konsultasi ke dokter, terutama jika kamu
               merasakan keluhan seperti jantung berdebar atau pusing.
             </p>
@@ -349,31 +361,23 @@ export function DashboardOverview() {
             {latestData ? (
               <div className="mt-5 flex-1">
                 <p className="flex items-center gap-3">
-                  {result === "unknown" ? null : (
-                    <StatusMark size="small" status={result} />
+                  {isNeutral ? null : (
+                    <StatusMark size="small" status={isAlert ? "af" : "normal"} />
                   )}
                   <span
                     className={`text-[0.9375rem] font-semibold ${
-                      result === "unknown"
+                      isNeutral
                         ? "text-primary-900/70"
                         : result === "normal"
                           ? "text-primary-500"
                           : "text-af-700"
                     }`}
                   >
-                    {result === "unknown"
-                      ? "Belum ada hasil"
-                      : result === "normal"
-                        ? "Normal Rhythm"
-                        : "Terdeteksi Potensi AF"}
+                    {copy.label}
                   </span>
                 </p>
                 <h3 className="mt-3 text-[1.1875rem] font-semibold text-primary-900">
-                  {result === "unknown"
-                    ? "Hasil analisis belum tersedia"
-                    : result === "normal"
-                      ? "Irama Jantung Normal & Stabil"
-                      : "Indikasi Anomali Irama Jantung"}
+                  {copy.title}
                 </h3>
                 <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4">
                   <div>
@@ -389,7 +393,7 @@ export function DashboardOverview() {
                     <dd className="mt-2">
                       <Sparkline
                         data={latestData.ppgResult?.rawPpgData}
-                        tone={result === "af" ? "pink" : "blue"}
+                        tone={isAlert ? "pink" : "blue"}
                       />
                     </dd>
                   </div>

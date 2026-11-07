@@ -5,8 +5,12 @@ import Link from "next/link";
 import {
   formatConfidence,
   formatWib,
-  resultStatus,
 } from "@/components/dashboard/DashboardFormat";
+import {
+  classifyResult,
+  isAlertKind,
+  RESULT_COPY,
+} from "@/components/dashboard/ResultKind";
 import { DashboardModal } from "@/components/dashboard/DashboardModal";
 import { PpgTrace } from "@/components/dashboard/PpgTrace";
 import {
@@ -25,9 +29,11 @@ const actionClassName =
   "inline-flex h-12 items-center justify-center rounded-full px-6 text-[1rem] font-semibold focus-visible:outline-2 focus-visible:outline-primary-300";
 
 export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
-  const result = resultStatus(item?.resultLabel);
-  const isUnknown = result === "unknown";
+  const result = item ? classifyResult(item) : "pending";
+  const copy = RESULT_COPY[result];
+  const isAlert = isAlertKind(result);
   const isNormal = result === "normal";
+  const isNeutral = !isAlert && !isNormal;
   const facts = item
     ? [
         { label: "Waktu", value: formatWib(item.requestedAt) ?? "—" },
@@ -45,34 +51,32 @@ export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
       open={item !== null}
       showCloseButton
       size="wide"
-      title={
-        isUnknown
-          ? "Hasil analisis belum tersedia"
-          : isNormal
-            ? "Irama Jantung Normal"
-            : "Terdeteksi Potensi AF"
-      }
+      title={copy.title}
     >
       {item ? (
         <div className="space-y-6">
-          {isUnknown ? null : (
-            <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
+            {isNeutral ? null : (
               <StatusMark size="small" status={isNormal ? "normal" : "af"} />
-              <p
-                className={`text-[0.9375rem] font-semibold ${
-                  isNormal ? "text-primary-500" : "text-af-700"
-                }`}
-              >
-                {isNormal ? "Normal Rhythm" : "Terdeteksi AF"}
-              </p>
-            </div>
-          )}
+            )}
+            <p
+              className={`text-[0.9375rem] font-semibold ${
+                isNeutral
+                  ? "text-primary-900/70"
+                  : isNormal
+                    ? "text-primary-500"
+                    : "text-af-700"
+              }`}
+            >
+              {copy.label}
+            </p>
+          </div>
 
           <PpgTrace
             className="h-40 w-full rounded-[16px] bg-paper"
             data={item.ppgResult?.rawPpgData}
-            label={`Grafik sinyal PPG${isUnknown ? "" : isNormal ? ", irama normal" : ", terdeteksi AF"}`}
-            tone={isNormal || isUnknown ? "blue" : "pink"}
+            label={`Grafik sinyal PPG${isNeutral ? "" : `, ${copy.label.toLowerCase()}`}`}
+            tone={isAlert ? "pink" : "blue"}
           />
 
           <dl className="grid gap-4 sm:grid-cols-3">
@@ -89,11 +93,7 @@ export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
           </dl>
 
           <p className="text-[1rem] leading-[1.55] text-primary-900/80">
-            {isUnknown
-              ? "Rekaman ini belum memiliki hasil analisis AI."
-              : isNormal
-              ? "Jarak antar detak pada rekaman ini terlihat teratur. Tetap pantau secara berkala."
-              : "AI menemukan pola tidak teratur yang mirip Atrial Fibrillation. Ini bukan diagnosis; tunjukkan hasil ini ke dokter, terutama bila ada keluhan."}
+            {copy.sentence}
           </p>
 
           <div className="flex flex-wrap justify-end gap-3">
@@ -104,7 +104,7 @@ export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
             >
               Tutup
             </button>
-            {result === "af" ? (
+            {isAlert ? (
               <Link
                 className={`${actionClassName} bg-primary-900 text-white hover:bg-primary-800`}
                 href={reportHref(rangeEndingOn(item.requestedAt))}

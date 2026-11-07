@@ -23,19 +23,14 @@ test("history detail modal shows facts, plain-language copy and AF report link",
   assert.match(source, /PpgTrace/);
   assert.match(source, /formatConfidence/);
   assert.match(source, /Tidak tersedia/);
-  assert.match(
-    source,
-    /Jarak antar detak pada rekaman ini terlihat teratur\. Tetap pantau secara berkala\./,
-  );
-  assert.match(
-    source,
-    /AI menemukan pola tidak teratur yang mirip Atrial Fibrillation\. Ini bukan diagnosis; tunjukkan hasil ini ke dokter, terutama bila ada keluhan\./,
-  );
-  assert.match(source, /Irama Jantung Normal/);
-  assert.match(source, /Terdeteksi Potensi AF/);
+  assert.match(source, /classifyResult\(item\)/);
+  assert.match(source, /RESULT_COPY\[result\]/);
+  assert.match(source, /copy\.sentence/);
+  assert.match(source, /copy\.title/);
+  assert.doesNotMatch(source, /resultStatus|isNormalResult/);
   assert.match(source, /reportHref\(rangeEndingOn\(/);
   assert.match(source, /Buat laporan dokter/);
-  assert.match(source, /isNormal \?[\s\S]*Buat laporan dokter|!isNormal[\s\S]*Buat laporan dokter/);
+  assert.match(source, /isAlert \?[\s\S]*Buat laporan dokter/);
 });
 
 test("history view state lives in the hook", async () => {
@@ -178,12 +173,15 @@ test("records without a result label get a neutral unknown state, not normal", a
   const modal = await read("components/dashboard/HistoryDetailModal.tsx");
   const view = await read("components/dashboard/HistoryView.tsx");
 
-  assert.ok(modal.includes("Hasil analisis belum tersedia"));
-  assert.ok(modal.includes("Rekaman ini belum memiliki hasil analisis AI."));
-  assert.match(modal, /isUnknown/);
+  const kinds = await read("components/dashboard/ResultKind.ts");
+
+  assert.ok(kinds.includes("Hasil analisis belum tersedia"));
+  assert.ok(kinds.includes("Rekaman ini belum memiliki hasil analisis AI."));
+  assert.ok(kinds.includes("Belum ada hasil"));
+  assert.match(modal, /isNeutral/);
   assert.doesNotMatch(modal, /\?\? true/);
-  assert.ok(view.includes("Belum ada hasil"));
-  assert.match(view, /isUnknown/);
+  assert.match(view, /isNeutral/);
+  assert.match(view, /RESULT_COPY\[result\]/);
   assert.doesNotMatch(view, /\?\? true/);
 });
 

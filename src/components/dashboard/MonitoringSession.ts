@@ -1,6 +1,6 @@
 import { SessionExpiredError } from "@/features/auth/session/client/ApiFetch";
 
-import { resultStatus } from "@/components/dashboard/DashboardFormat";
+import { classifyResult } from "@/components/dashboard/ResultKind";
 import type { DeviceState } from "@/components/dashboard/DeviceState";
 
 /** Where the monitoring moment is: the signal card and the AI modal follow it. */
@@ -38,6 +38,8 @@ export function formatElapsed(ms: number): string {
 type ResultRecord = {
   id?: number;
   resultLabel?: string;
+  resultClass?: number;
+  confidenceLevel?: number;
   status?: string;
   createdAt?: string;
   completedAt?: string;
@@ -78,7 +80,7 @@ function sameInstant(a: string, b: string) {
 }
 
 /**
- * A polled /latest is the new session's result only if it is labelled and not
+ * A polled /latest is the new session's result only if it has a final result (any COMPLETED kind) and is not
  * the one we already had: a different id, not a repeat of an id-less result's
  * timestamp and, while no earlier id is known for a resumed session, that
  * session's own row or one created after it started.
@@ -88,7 +90,7 @@ export function isFreshResult(
   previousResultId: number | null | undefined,
   context: Partial<Omit<ResultBaseline, "previousResultId">> = {},
 ): boolean {
-  if (!data || resultStatus(data.resultLabel) === "unknown") return false;
+  if (!data || classifyResult(data) === "pending") return false;
 
   const timestamp = resultTimestamp(data);
   if (
@@ -118,7 +120,7 @@ export function rememberResult(
   baseline: ResultBaseline,
   data: ResultRecord,
 ): ResultBaseline {
-  if (resultStatus(data.resultLabel) !== "unknown") {
+  if (classifyResult(data) !== "pending") {
     return data.id != null
       ? { ...EMPTY_BASELINE, previousResultId: data.id }
       : {

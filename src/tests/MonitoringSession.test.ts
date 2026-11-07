@@ -41,6 +41,15 @@ test("formatElapsed guards invalid input", () => {
   assert.equal(formatElapsed(Number.POSITIVE_INFINITY), "00:00");
 });
 
+test("isFreshResult treats every COMPLETED kind as final and pending never", () => {
+  const done = { status: "COMPLETED" };
+  assert.equal(isFreshResult({ id: 6, ...done, resultClass: 0, resultLabel: "Not Enough Data", confidenceLevel: 0 }, 5), true);
+  assert.equal(isFreshResult({ id: 6, ...done, resultClass: 0, resultLabel: "Normal (N)", confidenceLevel: 0 }, 5), true);
+  assert.equal(isFreshResult({ id: 6, ...done, resultClass: 2, resultLabel: "Atrial Flutter", confidenceLevel: 0.8 }, 5), true);
+  assert.equal(isFreshResult({ id: 6, status: "IN_PROGRESS", resultClass: 1 }, 5), false);
+  assert.equal(isFreshResult({ id: 6, ...done }, 5), false);
+});
+
 test("isFreshResult requires a labelled result that differs from the previous one", () => {
   assert.equal(isFreshResult({ id: 6, resultLabel: "Normal" }, 5), true);
   assert.equal(isFreshResult({ id: 5, resultLabel: "Normal" }, 5), false);

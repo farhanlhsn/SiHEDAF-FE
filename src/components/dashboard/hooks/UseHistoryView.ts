@@ -14,6 +14,7 @@ import {
 
 export type HistoryItem = {
   id?: number;
+  status?: string;
   resultLabel?: string;
   resultClass?: number;
   confidenceLevel?: number;

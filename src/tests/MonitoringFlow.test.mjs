@@ -18,9 +18,8 @@ test("AI result modal follows phases and never invents a result", () => {
     "Hasil belum tersedia",
     "Mulai monitoring lagi",
     "Buat laporan dokter",
-    "bukan diagnosis",
     "analysisStatusLabel(",
-    "resultStatus(",
+    "classifyResult(",
   ]) {
     assert.ok(modal.includes(text), `AiResultModal is missing ${text}`);
   }

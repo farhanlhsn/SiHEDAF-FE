@@ -22,7 +22,7 @@ import {
   type MeasurementDevice,
 } from "@/components/dashboard/hooks/UseMyDevice";
 import { firstRunSteps } from "@/components/dashboard/FirstRun";
-import { resultStatus } from "@/components/dashboard/DashboardFormat";
+import { classifyResult } from "@/components/dashboard/ResultKind";
 import {
   restartAction,
   toggleBlock,
@@ -148,7 +148,7 @@ export function useDashboardOverview() {
   }, [monitoringRange, isMonitoringActive]);
 
   const firstName = user?.fullname ? user.fullname.split(" ")[0] : "Pengguna";
-  const result = resultStatus(latestData?.resultLabel);
+  const result = latestData ? classifyResult(latestData) : "pending";
   // The one source for every device claim: card, status value, toggle, modal.
   const deviceStatus = deviceState({
     device: deviceData,

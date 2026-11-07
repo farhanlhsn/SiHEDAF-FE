@@ -1,5 +1,5 @@
 import type { HistoryItem } from "@/components/dashboard/hooks/UseHistoryView";
-import { isNormalResult } from "@/components/dashboard/DashboardFormat";
+import { classifyResult, isAlertKind } from "@/components/dashboard/ResultKind";
 import type { ReportRange } from "@/components/dashboard/ReportRange";
 
 export type ReportSummary = { totalData: number; totalAfib: number; totalNormal: number };
@@ -58,7 +58,7 @@ export async function collectReport(
 
   return {
     summary: first.summary,
-    afEvents: newestFirst(items.filter((item) => isNormalResult(item.resultLabel) === false)),
+    afEvents: newestFirst(items.filter((item) => isAlertKind(classifyResult(item)))),
     scanned: items.length,
     truncated: first.totalPages > maxPages,
   };
