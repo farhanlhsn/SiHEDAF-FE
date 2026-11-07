@@ -128,6 +128,9 @@ export function useMonitoringSession({
   const [isTogglingAction, setIsTogglingAction] = useState(false);
   // The shown result ended without Stop: the wristband finished after 3 minutes.
   const [autoFinished, setAutoFinished] = useState(false);
+  // When the last session on this page ended (this device's clock): the
+  // wristband is judged again only by a device answer asked for 8 s later.
+  const [endedAt, setEndedAt] = useState<number | null>(null);
 
   const baselineRef = useRef<ResultBaseline>(EMPTY_BASELINE);
   // Once the user started or stopped, a slow first /latest is out of date.
@@ -229,6 +232,7 @@ export function useMonitoringSession({
       baselineRef.current = rememberResult(baselineRef.current, data);
       onFreshResultRef.current(data);
       setAutoFinished(automatic);
+      setEndedAt(Date.now());
       setPhase("result");
       setModalView("result");
       // After Stop the modal is open already, or the reader closed it on purpose.
@@ -259,6 +263,7 @@ export function useMonitoringSession({
       if (outcome.kind === "fresh") {
         showResult(outcome.data, { automatic: false });
       } else {
+        setEndedAt(Date.now());
         setPhase("timeout");
         setModalView("timeout");
       }
@@ -375,6 +380,7 @@ export function useMonitoringSession({
         showResult(next.data, { automatic: true });
       } else {
         cancelPolling();
+        setEndedAt(Date.now());
         setPhase("idle");
         toast.error(TOGGLE_FAILED);
       }
@@ -457,6 +463,7 @@ export function useMonitoringSession({
     phase,
     clock,
     autoFinished,
+    endedAt,
     isTogglingAction,
     isModalOpen,
     modalView,

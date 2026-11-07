@@ -91,7 +91,10 @@ test("a device re-check shows it is working without hiding the card", async () =
   assert.match(hook, /setIsRefreshing\(true\);\s*setReloadCount/);
   // A re-check never flips the card back to loading.
   assert.doesNotMatch(hook, /setIsLoading\(true\)/);
-  assert.match(hook, /return \{ device, isLoading, isRefreshing, error, checkedAt, reload \}/);
+  assert.match(
+    hook,
+    /return \{\s*device,\s*isLoading,\s*isRefreshing,\s*error,\s*checkedAt,\s*requestedAt,\s*reload,\s*\}/,
+  );
 
   const card = await read("components/dashboard/DeviceOfflineCard.tsx");
   assert.match(card, /disabled=\{refreshing\}/);
@@ -150,4 +153,38 @@ test("the dashboard re-checks the wristband every 30 s without a loader, and sto
   for (const file of ["components/dashboard/ProfileView.tsx", "components/dashboard/EditProfileView.tsx", "components/dashboard/hooks/UseDoctorReport.ts"]) {
     assert.match(await read(file), /useMyDevice\(\)/, file);
   }
+});
+
+test("a session holds the wristband: the overview passes the phase into the device evaluation", async () => {
+  const overview = await read("components/dashboard/hooks/UseDashboardOverview.ts");
+  assert.match(
+    overview,
+    /deviceState\(\{[\s\S]*?now: deviceCheckedAt,\s*sessionActive: sessionHoldsDevice\(\{\s*phase: session\.phase,\s*endedAt: sessionEndedAt,\s*answerRequestedAt: deviceRequestedAt,\s*\}\),\s*\}\);/,
+  );
+  // About 8 s after a session ends the wristband is asked for again; the timer
+  // is cleared when another session ends first or the page unmounts.
+  assert.match(
+    overview,
+    /if \(sessionEndedAt === null\) return;\s*const timerId = setTimeout\(reloadDevice, AFTER_SESSION_RECHECK_MS\);\s*return \(\) => clearTimeout\(timerId\);\s*\}, \[reloadDevice, sessionEndedAt\]\);/,
+  );
+  assert.match(overview, /deviceOnline: deviceStatus === "online" \|\| deviceStatus === "recording"/);
+
+  // The answer's request time comes from the device hook, on this device's clock.
+  const hook = await read("components/dashboard/hooks/UseMyDevice.ts");
+  assert.match(hook, /const sentAt = Date\.now\(\);\s*try \{/);
+  assert.match(hook, /if \(!run\.signal\.aborted\) \{\s*setRequestedAt\(sentAt\);/);
+
+  // Every way a session ends records when: a result, a timed-out analysis, a refused Stop.
+  const session = await read("components/dashboard/hooks/UseMonitoringSession.ts");
+  assert.match(session, /setAutoFinished\([^)]*\);\s*setEndedAt\(Date\.now\(\)\);\s*setPhase\("result"\);/);
+  assert.match(session, /setEndedAt\(Date\.now\(\)\);\s*setPhase\("timeout"\);/);
+  assert.match(session, /setEndedAt\(Date\.now\(\)\);\s*setPhase\("idle"\);\s*toast\.error\(TOGGLE_FAILED\);/);
+  assert.match(session, /endedAt,\s*isTogglingAction,/);
+
+  // The card shows nothing for a held wristband; the status card says "Sedang merekam" and keeps the live dot.
+  const card = await read("components/dashboard/DeviceOfflineCard.tsx");
+  assert.match(card, /if \(state !== "offline" && state !== "stale"\) return null;/);
+  assert.doesNotMatch(card, /"recording"/);
+  const view = await read("components/dashboard/DashboardOverview.tsx");
+  assert.match(view, /deviceStatus === "online" \|\| deviceStatus === "recording"/);
 });

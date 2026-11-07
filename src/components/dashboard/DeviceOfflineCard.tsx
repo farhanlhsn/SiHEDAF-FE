@@ -76,6 +76,7 @@ export function DeviceOfflineCard({
     );
   }
 
+  // Loading, online, and recording (a session holds the wristband): no card.
   if (state !== "offline" && state !== "stale") return null;
 
   const seen = formatWib(lastSeen);

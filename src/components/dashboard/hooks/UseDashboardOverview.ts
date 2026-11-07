@@ -14,9 +14,11 @@ import {
   SessionExpiredError,
 } from "@/features/auth/session/client/ApiFetch";
 import {
+  AFTER_SESSION_RECHECK_MS,
   DEVICE_REFRESH_MS,
   DEVICE_STATUS_LABEL,
   deviceState,
+  sessionHoldsDevice,
 } from "@/components/dashboard/DeviceState";
 import {
   useMyDevice,
@@ -66,6 +68,7 @@ export function useDashboardOverview() {
     isRefreshing: isDeviceRefreshing,
     error: deviceError,
     checkedAt: deviceCheckedAt,
+    requestedAt: deviceRequestedAt,
     reload: reloadDevice,
   } = useMyDevice({ refreshMs: DEVICE_REFRESH_MS });
   const [latestData, setLatestData] = useState<MeasurementData | null>(null);
@@ -75,8 +78,18 @@ export function useDashboardOverview() {
   const [signalsData, setSignalsData] = useState<number[]>([]);
 
   const session = useMonitoringSession({ onFreshResult: setLatestData });
-  const { adoptInitial } = session;
+  const { adoptInitial, endedAt: sessionEndedAt } = session;
   const isMonitoringActive = session.phase === "recording";
+
+  // Once a session ends the wristband returns to its idle poll; ask for it
+  // again after that so its state is judged on a fresh answer.
+  useEffect(() => {
+    if (sessionEndedAt === null) return;
+
+    const timerId = setTimeout(reloadDevice, AFTER_SESSION_RECHECK_MS);
+
+    return () => clearTimeout(timerId);
+  }, [reloadDevice, sessionEndedAt]);
 
   useEffect(() => {
     let cancelled = false;
@@ -153,15 +166,22 @@ export function useDashboardOverview() {
   const firstName = user?.fullname ? user.fullname.split(" ")[0] : "Pengguna";
   const result = latestData ? classifyResult(latestData) : "pending";
   // The one source for every device claim: card, status value, toggle, modal.
-  // Staleness is judged when the device answered (every 30 s here).
+  // Staleness is judged when the device answered (every 30 s here). While a
+  // session holds the wristband (it does not update lastSeen while measuring)
+  // it is "recording" instead, and the 30 s answers are not judged.
   const deviceStatus = deviceState({
     device: deviceData,
     isLoading: isDeviceLoading,
     error: deviceError,
     now: deviceCheckedAt,
+    sessionActive: sessionHoldsDevice({
+      phase: session.phase,
+      endedAt: sessionEndedAt,
+      answerRequestedAt: deviceRequestedAt,
+    }),
   });
   const firstRunGuideSteps = firstRunSteps({
-    deviceOnline: deviceStatus === "online",
+    deviceOnline: deviceStatus === "online" || deviceStatus === "recording",
     monitoringActive:
       session.phase === "recording" || session.phase === "analysing",
     hasResult: Boolean(latestData),

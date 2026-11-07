@@ -79,7 +79,8 @@ export function DashboardOverview() {
     latestData?.completedAt ?? latestData?.updatedAt,
   );
   const measuredAt = formatWib(latestData?.createdAt);
-  const isDeviceOnline = deviceStatus === "online";
+  const isDeviceOnline =
+    deviceStatus === "online" || deviceStatus === "recording";
   const toggleHint =
     toggleBlocked === "no-network"
       ? "Tidak ada koneksi internet."

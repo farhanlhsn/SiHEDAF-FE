@@ -31,6 +31,9 @@ export function useMyDevice({ refreshMs }: UseMyDeviceOptions = {}) {
   const [error, setError] = useState<DataError | null>(null);
   // When the latest answer was given (server clock): staleness is judged then.
   const [checkedAt, setCheckedAt] = useState<number | null>(null);
+  // When the request behind the current answer (or error) was sent, by this
+  // device's clock: after a session, only an answer asked for late enough counts.
+  const [requestedAt, setRequestedAt] = useState<number | null>(null);
   const [reloadCount, setReloadCount] = useState(0);
   // A "Periksa lagi" / "Coba lagi" check in flight. The device and its state
   // stay as they are meanwhile, so the card does not disappear.
@@ -43,6 +46,7 @@ export function useMyDevice({ refreshMs }: UseMyDeviceOptions = {}) {
     const run = new AbortController();
 
     async function fetchDevice() {
+      const sentAt = Date.now();
       try {
         const res = await apiFetch("/api/v1/measurement/my-device", {
           signal: requestSignal(run.signal),
@@ -63,6 +67,7 @@ export function useMyDevice({ refreshMs }: UseMyDeviceOptions = {}) {
         setError(describeCaughtError(e));
       }
       if (!run.signal.aborted) {
+        setRequestedAt(sentAt);
         setIsLoading(false);
         setIsRefreshing(false);
       }
@@ -89,5 +94,13 @@ export function useMyDevice({ refreshMs }: UseMyDeviceOptions = {}) {
     setReloadCount((count) => count + 1);
   }, []);
 
-  return { device, isLoading, isRefreshing, error, checkedAt, reload };
+  return {
+    device,
+    isLoading,
+    isRefreshing,
+    error,
+    checkedAt,
+    requestedAt,
+    reload,
+  };
 }
