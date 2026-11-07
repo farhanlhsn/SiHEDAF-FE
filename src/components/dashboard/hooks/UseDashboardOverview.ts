@@ -59,6 +59,7 @@ export function useDashboardOverview() {
   const { online, reconnectCount } = useOnlineStatus();
   const [monitoringRange, setMonitoringRange] = useState("12");
 
+  // Re-checked every 30 s so online, stale and offline stay current.
   const {
     device: deviceData,
     isLoading: isDeviceLoading,
@@ -66,7 +67,6 @@ export function useDashboardOverview() {
     error: deviceError,
     checkedAt: deviceCheckedAt,
     reload: reloadDevice,
-    // Re-checked every 30 s so online, stale and offline stay current.
   } = useMyDevice({ refreshMs: DEVICE_REFRESH_MS });
   const [latestData, setLatestData] = useState<MeasurementData | null>(null);
   const [hasLoadedLatest, setHasLoadedLatest] = useState(false);
