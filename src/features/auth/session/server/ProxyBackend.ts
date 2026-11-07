@@ -50,7 +50,8 @@ async function callBackend(
     signal: init.timeoutMs ? AbortSignal.timeout(init.timeoutMs) : undefined,
   });
 
-  if (response.status === 401) {
+  // The backend answers an expired or invalid access token with 403, not 401.
+  if (response.status === 401 || response.status === 403) {
     throw new SessionServiceError(SESSION_EXPIRED, 401);
   }
 
@@ -73,7 +74,7 @@ export async function proxyBackend(
     return Response.json(result.body, { status: result.status });
   } catch (error) {
     // Any SessionServiceError comes from the refresh step (the backend call
-    // only throws one for a 401); the cookies are already cleared then.
+    // only throws one for a 401/403); the cookies are already cleared then.
     if (error instanceof SessionServiceError) {
       return failure(401, SESSION_ENDED);
     }

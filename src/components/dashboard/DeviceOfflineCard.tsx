@@ -17,15 +17,22 @@ type DeviceOfflineCardProps = {
 const steps = [
   "Pastikan wristband menyala dan terpasang di pergelangan tangan.",
   "Pastikan baterainya cukup; isi daya bila perlu.",
-  "Pastikan wristband berada di dekat jaringan yang biasa dipakai saat penyambungan, lalu tunggu beberapa menit.",
+  "Pastikan wristband terhubung ke internet, lalu tunggu sekitar 1 menit.",
 ];
+
+// Offline: the backend marked it OFFLINE. Stale: still ONLINE, but not seen
+// for more than 30 s, so the backend may refuse to start a recording.
+const titles = {
+  offline: "Wristband belum terhubung",
+  stale: "Koneksi wristband tidak stabil",
+} as const;
 
 const cardClassName =
   "mt-10 rounded-[24px] border border-primary-900/10 bg-white px-5 py-6 sm:px-7";
 const linkClassName =
   "font-semibold text-primary-500 underline underline-offset-4 transition-colors hover:text-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300";
 
-/** Guides the reader when the wristband is not connected, bound, or readable. */
+/** Guides the reader when the wristband is not connected, bound, readable, or seen lately. */
 export function DeviceOfflineCard({
   state,
   lastSeen,
@@ -69,17 +76,19 @@ export function DeviceOfflineCard({
     );
   }
 
-  if (state !== "offline") return null;
+  // Loading, online, and recording (a session holds the wristband): no card.
+  if (state !== "offline" && state !== "stale") return null;
 
   const seen = formatWib(lastSeen);
+  const titleId = `device-${state}-title`;
 
   return (
-    <section aria-labelledby="device-offline-title" className={cardClassName}>
+    <section aria-labelledby={titleId} className={cardClassName}>
       <h2
         className="text-[1.25rem] font-bold tracking-[-0.03em] text-primary-900"
-        id="device-offline-title"
+        id={titleId}
       >
-        Wristband belum terhubung
+        {titles[state]}
       </h2>
       <p className="mt-1 text-[0.9375rem] text-primary-900/80">
         {seen ? `Terakhir terlihat ${seen}` : "Belum pernah terlihat"}

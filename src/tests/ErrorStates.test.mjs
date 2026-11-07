@@ -58,7 +58,7 @@ test("DeviceOfflineCard guides the reader without naming a connection type", asy
   for (const text of [
     "Pastikan wristband menyala dan terpasang di pergelangan tangan.",
     "Pastikan baterainya cukup; isi daya bila perlu.",
-    "Pastikan wristband berada di dekat jaringan yang biasa dipakai saat penyambungan, lalu tunggu beberapa menit.",
+    "Pastikan wristband terhubung ke internet, lalu tunggu sekitar 1 menit.",
     "Masih belum terhubung? Sambungkan ulang perangkat.",
     "Wristband belum terhubung",
     "Terakhir terlihat",
@@ -91,7 +91,10 @@ test("a device re-check shows it is working without hiding the card", async () =
   assert.match(hook, /setIsRefreshing\(true\);\s*setReloadCount/);
   // A re-check never flips the card back to loading.
   assert.doesNotMatch(hook, /setIsLoading\(true\)/);
-  assert.match(hook, /return \{ device, isLoading, isRefreshing, error, reload \}/);
+  assert.match(
+    hook,
+    /return \{\s*device,\s*isLoading,\s*isRefreshing,\s*error,\s*checkedAt,\s*requestedAt,\s*reload,\s*\}/,
+  );
 
   const card = await read("components/dashboard/DeviceOfflineCard.tsx");
   assert.match(card, /disabled=\{refreshing\}/);
@@ -117,4 +120,71 @@ test("the overview reads /latest through latestOutcome", async () => {
   assert.match(hook, /const outcome = latestOutcome\(\{ status: res\.status, json \}\);/);
   assert.match(hook, /if \(outcome === "error"\) throw new HttpError\(res\.status\);/);
   assert.match(hook, /outcome === "data" && adoptInitial\(json\.data\)/);
+});
+
+test("a stale wristband gets its own card with the same steps and a re-check", async () => {
+  const card = await read("components/dashboard/DeviceOfflineCard.tsx");
+  assert.ok(card.includes('stale: "Koneksi wristband tidak stabil"'));
+  assert.ok(card.includes('offline: "Wristband belum terhubung"'));
+  assert.match(card, /if \(state !== "offline" && state !== "stale"\) return null;/);
+  // Both variants share the last-seen line, the steps, the link and "Periksa lagi".
+  assert.match(card, /\{titles\[state\]\}/);
+  assert.match(card, /seen \? `Terakhir terlihat \$\{seen\}`/);
+  assert.match(card, /aria-labelledby=\{titleId\}/);
+  assert.doesNotMatch(card, /beberapa menit|dekat jaringan/);
+});
+
+test("the dashboard re-checks the wristband every 30 s without a loader, and stops on unmount", async () => {
+  const hook = await read("components/dashboard/hooks/UseMyDevice.ts");
+  assert.match(hook, /export function useMyDevice\(\{ refreshMs \}: UseMyDeviceOptions = \{\}\)/);
+  assert.match(hook, /const run = new AbortController\(\);/);
+  assert.match(hook, /signal: requestSignal\(run\.signal\)/);
+  assert.match(hook, /setInterval\(\(\) => \{\s*if \(navigator\.onLine !== false\) void fetchDevice\(\);\s*\}, refreshMs\)/);
+  assert.match(hook, /return \(\) => \{\s*run\.abort\(\);\s*clearInterval\(intervalId\);/);
+  assert.match(hook, /\}, \[reconnectCount, refreshMs, reloadCount\]\);/);
+  // Answers are timed by the server clock, so staleness ignores a wrong device clock.
+  assert.match(hook, /setCheckedAt\(answeredAt\(res\.headers\.get\("date"\), Date\.now\(\)\)\)/);
+  assert.match(hook, /if \(run\.signal\.aborted \|\| e instanceof SessionExpiredError\) return;/);
+
+  const overview = await read("components/dashboard/hooks/UseDashboardOverview.ts");
+  assert.match(overview, /useMyDevice\(\{ refreshMs: DEVICE_REFRESH_MS \}\)/);
+  assert.match(overview, /now: deviceCheckedAt,/);
+  // Other pages read the device once.
+  for (const file of ["components/dashboard/ProfileView.tsx", "components/dashboard/EditProfileView.tsx", "components/dashboard/hooks/UseDoctorReport.ts"]) {
+    assert.match(await read(file), /useMyDevice\(\)/, file);
+  }
+});
+
+test("a session holds the wristband: the overview passes the phase into the device evaluation", async () => {
+  const overview = await read("components/dashboard/hooks/UseDashboardOverview.ts");
+  assert.match(
+    overview,
+    /deviceState\(\{[\s\S]*?now: deviceCheckedAt,\s*sessionActive: sessionHoldsDevice\(\{\s*phase: session\.phase,\s*endedAt: sessionEndedAt,\s*answerRequestedAt: deviceRequestedAt,\s*\}\),\s*\}\);/,
+  );
+  // About 8 s after a session ends the wristband is asked for again; the timer
+  // is cleared when another session ends first or the page unmounts.
+  assert.match(
+    overview,
+    /if \(sessionEndedAt === null\) return;\s*const timerId = setTimeout\(reloadDevice, AFTER_SESSION_RECHECK_MS\);\s*return \(\) => clearTimeout\(timerId\);\s*\}, \[reloadDevice, sessionEndedAt\]\);/,
+  );
+  assert.match(overview, /deviceOnline: deviceStatus === "online" \|\| deviceStatus === "recording"/);
+
+  // The answer's request time comes from the device hook, on this device's clock.
+  const hook = await read("components/dashboard/hooks/UseMyDevice.ts");
+  assert.match(hook, /const sentAt = Date\.now\(\);\s*try \{/);
+  assert.match(hook, /if \(!run\.signal\.aborted\) \{\s*setRequestedAt\(sentAt\);/);
+
+  // Every way a session ends records when: a result, a timed-out analysis, a refused Stop.
+  const session = await read("components/dashboard/hooks/UseMonitoringSession.ts");
+  assert.match(session, /setAutoFinished\([^)]*\);\s*setEndedAt\(Date\.now\(\)\);\s*setPhase\("result"\);/);
+  assert.match(session, /setEndedAt\(Date\.now\(\)\);\s*setPhase\("timeout"\);/);
+  assert.match(session, /setEndedAt\(Date\.now\(\)\);\s*setPhase\("idle"\);\s*toast\.error\(TOGGLE_FAILED\);/);
+  assert.match(session, /endedAt,\s*isTogglingAction,/);
+
+  // The card shows nothing for a held wristband; the status card says "Sedang merekam" and keeps the live dot.
+  const card = await read("components/dashboard/DeviceOfflineCard.tsx");
+  assert.match(card, /if \(state !== "offline" && state !== "stale"\) return null;/);
+  assert.doesNotMatch(card, /"recording"/);
+  const view = await read("components/dashboard/DashboardOverview.tsx");
+  assert.match(view, /deviceStatus === "online" \|\| deviceStatus === "recording"/);
 });

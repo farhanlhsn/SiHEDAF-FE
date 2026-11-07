@@ -17,6 +17,10 @@ import {
   formatConfidence,
   formatWib,
 } from "@/components/dashboard/DashboardFormat";
+import {
+  isAlertKind,
+  RESULT_COPY,
+} from "@/components/dashboard/ResultKind";
 import { DataErrorState } from "@/components/ui/DataErrorState";
 import { DeviceOfflineCard } from "@/components/dashboard/DeviceOfflineCard";
 import { FirstRunGuide } from "@/components/dashboard/FirstRunGuide";
@@ -28,6 +32,7 @@ import { useDashboardOverview } from "@/components/dashboard/hooks/UseDashboardO
 const panelClassName = "rounded-[24px] border border-primary-900/10 bg-white";
 const labelClassName = "text-[0.875rem] font-medium text-primary-900/75";
 const toggleHintId = "monitoring-toggle-hint";
+const stalledHintId = "monitoring-stalled-hint";
 const valueClassName = "mt-1 text-[1rem] font-semibold text-primary-900";
 
 export function DashboardOverview() {
@@ -49,7 +54,8 @@ export function DashboardOverview() {
     result,
     isMonitoringActive,
     phase,
-    elapsed,
+    clock,
+    autoFinished,
     monitoringRange,
     setMonitoringRange,
     isTogglingAction,
@@ -64,19 +70,29 @@ export function DashboardOverview() {
   } = useDashboardOverview();
 
   const isAnalysing = phase === "analysing";
+  const isAlert = isAlertKind(result);
+  const isNeutral = result === "pending" || result === "short" || result === "unavailable";
+  const copy = RESULT_COPY[result];
 
   const confidence = formatConfidence(latestData?.confidenceLevel);
   const analysedAt = formatWib(
     latestData?.completedAt ?? latestData?.updatedAt,
   );
   const measuredAt = formatWib(latestData?.createdAt);
-  const isDeviceOnline = deviceStatus === "online";
+  const isDeviceOnline =
+    deviceStatus === "online" || deviceStatus === "recording";
   const toggleHint =
     toggleBlocked === "no-network"
       ? "Tidak ada koneksi internet."
       : toggleBlocked === "device-unknown"
         ? "Status perangkat belum bisa dimuat."
         : null;
+  // Overtime for more than 30 s without a result: only Stop finishes it now.
+  const isStalled = isMonitoringActive && clock.overtime && clock.stalled;
+  const toggleDescribedBy =
+    [toggleHint ? toggleHintId : null, isStalled ? stalledHintId : null]
+      .filter(Boolean)
+      .join(" ") || undefined;
 
   return (
     <section className="min-h-[calc(100dvh-72px)] min-w-0 px-4 py-8 sm:px-7 lg:px-10 lg:py-10">
@@ -90,10 +106,12 @@ export function DashboardOverview() {
             <span className="font-bold">Memuat hasil terakhir</span>
           ) : latestError && !latestData ? (
             <span className="font-bold">Hasil terakhir belum bisa dimuat.</span>
-          ) : result === "unknown" && isMonitoringActive ? (
+          ) : result === "pending" && isMonitoringActive ? (
             <span className="font-bold">Monitoring sedang berjalan.</span>
-          ) : result === "unknown" ? (
+          ) : result === "pending" ? (
             <span className="font-bold">Belum ada hasil analisis.</span>
+          ) : result === "short" || result === "unavailable" ? (
+            <span className="font-bold">Rekaman terakhir belum bisa dianalisis.</span>
           ) : (
             <>
               <span className="font-extralight">Irama terakhirmu</span>{" "}
@@ -121,15 +139,19 @@ export function DashboardOverview() {
         {latestData ? (
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.9375rem] text-primary-900/80">
-              {result === "unknown" ? null : (
-                <StatusMark size="small" status={result} />
+              {isNeutral ? null : (
+                <StatusMark
+                  label={copy.label}
+                  size="small"
+                  status={isAlert ? "af" : "normal"}
+                />
               )}
               <span className="font-semibold text-primary-900">
                 Hasil Analisis Terakhir
               </span>
-              {result === "unknown" ? (
+              {isNeutral ? (
                 <span className="font-semibold text-primary-900/70">
-                  Belum ada hasil
+                  {copy.label}
                 </span>
               ) : null}
               {analysedAt ? <span>{analysedAt}</span> : null}
@@ -157,7 +179,7 @@ export function DashboardOverview() {
           </div>
         ) : null}
 
-        {result === "af" ? (
+        {isAlert ? (
           <div
             className="mt-6 flex max-w-[760px] gap-3 rounded-[18px] bg-af-50 p-5 text-[1rem] leading-[1.55] text-primary-900"
             role="note"
@@ -168,7 +190,10 @@ export function DashboardOverview() {
               strokeWidth={2.25}
             />
             <p>
-              AI menemukan pola yang mirip Atrial Fibrillation. Hasil ini bukan
+              {result === "flutter"
+                ? "AI menemukan pola yang mirip Atrial Flutter."
+                : "AI menemukan pola yang mirip Atrial Fibrillation."}{" "}
+              Hasil ini bukan
               diagnosis; pertimbangkan konsultasi ke dokter, terutama jika kamu
               merasakan keluhan seperti jantung berdebar atau pusing.
             </p>
@@ -208,31 +233,44 @@ export function DashboardOverview() {
                   {/* Only the phase word is live; the timer would be read every second. */}
                   <span aria-live="polite">
                     {isMonitoringActive
-                      ? "Merekam"
+                      ? clock.overtime
+                        ? "Menunggu hasil dari wristband…"
+                        : "Merekam"
                       : isAnalysing
                         ? "Menganalisis rekaman…"
                         : "Monitoring dijeda"}
                   </span>
-                  {isMonitoringActive ? (
+                  {/* From 03:00 the wristband has stopped: the waiting text replaces the clock. */}
+                  {isMonitoringActive && !clock.overtime ? (
                     <>
                       <span aria-hidden="true">·</span>
                       <span
-                        aria-label={`Lama perekaman ${elapsed}`}
+                        aria-label={`Lama perekaman ${clock.elapsed} dari ${clock.limit}`}
                         aria-live="off"
                         className="tabular-nums"
                         role="timer"
                       >
-                        {elapsed}
+                        {clock.text}
                       </span>
                     </>
                   ) : null}
                 </span>
+                {/* /signals only holds finished recordings: never imply live data. */}
                 <span className="text-primary-900/75">
                   {isMonitoringActive
-                    ? `Pembaruan otomatis selama ${monitoringRange} menit`
+                    ? "Grafik menampilkan rekaman yang sudah selesai; rekaman ini tampil setelah selesai."
                     : "Pembaruan dihentikan sementara"}
                 </span>
               </div>
+              {/* Not live: it appears once and is tied to the Stop button instead. */}
+              {isStalled ? (
+                <p
+                  className="mt-2 max-w-[560px] text-[0.9375rem] leading-[1.55] font-medium text-primary-900/80"
+                  id={stalledHintId}
+                >
+                  {"Belum ada hasil dari wristband. Tekan Hentikan Monitoring untuk menyelesaikan rekaman."}
+                </p>
+              ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-2.5">
               <label className="relative block">
@@ -261,7 +299,7 @@ export function DashboardOverview() {
                     ? "border-[1.5px] border-primary-900/20 bg-white text-primary-900 hover:bg-paper-deep"
                     : "btn-primary bg-primary-900 text-white"
                 }`}
-                aria-describedby={toggleHint ? toggleHintId : undefined}
+                aria-describedby={toggleDescribedBy}
                 disabled={
                   toggleBlocked !== null || isTogglingAction || isAnalysing
                 }
@@ -349,31 +387,27 @@ export function DashboardOverview() {
             {latestData ? (
               <div className="mt-5 flex-1">
                 <p className="flex items-center gap-3">
-                  {result === "unknown" ? null : (
-                    <StatusMark size="small" status={result} />
+                  {isNeutral ? null : (
+                    <StatusMark
+                      label={copy.label}
+                      size="small"
+                      status={isAlert ? "af" : "normal"}
+                    />
                   )}
                   <span
                     className={`text-[0.9375rem] font-semibold ${
-                      result === "unknown"
+                      isNeutral
                         ? "text-primary-900/70"
                         : result === "normal"
                           ? "text-primary-500"
                           : "text-af-700"
                     }`}
                   >
-                    {result === "unknown"
-                      ? "Belum ada hasil"
-                      : result === "normal"
-                        ? "Normal Rhythm"
-                        : "Terdeteksi Potensi AF"}
+                    {copy.label}
                   </span>
                 </p>
                 <h3 className="mt-3 text-[1.1875rem] font-semibold text-primary-900">
-                  {result === "unknown"
-                    ? "Hasil analisis belum tersedia"
-                    : result === "normal"
-                      ? "Irama Jantung Normal & Stabil"
-                      : "Indikasi Anomali Irama Jantung"}
+                  {copy.title}
                 </h3>
                 <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-4">
                   <div>
@@ -389,7 +423,7 @@ export function DashboardOverview() {
                     <dd className="mt-2">
                       <Sparkline
                         data={latestData.ppgResult?.rawPpgData}
-                        tone={result === "af" ? "pink" : "blue"}
+                        tone={isAlert ? "pink" : "blue"}
                       />
                     </dd>
                   </div>
@@ -468,6 +502,7 @@ export function DashboardOverview() {
       </div>
 
       <AiResultModal
+        autoFinished={autoFinished}
         data={latestData}
         onClose={closeAiModal}
         onRestart={restartMonitoring}

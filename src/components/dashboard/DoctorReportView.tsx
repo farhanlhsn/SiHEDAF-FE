@@ -8,12 +8,18 @@ import {
   splitShares,
 } from "@/components/dashboard/DashboardFormat";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
+import { classifyResult, RESULT_COPY } from "@/components/dashboard/ResultKind";
 import { PpgTrace } from "@/components/dashboard/PpgTrace";
+import {
+  recordingDuration,
+  SAMPLE_RATE_HZ,
+} from "@/components/dashboard/Signal";
 import { StatusMark } from "@/components/dashboard/StatusMark";
 import { useDoctorReport } from "@/components/dashboard/hooks/UseDoctorReport";
 import { toDateRange } from "@/components/dashboard/ReportRange";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 import { DataErrorState } from "@/components/ui/DataErrorState";
+import { ScrollArea } from "@/components/ui/ScrollArea";
 import { PulseLoader } from "@/components/ui/PulseLoader";
 
 type DoctorReportViewProps = {
@@ -37,11 +43,9 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
   } = useDoctorReport(initialParams);
 
   const summary = report?.summary;
-  const total = summary?.totalData ?? 0;
-  const [normalShare, afShare] = splitShares(
-    [summary?.totalNormal ?? 0, summary?.totalAfib ?? 0],
-    total,
-  );
+  const total = summary?.total ?? 0;
+  const alerts = (summary?.af ?? 0) + (summary?.flutter ?? 0);
+  const [normalShare, afShare] = splitShares([summary?.normal ?? 0, alerts], total);
 
   return (
     <section className="px-4 py-8 sm:px-7 lg:px-10 lg:py-10 print:p-0">
@@ -110,21 +114,28 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
               <section aria-label="Ringkasan" className="print-avoid-break mt-8">
                 <h2 className="text-[1.0625rem] font-bold text-primary-900">Ringkasan</h2>
                 <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                  <Stat label="Total rekaman" value={String(report.summary.totalData)} />
+                  <Stat label="Total rekaman" value={String(report.summary.total)} />
                   <Stat
                     label="AF terdeteksi"
                     tone="text-af-700"
-                    value={String(report.summary.totalAfib)}
+                    value={String(report.summary.af)}
+                  />
+                  <Stat
+                    label="AFL terdeteksi"
+                    tone="text-af-700"
+                    value={String(report.summary.flutter)}
                   />
                   <Stat
                     label="Ritme normal"
                     tone="text-primary-300"
-                    value={String(report.summary.totalNormal)}
+                    value={String(report.summary.normal)}
                   />
-                  <Stat label="Persentase AF" value={`${afShare}%`} />
+                  {report.summary.other > 0 ? (
+                    <Stat label="Tanpa hasil" value={String(report.summary.other)} />
+                  ) : null}
                 </div>
                 <div
-                  aria-label={`${normalShare}% ritme normal, ${afShare}% terdeteksi AF`}
+                  aria-label={`${normalShare}% ritme normal, ${afShare}% terdeteksi AF atau AFL`}
                   className="mt-5 flex h-4 overflow-hidden rounded-full bg-primary-900/10"
                   role="img"
                 >
@@ -137,70 +148,91 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                 </div>
                 <p className="mt-2 flex flex-wrap gap-x-6 text-[0.875rem] font-medium text-primary-900/80">
                   <span>Ritme normal {normalShare}%</span>
-                  <span>Terdeteksi AF {afShare}%</span>
+                  <span>Terdeteksi AF atau AFL {afShare}%</span>
                 </p>
               </section>
 
-              <section aria-label="Kejadian AF" className="mt-8">
+              <section aria-label="Kejadian AF dan AFL" className="mt-8">
                 <h2 className="text-[1.0625rem] font-bold text-primary-900">
-                  Kejadian AF terdeteksi
+                  Kejadian AF dan AFL terdeteksi
                 </h2>
-                {report.summary.totalData === 0 && report.scanned === 0 ? (
+                {report.summary.total === 0 && report.scanned === 0 ? (
                   <p className="mt-3 text-[0.9375rem] text-primary-900/80">
                     Belum ada rekaman pada periode ini.
                   </p>
                 ) : report.afEvents.length === 0 ? (
-                  <p className="mt-3 text-[0.9375rem] text-primary-900/80">
-                    {report.summary.totalAfib === 0
-                      ? "Tidak ada AF terdeteksi pada periode ini."
-                      : report.truncated
-                        ? `Ringkasan mencatat ${report.summary.totalAfib} kejadian AF, tetapi kejadian tersebut berada di luar ${report.scanned} rekaman pertama yang ditampilkan. Persempit periode laporan untuk melihatnya.`
-                        : `Ringkasan mencatat ${report.summary.totalAfib} kejadian AF, tetapi rinciannya tidak tersedia.`}
-                  </p>
+                  report.truncated ? null : (
+                    <p className="mt-3 text-[0.9375rem] text-primary-900/80">
+                      Tidak ada AF atau AFL terdeteksi pada periode ini.
+                    </p>
+                  )
                 ) : (
-                  <table className="mt-3 w-full border-collapse text-left">
-                    <thead>
-                      <tr className="border-b border-primary-900/10 text-[0.875rem] font-semibold text-primary-900/75">
-                        <th className="w-12 pb-2 font-semibold">No</th>
-                        <th className="pb-2 font-semibold">Waktu</th>
-                        <th className="pb-2 font-semibold">Keyakinan AI</th>
-                        <th className="w-[34%] pb-2 font-semibold">Grafik</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {report.afEvents.map((item, index) => (
-                        <tr
-                          className="print-avoid-break border-b border-primary-900/[0.07]"
-                          key={item.id}
-                        >
-                          <td className="py-3 text-[0.9375rem] tabular-nums text-primary-900">
-                            {index + 1}
-                          </td>
-                          <td className="py-3 text-[0.9375rem] text-primary-900">
-                            <span className="flex items-center gap-2">
-                              <StatusMark size="small" status="af" />
-                              {formatWib(item.requestedAt) ?? "—"}
-                            </span>
-                          </td>
-                          <td className="py-3 text-[0.9375rem] text-primary-900">
-                            {formatConfidence(item.confidenceLevel) ?? "—"}
-                          </td>
-                          <td className="py-3">
-                            <PpgTrace
-                              className="h-12 w-full"
-                              data={item.ppgResult?.rawPpgData}
-                              label={`Grafik PPG kejadian AF nomor ${index + 1}`}
-                              tone="pink"
-                            />
-                          </td>
+                  // Six columns do not fit a phone: scroll sideways there; print fits A4.
+                  <ScrollArea
+                    className="mt-3 w-full print:overflow-visible"
+                    viewportClassName="pb-2 print:pb-0"
+                  >
+                    <table className="w-full min-w-[640px] border-collapse text-left print:min-w-0">
+                      <thead>
+                        <tr className="border-b border-primary-900/10 text-[0.875rem] font-semibold text-primary-900/75">
+                          <th className="w-12 pb-2 font-semibold">No</th>
+                          <th className="pb-2 font-semibold">Jenis</th>
+                          <th className="pb-2 font-semibold">Waktu</th>
+                          <th className="pb-2 font-semibold">Durasi</th>
+                          <th className="pb-2 font-semibold">Keyakinan AI</th>
+                          <th className="w-[30%] pb-2 font-semibold">Grafik</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {report.afEvents.map((item, index) => (
+                          <tr
+                            className="print-avoid-break border-b border-primary-900/[0.07]"
+                            key={item.id}
+                          >
+                            <td className="py-3 text-[0.9375rem] tabular-nums text-primary-900">
+                              {index + 1}
+                            </td>
+                            <td className="py-3 text-[0.9375rem] font-semibold text-af-700">
+                              <span className="flex items-center gap-2">
+                                <StatusMark
+                                  label={RESULT_COPY[classifyResult(item)].label}
+                                  size="small"
+                                  status="af"
+                                />
+                                <span>
+                                  {classifyResult(item) === "flutter" ? "AFL" : "AF"}
+                                </span>
+                              </span>
+                            </td>
+                            {/* The report filters on completedAt, so it shows that time. */}
+                            <td className="py-3 text-[0.9375rem] text-primary-900">
+                              {formatWib(item.completedAt ?? item.requestedAt) ?? "—"}
+                            </td>
+                            <td className="py-3 text-[0.9375rem] tabular-nums text-primary-900">
+                              {recordingDuration(item.ppgResult?.rawPpgData) ?? "—"}
+                            </td>
+                            <td className="py-3 text-[0.9375rem] text-primary-900">
+                              {formatConfidence(item.confidenceLevel) ?? "—"}
+                            </td>
+                            <td className="py-3">
+                              <PpgTrace
+                                className="h-12 w-full"
+                                data={item.ppgResult?.rawPpgData}
+                                label={`Grafik PPG kejadian nomor ${index + 1}`}
+                                sampleRate={SAMPLE_RATE_HZ}
+                                tone="pink"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </ScrollArea>
                 )}
                 {report.truncated ? (
                   <p className="mt-3 text-[0.875rem] text-primary-900/80">
-                    Menampilkan kejadian AF dari {report.scanned} rekaman pertama pada periode ini.
+                    Menampilkan kejadian AF dan AFL dari {report.scanned} rekaman terbaru pada periode ini.
+                    Angka ringkasan hanya mencakup rekaman tersebut. Persempit periode laporan untuk melihat semuanya.
                   </p>
                 ) : null}
               </section>
@@ -208,7 +240,7 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
           ) : null}
 
           <p className="print-avoid-break mt-8 rounded-[16px] bg-paper p-4 text-[0.875rem] leading-[1.55] text-primary-900/80">
-            Hasil berasal dari klasifikasi AI atas sinyal PPG wearable dan bukan diagnosis. Mohon dievaluasi oleh tenaga kesehatan. Grafik ditampilkan tanpa skala waktu.
+            Hasil berasal dari klasifikasi AI atas sinyal PPG wearable dan bukan diagnosis. Mohon dievaluasi oleh tenaga kesehatan. Durasi dan skala waktu grafik dihitung dari laju sampel 50 Hz.
           </p>
         </article>
       </div>

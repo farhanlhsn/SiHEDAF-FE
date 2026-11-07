@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { answeredAt } from "@/components/dashboard/DeviceState";
+import { requestSignal } from "@/components/dashboard/MonitoringSession";
 import { useOnlineStatus } from "@/components/ui/hooks/UseOnlineStatus";
 import {
   describeCaughtError,
@@ -17,11 +19,21 @@ export type MeasurementDevice = {
   lastSeen?: string;
 };
 
+type UseMyDeviceOptions = {
+  /** Ask again this often (ms) in the background, without a loader; off when omitted. */
+  refreshMs?: number;
+};
+
 /** The wearable bound to the signed-in account, read from the device API. */
-export function useMyDevice() {
+export function useMyDevice({ refreshMs }: UseMyDeviceOptions = {}) {
   const [device, setDevice] = useState<MeasurementDevice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<DataError | null>(null);
+  // When the latest answer was given (server clock): staleness is judged then.
+  const [checkedAt, setCheckedAt] = useState<number | null>(null);
+  // When the request behind the current answer (or error) was sent, by this
+  // device's clock: after a session, only an answer asked for late enough counts.
+  const [requestedAt, setRequestedAt] = useState<number | null>(null);
   const [reloadCount, setReloadCount] = useState(0);
   // A "Periksa lagi" / "Coba lagi" check in flight. The device and its state
   // stay as they are meanwhile, so the card does not disappear.
@@ -29,26 +41,33 @@ export function useMyDevice() {
   const { reconnectCount } = useOnlineStatus();
 
   useEffect(() => {
-    let isCancelled = false;
+    // One per effect run: a reload, a reconnect or unmounting aborts every
+    // request of the run before, so no late answer lands afterwards.
+    const run = new AbortController();
 
     async function fetchDevice() {
+      const sentAt = Date.now();
       try {
-        const res = await apiFetch("/api/v1/measurement/my-device");
+        const res = await apiFetch("/api/v1/measurement/my-device", {
+          signal: requestSignal(run.signal),
+        });
         const json = await res.json();
-        if (isCancelled) return;
+        if (run.signal.aborted) return;
         if (json.code === 200) {
           // 200 with no data means no wristband is bound yet.
           setDevice(json.data ?? null);
+          setCheckedAt(answeredAt(res.headers.get("date"), Date.now()));
           setError(null);
         } else {
           setError(describeCaughtError(null, res.status));
         }
       } catch (e) {
-        if (e instanceof SessionExpiredError) return;
+        if (run.signal.aborted || e instanceof SessionExpiredError) return;
         console.error("Gagal memuat status perangkat:", e);
-        if (!isCancelled) setError(describeCaughtError(e));
+        setError(describeCaughtError(e));
       }
-      if (!isCancelled) {
+      if (!run.signal.aborted) {
+        setRequestedAt(sentAt);
         setIsLoading(false);
         setIsRefreshing(false);
       }
@@ -56,15 +75,32 @@ export function useMyDevice() {
 
     void fetchDevice();
 
+    // Background re-checks keep online/stale/offline current. They pause
+    // while the browser is offline; the reconnect reload covers that.
+    const intervalId = refreshMs
+      ? setInterval(() => {
+          if (navigator.onLine !== false) void fetchDevice();
+        }, refreshMs)
+      : undefined;
+
     return () => {
-      isCancelled = true;
+      run.abort();
+      clearInterval(intervalId);
     };
-  }, [reconnectCount, reloadCount]);
+  }, [reconnectCount, refreshMs, reloadCount]);
 
   const reload = useCallback(() => {
     setIsRefreshing(true);
     setReloadCount((count) => count + 1);
   }, []);
 
-  return { device, isLoading, isRefreshing, error, reload };
+  return {
+    device,
+    isLoading,
+    isRefreshing,
+    error,
+    checkedAt,
+    requestedAt,
+    reload,
+  };
 }

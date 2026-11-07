@@ -40,7 +40,13 @@ test("connects dashboard profile and monitoring range controls", async () => {
   assert.match(overviewSource, /monitoringRange/);
   assert.match(overviewSource, /setMonitoringRange/);
   assert.match(overviewSource, /<select/);
-  assert.match(overviewSource, /Pembaruan otomatis selama/);
+  // /signals holds finished recordings only: the card never promises live updates.
+  assert.doesNotMatch(overviewSource, /Pembaruan otomatis selama/);
+  assert.ok(
+    overviewSource.includes(
+      "Grafik menampilkan rekaman yang sudah selesai; rekaman ini tampil setelah selesai.",
+    ),
+  );
 });
 
 test("paginates history rows and lets users choose page size", async () => {

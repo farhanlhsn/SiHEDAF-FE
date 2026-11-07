@@ -14,11 +14,15 @@ import {
 
 export type HistoryItem = {
   id?: number;
+  status?: string;
   resultLabel?: string;
   resultClass?: number;
   confidenceLevel?: number;
   requestedAt?: string;
+  completedAt?: string;
+  /** Internal device UUID: never shown; the paired ID is device.deviceNumber. */
   deviceId?: string;
+  device?: { deviceNumber?: string } | null;
   ppgData?: number[];
   ppgResult?: { rawPpgData?: number[] };
 };

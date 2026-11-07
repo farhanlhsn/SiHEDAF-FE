@@ -18,9 +18,8 @@ test("AI result modal follows phases and never invents a result", () => {
     "Hasil belum tersedia",
     "Mulai monitoring lagi",
     "Buat laporan dokter",
-    "bukan diagnosis",
     "analysisStatusLabel(",
-    "resultStatus(",
+    "classifyResult(",
   ]) {
     assert.ok(modal.includes(text), `AiResultModal is missing ${text}`);
   }
@@ -126,7 +125,7 @@ test("a slow first /latest still teaches the baseline before it is ignored", () 
 test("start/stop wait 30 s and re-read /latest after a timeout", () => {
   assert.match(sessionHook, /requestSignal\(lifetime, TOGGLE_TIMEOUT_MS\)/);
   assert.match(sessionHook, /isTimeoutError\(error\)/);
-  assert.match(sessionHook, /afterToggleTimeout\(action, latest\)/);
+  assert.match(sessionHook, /afterToggleTimeout\(\s*action,\s*latest,\s*running,\s*\)/);
   assert.match(sessionHook, /toast\.error\(TOGGLE_ERROR\)/);
 });
 
@@ -148,4 +147,141 @@ test("a view swap replaces only the dialog, keeping the backdrop and the opener"
   assert.match(dashboardModal, /const opener = document\.activeElement;[\s\S]*?\}, \[isShown\]\);/);
   // …while a content swap moves focus into the new dialog.
   assert.match(dashboardModal, /dialogRef\.current\?\.focus\(\);\s*\}, \[contentKey, isShown\]\);/);
+});
+
+test("the recording status counts up to 03:00, then waits for the wristband", () => {
+  assert.match(sessionHook, /recordingClock\(/);
+  assert.match(overviewHook, /clock: session\.clock/);
+  assert.match(overview, /\{clock\.text\}/);
+  assert.match(overview, /aria-label=\{`Lama perekaman \$\{clock\.elapsed\} dari \$\{clock\.limit\}`\}/);
+  // From 03:00 the waiting text replaces the phase word in the polite region and the timer leaves.
+  const politeAt = overview.indexOf('aria-live="polite"');
+  const liveElement = overview.slice(politeAt, overview.indexOf("</span>", politeAt));
+  assert.ok(liveElement.includes("Menunggu hasil dari wristband…"), "waiting text belongs to the phase word");
+  assert.ok(liveElement.includes('"Merekam"'));
+  assert.match(overview, /isMonitoringActive && !clock\.overtime \?/);
+});
+
+test("while recording, /latest is watched every 5 s and the watch ends with the recording", () => {
+  assert.match(sessionHook, /intervalMs: RECORDING_WATCH_INTERVAL_MS/);
+  assert.match(sessionHook, /await waitFor\(RECORDING_WATCH_INTERVAL_MS, watch\);/);
+  // One effect owns the watch: only while recording and no start/stop is in flight;
+  // its cleanup aborts it when recording ends, Stop is pressed or the page unmounts.
+  assert.match(sessionHook, /if \(phase !== "recording" \|\| isTogglingAction\) return;/);
+  assert.match(sessionHook, /const watch = new AbortController\(\);/);
+  assert.match(sessionHook, /return \(\) => \{\s*watch\.abort\(\);/);
+  // Pressing Stop ends the watch at once, so Stop's analysing poll is the only loop.
+  assert.match(sessionHook, /if \(action === "stop"\) stopWatching\(\);/);
+  assert.match(sessionHook, /watchRef\.current\?\.abort\(\);/);
+  // The watch follows the same fresh-result rules as the analysing poll.
+  assert.match(sessionHook, /isFresh: isFreshNow,/);
+  assert.match(sessionHook, /void watchRecording\(watch\.signal, isFreshNow\)\.then\(/);
+  assert.match(sessionHook, /maxAttempts: Number\.POSITIVE_INFINITY/);
+});
+
+test("a recording the wristband finished opens the result with a note", () => {
+  assert.ok(modal.includes("Rekaman selesai otomatis setelah 3 menit."));
+  assert.match(modal, /autoFinished \?/);
+  assert.match(overviewHook, /autoFinished: session\.autoFinished/);
+  assert.match(overview, /autoFinished=\{autoFinished\}/);
+  // Watch result and a refused Stop that finds a fresh result: automatic; the analysing poll: not.
+  assert.match(sessionHook, /showResult\(outcome\.data, \{ automatic: true \}\)/);
+  assert.match(sessionHook, /showResult\(next\.data, \{ automatic: true \}\)/);
+  assert.match(sessionHook, /showResult\(outcome\.data, \{ automatic: false \}\)/);
+  assert.match(sessionHook, /afterStopRefused\(latest, isFreshNow\)/);
+  assert.match(sessionHook, /toggleAnswer\(status, json\?\.code\)/);
+});
+
+test("a reload resumes a running session from the newest history row", () => {
+  assert.ok(sessionHook.includes('"/api/v1/measurement/history?page=1&limit=1"'));
+  assert.match(sessionHook, /runningSessionFrom\(/);
+  assert.match(sessionHook, /rememberSession\(baselineRef\.current, running\)/);
+  // Ignored once the user started or stopped meanwhile; never after unmount.
+  assert.match(sessionHook, /if \(lifetime\.aborted \|\| !running \|\| userActedRef\.current\) return;/);
+  assert.match(sessionHook, /void resumeRunningSession\(lifetime\.signal\);/);
+});
+
+test("a refused start gets a fixed wristband hint and no server text reaches a toast", () => {
+  assert.ok(
+    sessionHook.includes(
+      "Wristband belum siap untuk merekam. Pastikan wristband menyala, terhubung ke internet, dan tidak sedang merekam, lalu coba lagi.",
+    ),
+  );
+  assert.match(sessionHook, /toast\.error\(START_REFUSED\)/);
+  const toastArgs = [...sessionHook.matchAll(/toast\.\w+\(([^)]*)\)/g)].map((match) => match[1]);
+  assert.ok(toastArgs.length >= 3);
+  for (const arg of toastArgs) {
+    assert.match(arg, /^(?:TOGGLE_FAILED|TOGGLE_ERROR|START_REFUSED)$/, `toast shows ${arg}`);
+  }
+  assert.doesNotMatch(sessionHook, /\.message\b|\.errors\b/, "server text is never read");
+});
+
+test("Stop stays possible while recording, whatever the wristband state", () => {
+  const session = read("components/dashboard/MonitoringSession.ts");
+  const block = session.slice(session.indexOf("export function toggleBlock("));
+  const body = block.slice(0, block.indexOf("\n}\n"));
+  // Only the network can block a running session's Stop; the device check comes after.
+  assert.ok(
+    body.indexOf('if (phase === "recording" || phase === "analysing") return null;') <
+      body.indexOf('device === "online"'),
+  );
+  assert.match(overview, /disabled=\{\s*toggleBlocked !== null \|\| isTogglingAction \|\| isAnalysing\s*\}/);
+});
+
+test("overtime longer than 30 s tells the reader to press Stop, once and not live", () => {
+  const text = "Belum ada hasil dari wristband. Tekan Hentikan Monitoring untuk menyelesaikan rekaman.";
+  assert.ok(overview.includes(text));
+  assert.match(overview, /const isStalled = isMonitoringActive && clock\.overtime && clock\.stalled;/);
+  const at = overview.indexOf(text);
+  const paragraph = overview.slice(overview.lastIndexOf("<p", at), at);
+  assert.doesNotMatch(paragraph, /aria-live|role="(?:status|alert)"/);
+  assert.match(paragraph, /text-\[0\.9375rem\]/);
+  assert.match(paragraph, /text-primary-900\/80/);
+  assert.match(paragraph, /id=\{stalledHintId\}/);
+  // The Stop button points to it for screen readers.
+  assert.match(overview, /aria-describedby=\{toggleDescribedBy\}/);
+  assert.match(overview, /isStalled \? stalledHintId : null/);
+});
+
+test("a start that timed out adopts a running session from the newest history row", () => {
+  assert.match(sessionHook, /if \(action === "start"\) running = await fetchRunningSession\(lifetime\);/);
+  assert.match(sessionHook, /if \(!running\) latest = await fetchLatest\(lifetime\);/);
+  assert.match(sessionHook, /afterToggleTimeout\(\s*action,\s*latest,\s*running,\s*\)/);
+  assert.match(
+    sessionHook,
+    /next === "recording" && running\) \{[\s\S]{0,160}rememberSession\(baselineRef\.current, running\);\s*beginRecording\(running\.startedAt \?\? Date\.now\(\)\);/,
+  );
+});
+
+test("the auto-finish note is shown only for a session that ran (almost) 3 minutes", () => {
+  assert.match(
+    sessionHook,
+    /const note =\s*automatic &&\s*showsAutoFinishNote\(data, started === null \? null : Date\.now\(\) - started\);\s*setAutoFinished\(note\);/,
+  );
+  // Every recording start goes through one clock, which the note's fallback reads.
+  assert.match(sessionHook, /startedAtRef\.current = startedAtMs;\s*setStartedAt\(startedAtMs\);/);
+  assert.equal((sessionHook.match(/setStartedAt\(/g) ?? []).length, 1);
+});
+
+test("an analysis that timed out checks the newest history row before reporting the delay", () => {
+  const start = sessionHook.indexOf("const pollForResult = useCallback(");
+  const body = sessionHook.slice(start, sessionHook.indexOf("\n  );\n", start));
+  assert.match(body, /running = await fetchRunningSession\(run\.signal\);/);
+  assert.match(body, /if \(error instanceof SessionExpiredError\) return;/);
+  // Abort-safe: nothing happens once the poll or the page is gone.
+  assert.match(body, /\}\s*if \(isCancelled\(\)\) return;\s*pollRef\.current = null;\s*if \(afterAnalysisTimeout\(running\)/);
+  assert.match(
+    body,
+    /afterAnalysisTimeout\(running\) === "recording" && running\) \{\s*baselineRef\.current = rememberSession\(baselineRef\.current, running\);\s*setIsModalOpen\(false\);\s*beginRecording\(running\.startedAt \?\? Date\.now\(\)\);\s*toast\.error\(TOGGLE_ERROR\);\s*\} else \{\s*setEndedAt\(Date\.now\(\)\);\s*setPhase\("timeout"\);\s*setModalView\("timeout"\);/,
+  );
+});
+
+test("a resumed session's start is counted on this device's clock via the Date header", () => {
+  const start = sessionHook.indexOf("async function fetchRunningSession(");
+  const body = sessionHook.slice(start, sessionHook.indexOf("\n}\n", start));
+  assert.match(body, /const answeredLocally = Date\.now\(\);/);
+  assert.match(
+    body,
+    /startedAt: toLocalTime\(\s*running\.startedAt,\s*res\.headers\.get\("date"\),\s*answeredLocally,\s*\)/,
+  );
 });

@@ -27,8 +27,8 @@ test("verifies AiResultModal component structure and theme integration", async (
   assert.match(modalSource, /Keyakinan AI/);
   assert.match(modalSource, /confidenceLevel/);
   assert.match(modalSource, /analysisStatusLabel\(/);
-  assert.match(modalSource, /Irama Jantung Normal/);
-  assert.match(modalSource, /Terdeteksi Potensi AF/);
+  assert.match(modalSource, /classifyResult\(/);
+  assert.match(modalSource, /RESULT_COPY\[kind\]\.title/);
   assert.match(modalSource, /Lihat Riwayat/);
   assert.match(modalSource, /showCloseButton=\{false\}/);
   assert.match(modalSource, />\s*Tutup\s*</);

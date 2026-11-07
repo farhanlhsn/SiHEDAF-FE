@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { Clock } from "lucide-react";
 import { useId } from "react";
 
 import {
   formatConfidence,
   formatWib,
-  resultStatus,
 } from "@/components/dashboard/DashboardFormat";
 import { DashboardModal } from "@/components/dashboard/DashboardModal";
 import type { MeasurementData } from "@/components/dashboard/hooks/UseDashboardOverview";
@@ -15,7 +15,16 @@ import {
   type RestartAction,
   type ResultModalView,
 } from "@/components/dashboard/MonitoringSession";
+import {
+  classifyResult,
+  isAlertKind,
+  RESULT_COPY,
+} from "@/components/dashboard/ResultKind";
 import { PpgTrace } from "@/components/dashboard/PpgTrace";
+import {
+  recordingDuration,
+  SAMPLE_RATE_HZ,
+} from "@/components/dashboard/Signal";
 import {
   rangeEndingOn,
   reportHref,
@@ -24,6 +33,8 @@ import { StatusMark } from "@/components/dashboard/StatusMark";
 import { PulseLoader } from "@/components/ui/PulseLoader";
 
 type AiResultModalProps = Readonly<{
+  /** The wristband ended the session after 3 minutes; the user did not press Stop. */
+  autoFinished: boolean;
   data: MeasurementData | null;
   onClose: () => void;
   onRestart: () => void;
@@ -43,20 +54,8 @@ const actionClassName =
 const primaryActionClassName = `btn-primary ${actionClassName} bg-primary-900 text-white`;
 const secondaryActionClassName = `${actionClassName} border-[1.5px] border-primary-900/20 text-primary-900 transition-colors hover:bg-paper-deep disabled:cursor-not-allowed disabled:border-primary-900/15 disabled:text-primary-900/70 disabled:hover:bg-transparent`;
 
-const titles = {
-  normal: "Irama Jantung Normal",
-  af: "Terdeteksi Potensi AF",
-  unknown: "Hasil analisis belum tersedia",
-} as const;
-
-const copy = {
-  normal:
-    "Jarak antar detak pada rekaman ini terlihat teratur. Tetap pantau secara berkala.",
-  af: "AI menemukan pola tidak teratur yang mirip Atrial Fibrillation. Ini bukan diagnosis; tunjukkan hasil ini ke dokter, terutama bila ada keluhan.",
-  unknown: "Rekaman ini belum memiliki hasil analisis AI.",
-} as const;
-
 export function AiResultModal({
+  autoFinished,
   data,
   onClose,
   onRestart,
@@ -64,13 +63,13 @@ export function AiResultModal({
   restart,
   view,
 }: AiResultModalProps) {
-  const status = resultStatus(data?.resultLabel);
+  const kind = data ? classifyResult(data) : "pending";
   const title =
     view === "analysing"
       ? "Menganalisis rekaman"
       : view === "timeout"
         ? "Hasil belum tersedia"
-        : titles[status];
+        : RESULT_COPY[kind].title;
 
   // Each view is a fresh dialog element (contentKey), so focus moves into it
   // and the new title is announced when the result arrives in an open modal;
@@ -90,6 +89,7 @@ export function AiResultModal({
         <TimeoutBody onClose={onClose} />
       ) : (
         <ResultBody
+          autoFinished={autoFinished}
           data={data}
           onClose={onClose}
           onRestart={onRestart}
@@ -148,22 +148,27 @@ function TimeoutBody({ onClose }: Readonly<{ onClose: () => void }>) {
 }
 
 function ResultBody({
+  autoFinished,
   data,
   onClose,
   onRestart,
   restart,
 }: Readonly<{
+  autoFinished: boolean;
   data: MeasurementData | null;
   onClose: () => void;
   onRestart: () => void;
   restart: RestartAction;
 }>) {
   const restartHintId = useId();
-  const status = resultStatus(data?.resultLabel);
+  const kind = data ? classifyResult(data) : "pending";
+  const isAlert = isAlertKind(kind);
+  const isNeutral = !isAlert && kind !== "normal";
   const confidence = formatConfidence(data?.confidenceLevel);
   const measuredAt = formatWib(
     data?.completedAt ?? data?.updatedAt ?? data?.createdAt,
   );
+  const duration = recordingDuration(data?.ppgResult?.rawPpgData);
 
   const historyLink = (
     <Link
@@ -175,7 +180,8 @@ function ResultBody({
     </Link>
   );
   // Offered with a result only once no session runs, never while recording.
-  const offersRestart = status !== "unknown" && restart !== "hidden";
+  // Pending has nothing to redo; a short or failed recording is fixed by a new one.
+  const offersRestart = kind !== "pending" && restart !== "hidden";
   const restartHint =
     restart === "no-network"
       ? "Tidak ada koneksi internet."
@@ -198,7 +204,7 @@ function ResultBody({
   const closeButton = (
     <button
       className={
-        status === "normal" ? primaryActionClassName : secondaryActionClassName
+        kind === "normal" ? primaryActionClassName : secondaryActionClassName
       }
       onClick={onClose}
       type="button"
@@ -209,14 +215,31 @@ function ResultBody({
 
   return (
     <div className="flex flex-col gap-5">
+      {autoFinished ? (
+        <p
+          className="flex items-center gap-2.5 rounded-[14px] bg-primary-50 px-4 py-3 text-[0.9375rem] font-medium text-primary-900"
+          role="note"
+        >
+          <Clock
+            aria-hidden="true"
+            className="size-4 shrink-0 text-primary-500"
+            strokeWidth={2.25}
+          />
+          Rekaman selesai otomatis setelah 3 menit.
+        </p>
+      ) : null}
       <div className="flex items-start gap-4">
-        {status === "unknown" ? null : (
+        {isNeutral ? null : (
           <div className="shrink-0">
-            <StatusMark size="large" status={status} />
+            <StatusMark
+              label={RESULT_COPY[kind].label}
+              size="large"
+              status={isAlert ? "af" : "normal"}
+            />
           </div>
         )}
         <p className="text-[1rem] leading-[1.55] text-primary-900/80">
-          {copy[status]}
+          {RESULT_COPY[kind].sentence}
         </p>
       </div>
 
@@ -224,14 +247,21 @@ function ResultBody({
         className="h-36 w-full rounded-[18px] bg-paper"
         data={data?.ppgResult?.rawPpgData}
         label="Grafik sinyal PPG"
-        tone={status === "af" ? "pink" : "blue"}
+        sampleRate={SAMPLE_RATE_HZ}
+        tone={isAlert ? "pink" : "blue"}
       />
 
-      <dl className="grid gap-4 rounded-[18px] bg-paper p-5 text-[0.9375rem] sm:grid-cols-3">
+      <dl className="grid gap-4 rounded-[18px] bg-paper p-5 text-[0.9375rem] sm:grid-cols-2">
         <div>
           <dt className="text-primary-900/75">Waktu</dt>
           <dd className="mt-1 font-semibold text-primary-900">
             {measuredAt ?? "—"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-primary-900/75">Durasi rekaman</dt>
+          <dd className="mt-1 font-semibold tabular-nums text-primary-900">
+            {duration ?? "—"}
           </dd>
         </div>
         <div>
@@ -249,7 +279,7 @@ function ResultBody({
       </dl>
 
       <div className={actionsClassName}>
-        {status === "af" ? (
+        {isAlert ? (
           <>
             <Link
               className={primaryActionClassName}
@@ -264,7 +294,7 @@ function ResultBody({
             {restartButton}
             {closeButton}
           </>
-        ) : status === "normal" ? (
+        ) : kind === "normal" ? (
           <>
             {closeButton}
             {historyLink}
@@ -272,6 +302,7 @@ function ResultBody({
           </>
         ) : (
           <>
+            {restartButton}
             {historyLink}
             {closeButton}
           </>
