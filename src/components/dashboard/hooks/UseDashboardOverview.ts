@@ -14,9 +14,9 @@ import {
   SessionExpiredError,
 } from "@/features/auth/session/client/ApiFetch";
 import {
-  AFTER_SESSION_RECHECK_MS,
   DEVICE_REFRESH_MS,
   DEVICE_STATUS_LABEL,
+  afterSessionRecheckDelay,
   deviceState,
   sessionHoldsDevice,
 } from "@/components/dashboard/DeviceState";
@@ -83,11 +83,15 @@ export function useDashboardOverview() {
   const isMonitoringActive = session.phase === "recording";
 
   // Once a session ends the wristband returns to its idle poll; ask for it
-  // again after that so its state is judged on a fresh answer.
+  // again after that so its state is judged on a fresh answer. Coming back
+  // to /dashboard within the hold schedules the rest of the wait.
   useEffect(() => {
     if (sessionEndedAt === null) return;
 
-    const timerId = setTimeout(reloadDevice, AFTER_SESSION_RECHECK_MS);
+    const timerId = setTimeout(
+      reloadDevice,
+      afterSessionRecheckDelay(sessionEndedAt, performance.now()),
+    );
 
     return () => clearTimeout(timerId);
   }, [reloadDevice, sessionEndedAt]);

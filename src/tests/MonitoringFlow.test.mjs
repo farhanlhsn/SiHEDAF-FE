@@ -290,7 +290,7 @@ test("an analysis that timed out checks the newest history row before reporting 
   assert.match(body, /\}\s*if \(isCancelled\(\)\) return;\s*pollRef\.current = null;\s*if \(afterAnalysisTimeout\(running\)/);
   assert.match(
     body,
-    /afterAnalysisTimeout\(running\) === "recording" && running\) \{\s*baselineRef\.current = rememberSession\(baselineRef\.current, running\);\s*setIsModalOpen\(false\);\s*beginRecording\(running\.startedAt \?\? Date\.now\(\)\);\s*toast\.error\(TOGGLE_ERROR\);\s*\} else \{\s*setEndedAt\(Date\.now\(\)\);\s*setPhase\("timeout"\);\s*setModalView\("timeout"\);/,
+    /afterAnalysisTimeout\(running\) === "recording" && running\) \{\s*baselineRef\.current = rememberSession\(baselineRef\.current, running\);\s*setIsModalOpen\(false\);\s*beginRecording\(running\.startedAt \?\? Date\.now\(\)\);\s*toast\.error\(TOGGLE_ERROR\);\s*\} else \{\s*markEnded\(\);\s*setPhase\("timeout"\);\s*setModalView\("timeout"\);/,
   );
 });
 

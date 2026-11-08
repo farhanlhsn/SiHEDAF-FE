@@ -36,6 +36,7 @@ import {
   type ResultModalView,
   type RunningSession,
 } from "@/components/dashboard/MonitoringSession";
+import { rememberedSessionEnd } from "@/components/dashboard/DeviceState";
 import type { MeasurementData } from "@/components/dashboard/hooks/UseDashboardOverview";
 
 type UseMonitoringSessionOptions = {
@@ -53,6 +54,13 @@ const TOGGLE_ERROR =
   "Terjadi kesalahan saat mengubah status monitoring. Coba lagi.";
 const START_REFUSED =
   "Wristband belum siap untuk merekam. Pastikan wristband menyala, terhubung ke internet, dan tidak sedang merekam, lalu coba lagi.";
+
+/**
+ * When the last session in this page life ended (monotonic page clock).
+ * Written only when a session ends, so leaving /dashboard and coming back
+ * keeps the after-session hold on the wristband; a full reload starts fresh.
+ */
+let lastEndedAt: number | null = null;
 
 /** Start or stop a session; throws on network errors and timeouts. */
 async function postMeasurement(
@@ -148,9 +156,12 @@ export function useMonitoringSession({
   const [isTogglingAction, setIsTogglingAction] = useState(false);
   // The shown result ended without Stop: the wristband finished after 3 minutes.
   const [autoFinished, setAutoFinished] = useState(false);
-  // When the last session on this page ended (this device's clock): the
-  // wristband is judged again only by a device answer asked for 8 s later.
-  const [endedAt, setEndedAt] = useState<number | null>(null);
+  // When the last session ended (monotonic page clock, kept across a visit to
+  // another dashboard page): the wristband is judged again only by a device
+  // answer asked for 8 s later.
+  const [endedAt, setEndedAt] = useState<number | null>(() =>
+    rememberedSessionEnd(lastEndedAt, performance.now()),
+  );
   // The reload check (is a session still recording?) has finished in any way:
   // resumed, nothing running, failed or timed out. Until then the wristband
   // is not judged (its lastSeen is frozen while it records).
@@ -180,6 +191,13 @@ export function useMonitoringSession({
   const stopWatching = useCallback(() => {
     watchRef.current?.abort();
     watchRef.current = null;
+  }, []);
+
+  /** The session ended just now: hold the wristband until it is asked again. */
+  const markEnded = useCallback(() => {
+    const at = performance.now();
+    lastEndedAt = at;
+    setEndedAt(at);
   }, []);
 
   /** Start the recording clock at `startedAtMs` (this device's clock). */
@@ -274,13 +292,13 @@ export function useMonitoringSession({
         automatic &&
         showsAutoFinishNote(data, started === null ? null : Date.now() - started);
       setAutoFinished(note);
-      setEndedAt(Date.now());
+      markEnded();
       setPhase("result");
       setModalView("result");
       // After Stop the modal is open already, or the reader closed it on purpose.
       if (automatic) setIsModalOpen(true);
     },
-    [],
+    [markEnded],
   );
 
   const beginRecording = useCallback(
@@ -340,12 +358,12 @@ export function useMonitoringSession({
         beginRecording(running.startedAt ?? Date.now());
         toast.error(TOGGLE_ERROR);
       } else {
-        setEndedAt(Date.now());
+        markEnded();
         setPhase("timeout");
         setModalView("timeout");
       }
     },
-    [beginRecording, cancelPolling, isFreshNow, showResult],
+    [beginRecording, cancelPolling, isFreshNow, markEnded, showResult],
   );
 
   // The recording watch runs only while recording with no start/stop in
@@ -441,12 +459,12 @@ export function useMonitoringSession({
         showResult(next.data, { automatic: true });
       } else {
         cancelPolling();
-        setEndedAt(Date.now());
+        markEnded();
         setPhase("idle");
         toast.error(TOGGLE_FAILED);
       }
     },
-    [cancelPolling, isFreshNow, showResult],
+    [cancelPolling, isFreshNow, markEnded, showResult],
   );
 
   const toggle = useCallback(

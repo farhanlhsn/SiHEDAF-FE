@@ -161,25 +161,39 @@ test("a session holds the wristband: the overview passes the phase into the devi
     overview,
     /deviceState\(\{[\s\S]*?now: deviceCheckedAt,\s*sessionActive: sessionHoldsDevice\(\{\s*phase: session\.phase,\s*endedAt: sessionEndedAt,\s*answerRequestedAt: deviceRequestedAt,\s*\}\),\s*resumeChecked,\s*\}\);/,
   );
-  // About 8 s after a session ends the wristband is asked for again; the timer
-  // is cleared when another session ends first or the page unmounts.
+  // 9 s after a session ends (1 s past the 8 s threshold) the wristband is
+  // asked for again; coming back within the hold waits only for the rest. The
+  // timer is cleared when another session ends first or the page unmounts.
   assert.match(
     overview,
-    /if \(sessionEndedAt === null\) return;\s*const timerId = setTimeout\(reloadDevice, AFTER_SESSION_RECHECK_MS\);\s*return \(\) => clearTimeout\(timerId\);\s*\}, \[reloadDevice, sessionEndedAt\]\);/,
+    /if \(sessionEndedAt === null\) return;\s*const timerId = setTimeout\(\s*reloadDevice,\s*afterSessionRecheckDelay\(sessionEndedAt, performance\.now\(\)\),\s*\);\s*return \(\) => clearTimeout\(timerId\);\s*\}, \[reloadDevice, sessionEndedAt\]\);/,
   );
+  assert.doesNotMatch(overview, /setTimeout\(reloadDevice, AFTER_SESSION_RECHECK_MS\)/);
   assert.match(overview, /deviceOnline: deviceStatus === "online" \|\| deviceStatus === "recording"/);
 
-  // The answer's request time comes from the device hook, on this device's clock.
+  // The answer's request time comes from the device hook, on the monotonic page clock.
   const hook = await read("components/dashboard/hooks/UseMyDevice.ts");
-  assert.match(hook, /const sentAt = Date\.now\(\);\s*try \{/);
+  assert.match(hook, /const sentAt = performance\.now\(\);\s*try \{/);
   assert.match(hook, /if \(!run\.signal\.aborted\) \{\s*setRequestedAt\(sentAt\);/);
 
   // Every way a session ends records when: a result, a timed-out analysis, a refused Stop.
   const session = await read("components/dashboard/hooks/UseMonitoringSession.ts");
-  assert.match(session, /setAutoFinished\([^)]*\);\s*setEndedAt\(Date\.now\(\)\);\s*setPhase\("result"\);/);
-  assert.match(session, /setEndedAt\(Date\.now\(\)\);\s*setPhase\("timeout"\);/);
-  assert.match(session, /setEndedAt\(Date\.now\(\)\);\s*setPhase\("idle"\);\s*toast\.error\(TOGGLE_FAILED\);/);
+  assert.match(session, /setAutoFinished\([^)]*\);\s*markEnded\(\);\s*setPhase\("result"\);/);
+  assert.match(session, /markEnded\(\);\s*setPhase\("timeout"\);/);
+  assert.match(session, /markEnded\(\);\s*setPhase\("idle"\);\s*toast\.error\(TOGGLE_FAILED\);/);
   assert.match(session, /endedAt,\s*resumeChecked,\s*isTogglingAction,/);
+  // One place sets it, on the monotonic clock, and remembers it for a return to /dashboard.
+  assert.match(
+    session,
+    /const markEnded = useCallback\(\(\) => \{\s*const at = performance\.now\(\);\s*lastEndedAt = at;\s*setEndedAt\(at\);\s*\}, \[\]\);/,
+  );
+  assert.equal((session.match(/setEndedAt\(/g) ?? []).length, 1);
+  assert.equal((session.match(/lastEndedAt = /g) ?? []).length, 1);
+  assert.match(session, /^let lastEndedAt: number \| null = null;$/m);
+  assert.match(
+    session,
+    /useState<number \| null>\(\(\) =>\s*rememberedSessionEnd\(lastEndedAt, performance\.now\(\)\),\s*\)/,
+  );
 
   // The card shows nothing for a held wristband; the status card says "Sedang merekam" and keeps the live dot.
   const card = await read("components/dashboard/DeviceOfflineCard.tsx");

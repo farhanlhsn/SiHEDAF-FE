@@ -2,12 +2,15 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  AFTER_SESSION_RECHECK_DELAY_MS,
   AFTER_SESSION_RECHECK_MS,
   DEVICE_REFRESH_MS,
   DEVICE_STATUS_LABEL,
   STALE_AFTER_MS,
+  afterSessionRecheckDelay,
   answeredAt,
   deviceState,
+  rememberedSessionEnd,
   sessionHoldsDevice,
 } from "../components/dashboard/DeviceState";
 
@@ -202,4 +205,34 @@ test("until the reload check finished the wristband is loading, not judged", () 
   // Once checked (the default), the same answers are judged as before.
   assert.equal(deviceState({ device: answers[0], isLoading: false, error: noError, now, resumeChecked: true }), "offline");
   assert.equal(deviceState({ device: answers[1], isLoading: false, error: noError, now }), "stale");
+});
+
+test("the after-session re-check fires a second past the 8 s threshold", () => {
+  assert.equal(AFTER_SESSION_RECHECK_DELAY_MS, 9_000);
+  assert.ok(AFTER_SESSION_RECHECK_DELAY_MS > AFTER_SESSION_RECHECK_MS);
+  // Monotonic page-clock values (performance.now()): small numbers, not epoch ms.
+  const endedAt = 12_345;
+  assert.equal(afterSessionRecheckDelay(endedAt, endedAt), 9_000);
+  // Back on /dashboard 3 s later: only the rest of the wait.
+  assert.equal(afterSessionRecheckDelay(endedAt, endedAt + 3_000), 6_000);
+  assert.equal(afterSessionRecheckDelay(endedAt, endedAt + 9_000), 0);
+  // Never negative, even long after.
+  assert.equal(afterSessionRecheckDelay(endedAt, endedAt + 60_000), 0);
+  // The request it triggers is late enough for the hold to let go.
+  assert.equal(
+    sessionHoldsDevice({ phase: "result", endedAt, answerRequestedAt: endedAt + afterSessionRecheckDelay(endedAt, endedAt) }),
+    false,
+  );
+});
+
+test("a session end is remembered across dashboard visits only while its hold can matter", () => {
+  const endedAt = 50_000;
+  assert.equal(rememberedSessionEnd(null, endedAt), null);
+  assert.equal(rememberedSessionEnd(endedAt, endedAt), endedAt);
+  assert.equal(rememberedSessionEnd(endedAt, endedAt + 7_999), endedAt);
+  // From 8 s on, any request the page sends is judged: nothing to hold.
+  assert.equal(rememberedSessionEnd(endedAt, endedAt + 8_000), null);
+  assert.equal(rememberedSessionEnd(endedAt, endedAt + 600_000), null);
+  // A remembered end always leaves a positive wait for the re-check.
+  assert.ok(afterSessionRecheckDelay(endedAt, endedAt + 7_999) > 0);
 });

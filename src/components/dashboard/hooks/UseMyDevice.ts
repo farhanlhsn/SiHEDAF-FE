@@ -31,8 +31,9 @@ export function useMyDevice({ refreshMs }: UseMyDeviceOptions = {}) {
   const [error, setError] = useState<DataError | null>(null);
   // When the latest answer was given (server clock): staleness is judged then.
   const [checkedAt, setCheckedAt] = useState<number | null>(null);
-  // When the request behind the current answer (or error) was sent, by this
-  // device's clock: after a session, only an answer asked for late enough counts.
+  // When the request behind the current answer (or error) was sent, on the
+  // monotonic page clock (performance.now(), shared across client-side
+  // navigation): after a session, only an answer asked for late enough counts.
   const [requestedAt, setRequestedAt] = useState<number | null>(null);
   const [reloadCount, setReloadCount] = useState(0);
   // A "Periksa lagi" / "Coba lagi" check in flight. The device and its state
@@ -46,7 +47,7 @@ export function useMyDevice({ refreshMs }: UseMyDeviceOptions = {}) {
     const run = new AbortController();
 
     async function fetchDevice() {
-      const sentAt = Date.now();
+      const sentAt = performance.now();
       try {
         const res = await apiFetch("/api/v1/measurement/my-device", {
           signal: requestSignal(run.signal),
