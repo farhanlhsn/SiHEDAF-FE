@@ -159,7 +159,7 @@ test("a session holds the wristband: the overview passes the phase into the devi
   const overview = await read("components/dashboard/hooks/UseDashboardOverview.ts");
   assert.match(
     overview,
-    /deviceState\(\{[\s\S]*?now: deviceCheckedAt,\s*sessionActive: sessionHoldsDevice\(\{\s*phase: session\.phase,\s*endedAt: sessionEndedAt,\s*answerRequestedAt: deviceRequestedAt,\s*\}\),\s*\}\);/,
+    /deviceState\(\{[\s\S]*?now: deviceCheckedAt,\s*sessionActive: sessionHoldsDevice\(\{\s*phase: session\.phase,\s*endedAt: sessionEndedAt,\s*answerRequestedAt: deviceRequestedAt,\s*\}\),\s*resumeChecked,\s*\}\);/,
   );
   // About 8 s after a session ends the wristband is asked for again; the timer
   // is cleared when another session ends first or the page unmounts.
@@ -179,7 +179,7 @@ test("a session holds the wristband: the overview passes the phase into the devi
   assert.match(session, /setAutoFinished\([^)]*\);\s*setEndedAt\(Date\.now\(\)\);\s*setPhase\("result"\);/);
   assert.match(session, /setEndedAt\(Date\.now\(\)\);\s*setPhase\("timeout"\);/);
   assert.match(session, /setEndedAt\(Date\.now\(\)\);\s*setPhase\("idle"\);\s*toast\.error\(TOGGLE_FAILED\);/);
-  assert.match(session, /endedAt,\s*isTogglingAction,/);
+  assert.match(session, /endedAt,\s*resumeChecked,\s*isTogglingAction,/);
 
   // The card shows nothing for a held wristband; the status card says "Sedang merekam" and keeps the live dot.
   const card = await read("components/dashboard/DeviceOfflineCard.tsx");

@@ -197,8 +197,26 @@ test("a reload resumes a running session from the newest history row", () => {
   assert.match(sessionHook, /runningSessionFrom\(/);
   assert.match(sessionHook, /rememberSession\(baselineRef\.current, running\)/);
   // Ignored once the user started or stopped meanwhile; never after unmount.
-  assert.match(sessionHook, /if \(lifetime\.aborted \|\| !running \|\| userActedRef\.current\) return;/);
+  assert.match(sessionHook, /if \(lifetime\.aborted\) return;\s*setResumeChecked\(true\);\s*if \(!running \|\| userActedRef\.current\) return;/);
   assert.match(sessionHook, /void resumeRunningSession\(lifetime\.signal\);/);
+});
+
+test("the reload check reports when it finished, in any way, and never after unmount", () => {
+  assert.match(sessionHook, /const \[resumeChecked, setResumeChecked\] = useState\(false\);/);
+  const start = sessionHook.indexOf("const resumeRunningSession = useCallback(");
+  const body = sessionHook.slice(start, sessionHook.indexOf("[startClock],", start));
+  // A failed or timed-out read reaches the same line as an answer.
+  assert.match(body, /fetchRunningSession\(lifetime\)\s*\/\/[^\n]*\n\s*\.catch\(\(\) => null\)\s*\.then\(\(running\) => \{\s*if \(lifetime\.aborted\) return;\s*setResumeChecked\(true\);/);
+  assert.equal((sessionHook.match(/setResumeChecked\(/g) ?? []).length, 1);
+  assert.match(sessionHook, /endedAt,\s*resumeChecked,\s*isTogglingAction,/);
+});
+
+test("until the reload check finished the overview does not judge the wristband", () => {
+  assert.match(overviewHook, /const \{ adoptInitial, endedAt: sessionEndedAt, resumeChecked \} = session;/);
+  assert.match(
+    overviewHook,
+    /deviceState\(\{[\s\S]*?sessionActive: sessionHoldsDevice\(\{[\s\S]*?\}\),\s*resumeChecked,\s*\}\);/,
+  );
 });
 
 test("a refused start gets a fixed wristband hint and no server text reaches a toast", () => {

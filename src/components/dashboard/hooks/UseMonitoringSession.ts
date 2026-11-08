@@ -151,6 +151,10 @@ export function useMonitoringSession({
   // When the last session on this page ended (this device's clock): the
   // wristband is judged again only by a device answer asked for 8 s later.
   const [endedAt, setEndedAt] = useState<number | null>(null);
+  // The reload check (is a session still recording?) has finished in any way:
+  // resumed, nothing running, failed or timed out. Until then the wristband
+  // is not judged (its lastSeen is frozen while it records).
+  const [resumeChecked, setResumeChecked] = useState(false);
 
   const baselineRef = useRef<ResultBaseline>(EMPTY_BASELINE);
   // The running session's start (this device's clock), for the auto-finish note.
@@ -196,22 +200,27 @@ export function useMonitoringSession({
     [],
   );
 
-  /** After a reload: resume a session the newest history row still records. */
-  const resumeRunningSession = useCallback(async (lifetime: AbortSignal) => {
-    let running: RunningSession | null;
-    try {
-      running = await fetchRunningSession(lifetime);
-    } catch {
-      // Expired session (redirecting), no network or a timeout: stay idle.
-      return;
-    }
-    if (lifetime.aborted || !running || userActedRef.current) return;
+  /**
+   * After a reload: resume a session the newest history row still records.
+   * Settles resumeChecked however the read ends, but never after unmount.
+   */
+  const resumeRunningSession = useCallback(
+    (lifetime: AbortSignal) =>
+      fetchRunningSession(lifetime)
+        // Expired session (redirecting), no network or a timeout: stay idle.
+        .catch(() => null)
+        .then((running) => {
+          if (lifetime.aborted) return;
+          setResumeChecked(true);
+          if (!running || userActedRef.current) return;
 
-    // Its own result will count as fresh once the server completes it.
-    baselineRef.current = rememberSession(baselineRef.current, running);
-    startClock(running.startedAt ?? Date.now());
-    setPhase("recording");
-  }, [startClock]);
+          // Its own result will count as fresh once the server completes it.
+          baselineRef.current = rememberSession(baselineRef.current, running);
+          startClock(running.startedAt ?? Date.now());
+          setPhase("recording");
+        }),
+    [startClock],
+  );
 
   // Created in the effect body so a StrictMode remount gets a live one again.
   useEffect(() => {
@@ -516,6 +525,7 @@ export function useMonitoringSession({
     clock,
     autoFinished,
     endedAt,
+    resumeChecked,
     isTogglingAction,
     isModalOpen,
     modalView,

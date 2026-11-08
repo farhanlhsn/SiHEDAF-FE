@@ -175,3 +175,31 @@ test("after a session ends the hold lasts until an answer requested at least 8 s
     assert.equal(sessionHoldsDevice({ phase, endedAt, answerRequestedAt: endedAt + 30_000 }), false);
   }
 });
+
+test("until the reload check finished the wristband is loading, not judged", () => {
+  // Mid-recording after a reload the backend reports a frozen lastSeen, or even OFFLINE.
+  const answers = [
+    { status: "OFFLINE", lastSeen: secondsAgo(120) },
+    { status: "ONLINE", lastSeen: secondsAgo(45) },
+    { status: "ONLINE", lastSeen: secondsAgo(2) },
+  ];
+  for (const device of answers) {
+    assert.equal(
+      deviceState({ device, isLoading: false, error: noError, now, resumeChecked: false }),
+      "loading",
+      JSON.stringify(device),
+    );
+  }
+  assert.equal(
+    deviceState({ device: null, isLoading: false, error: { title: "x", message: "y" }, now, resumeChecked: false }),
+    "loading",
+  );
+  // A session the check (or the user) started holds the wristband: recording wins.
+  assert.equal(
+    deviceState({ device: answers[0], isLoading: false, error: noError, now, resumeChecked: false, sessionActive: true }),
+    "recording",
+  );
+  // Once checked (the default), the same answers are judged as before.
+  assert.equal(deviceState({ device: answers[0], isLoading: false, error: noError, now, resumeChecked: true }), "offline");
+  assert.equal(deviceState({ device: answers[1], isLoading: false, error: noError, now }), "stale");
+});

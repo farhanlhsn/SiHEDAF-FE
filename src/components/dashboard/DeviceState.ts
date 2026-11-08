@@ -31,6 +31,12 @@ type DeviceStateInput = {
   now: number | null;
   /** A session holds the wristband (see sessionHoldsDevice): it is not judged. */
   sessionActive?: boolean;
+  /**
+   * Whether the page knows if a session is still recording (after a reload,
+   * the newest history row says). Until then the device is not judged: a
+   * recording wristband's lastSeen is frozen, so it would look offline.
+   */
+  resumeChecked?: boolean;
 };
 
 /**
@@ -39,7 +45,8 @@ type DeviceStateInput = {
  * "stale", as the backend's start check sees it. While a session holds the
  * wristband it is "recording": it only polls (and so updates lastSeen) while
  * idle, so during a recording the backend's lastSeen freezes and its sweep may
- * even mark it OFFLINE.
+ * even mark it OFFLINE. Until the page knows whether a session is still
+ * recording (resumeChecked) it is "loading" for the same reason.
  */
 export function deviceState({
   device,
@@ -47,9 +54,10 @@ export function deviceState({
   error,
   now,
   sessionActive = false,
+  resumeChecked = true,
 }: DeviceStateInput): DeviceState {
   if (sessionActive) return "recording";
-  if (isLoading) return "loading";
+  if (isLoading || !resumeChecked) return "loading";
   if (error) return "error";
   if (!device) return "none";
   if (device.status !== "ONLINE") return "offline";

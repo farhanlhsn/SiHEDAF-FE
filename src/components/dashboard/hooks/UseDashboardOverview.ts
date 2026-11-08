@@ -79,7 +79,7 @@ export function useDashboardOverview() {
   const [signalsData, setSignalsData] = useState<number[]>([]);
 
   const session = useMonitoringSession({ onFreshResult: setLatestData });
-  const { adoptInitial, endedAt: sessionEndedAt } = session;
+  const { adoptInitial, endedAt: sessionEndedAt, resumeChecked } = session;
   const isMonitoringActive = session.phase === "recording";
 
   // Once a session ends the wristband returns to its idle poll; ask for it
@@ -169,7 +169,9 @@ export function useDashboardOverview() {
   // The one source for every device claim: card, status value, toggle, modal.
   // Staleness is judged when the device answered (every 30 s here). While a
   // session holds the wristband (it does not update lastSeen while measuring)
-  // it is "recording" instead, and the 30 s answers are not judged.
+  // it is "recording" instead, and the 30 s answers are not judged. After a
+  // reload it stays "loading" until the page knows whether a session is still
+  // recording, so a frozen lastSeen never flashes the offline card.
   const deviceStatus = deviceState({
     device: deviceData,
     isLoading: isDeviceLoading,
@@ -180,6 +182,7 @@ export function useDashboardOverview() {
       endedAt: sessionEndedAt,
       answerRequestedAt: deviceRequestedAt,
     }),
+    resumeChecked,
   });
   const firstRunGuideSteps = firstRunSteps({
     deviceOnline: deviceStatus === "online" || deviceStatus === "recording",
@@ -188,9 +191,14 @@ export function useDashboardOverview() {
     hasResult: Boolean(latestData),
   });
 
-  // Wait for the device request too, or step 1 flashes "current" while loading.
+  // Wait for the device request (and the reload check) too, or step 1 flashes
+  // "current" while loading.
   const showFirstRun =
-    hasLoadedLatest && !isDeviceLoading && !latestData && !latestError;
+    hasLoadedLatest &&
+    !isDeviceLoading &&
+    !latestData &&
+    !latestError &&
+    resumeChecked;
 
   return {
     user,
