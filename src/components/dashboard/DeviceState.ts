@@ -146,3 +146,28 @@ export const DEVICE_STATUS_LABEL: Record<DeviceState, string> = {
   error: "Tidak diketahui",
   recording: "Sedang merekam",
 };
+
+/**
+ * The status card value for this moment. A held wristband ("recording") is
+ * recording only while the session records; after it (analysing, a result,
+ * a timeout, a refused Stop) the hold lasts until the wristband is asked
+ * again, and the card must not contradict the signal card.
+ */
+export function deviceStatusLabel(
+  state: DeviceState,
+  phase: MonitoringPhase,
+): string {
+  if (state === "recording" && phase !== "recording") {
+    return "Baru selesai merekam";
+  }
+
+  return DEVICE_STATUS_LABEL[state];
+}
+
+/** Whether the status card shows the live dot: connected, or recording right now. */
+export function deviceStatusLive(
+  state: DeviceState,
+  phase: MonitoringPhase,
+): boolean {
+  return state === "online" || (state === "recording" && phase === "recording");
+}

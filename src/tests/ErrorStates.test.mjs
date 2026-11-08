@@ -195,10 +195,16 @@ test("a session holds the wristband: the overview passes the phase into the devi
     /useState<number \| null>\(\(\) =>\s*rememberedSessionEnd\(lastEndedAt, performance\.now\(\)\),\s*\)/,
   );
 
-  // The card shows nothing for a held wristband; the status card says "Sedang merekam" and keeps the live dot.
+  // The card shows nothing for a held wristband. The status card follows the
+  // phase: "Sedang merekam" with the live dot only while recording, "Baru
+  // selesai merekam" without it afterwards.
   const card = await read("components/dashboard/DeviceOfflineCard.tsx");
   assert.match(card, /if \(state !== "offline" && state !== "stale"\) return null;/);
   assert.doesNotMatch(card, /"recording"/);
+  assert.match(overview, /deviceStatusLabel: deviceStatusLabel\(deviceStatus, session\.phase\),/);
+  assert.match(overview, /deviceStatusLive: deviceStatusLive\(deviceStatus, session\.phase\),/);
+  assert.doesNotMatch(overview, /DEVICE_STATUS_LABEL\[/);
   const view = await read("components/dashboard/DashboardOverview.tsx");
-  assert.match(view, /deviceStatus === "online" \|\| deviceStatus === "recording"/);
+  assert.match(view, /\{deviceStatusLive \? \(\s*<span\s*aria-hidden="true"\s*className="live-dot/);
+  assert.doesNotMatch(view, /deviceStatus === "online" \|\| deviceStatus === "recording"/);
 });

@@ -10,6 +10,8 @@ import {
   afterSessionRecheckDelay,
   answeredAt,
   deviceState,
+  deviceStatusLabel,
+  deviceStatusLive,
   rememberedSessionEnd,
   sessionHoldsDevice,
 } from "../components/dashboard/DeviceState";
@@ -235,4 +237,31 @@ test("a session end is remembered across dashboard visits only while its hold ca
   assert.equal(rememberedSessionEnd(endedAt, endedAt + 600_000), null);
   // A remembered end always leaves a positive wait for the re-check.
   assert.ok(afterSessionRecheckDelay(endedAt, endedAt + 7_999) > 0);
+});
+
+const phases = ["idle", "recording", "analysing", "result", "timeout"] as const;
+const states = ["loading", "online", "stale", "offline", "none", "error", "recording"] as const;
+
+test("the status card says recording only while the session records", () => {
+  assert.equal(deviceStatusLabel("recording", "recording"), "Sedang merekam");
+  // Held after the session (analysing, result, timeout, idle after a refused Stop).
+  for (const phase of ["idle", "analysing", "result", "timeout"] as const) {
+    assert.equal(deviceStatusLabel("recording", phase), "Baru selesai merekam", phase);
+  }
+  // Every other state keeps its label, whatever the phase.
+  for (const state of states.filter((value) => value !== "recording")) {
+    for (const phase of phases) {
+      assert.equal(deviceStatusLabel(state, phase), DEVICE_STATUS_LABEL[state], `${state}/${phase}`);
+    }
+  }
+});
+
+test("the status card's live dot shows only when connected or recording right now", () => {
+  for (const phase of phases) {
+    assert.equal(deviceStatusLive("online", phase), true, phase);
+    assert.equal(deviceStatusLive("recording", phase), phase === "recording", phase);
+    for (const state of ["loading", "stale", "offline", "none", "error"] as const) {
+      assert.equal(deviceStatusLive(state, phase), false, `${state}/${phase}`);
+    }
+  }
 });

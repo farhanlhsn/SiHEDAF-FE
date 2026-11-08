@@ -133,9 +133,9 @@ test("a device that is still loading is not reported offline", () => {
   // Every device claim follows the one deviceState (loading, error, none…).
   assert.match(overviewHook, /restartAction\(session\.phase, \{\s*device: deviceStatus,/);
   assert.match(overviewHook, /toggleBlock\(session\.phase, \{\s*device: deviceStatus,/);
-  assert.match(overviewHook, /DEVICE_STATUS_LABEL\[deviceStatus\]/);
+  assert.match(overviewHook, /deviceStatusLabel\(deviceStatus, session\.phase\)/);
   assert.match(overview, /\{deviceStatusLabel\}/);
-  assert.doesNotMatch(overview, /"Memuat\.\.\."/, "the status value comes from DEVICE_STATUS_LABEL");
+  assert.doesNotMatch(overview, /"Memuat\.\.\."/, "the status value comes from deviceStatusLabel");
   assert.doesNotMatch(overview, /deviceData\?\.status/);
 });
 

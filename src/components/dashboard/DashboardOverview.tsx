@@ -41,6 +41,7 @@ export function DashboardOverview() {
     deviceData,
     deviceStatus,
     deviceStatusLabel,
+    deviceStatusLive,
     deviceError,
     isDeviceRefreshing,
     reloadDevice,
@@ -79,8 +80,6 @@ export function DashboardOverview() {
     latestData?.completedAt ?? latestData?.updatedAt,
   );
   const measuredAt = formatWib(latestData?.createdAt);
-  const isDeviceOnline =
-    deviceStatus === "online" || deviceStatus === "recording";
   const toggleHint =
     toggleBlocked === "no-network"
       ? "Tidak ada koneksi internet."
@@ -463,7 +462,7 @@ export function DashboardOverview() {
               />
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-2 text-[0.9375rem] font-semibold text-primary-900">
-                  {isDeviceOnline ? (
+                  {deviceStatusLive ? (
                     <span
                       aria-hidden="true"
                       className="live-dot !bg-primary-300"

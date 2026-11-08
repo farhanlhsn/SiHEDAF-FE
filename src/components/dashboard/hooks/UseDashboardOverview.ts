@@ -15,9 +15,10 @@ import {
 } from "@/features/auth/session/client/ApiFetch";
 import {
   DEVICE_REFRESH_MS,
-  DEVICE_STATUS_LABEL,
   afterSessionRecheckDelay,
   deviceState,
+  deviceStatusLabel,
+  deviceStatusLive,
   sessionHoldsDevice,
 } from "@/components/dashboard/DeviceState";
 import {
@@ -209,7 +210,8 @@ export function useDashboardOverview() {
     firstName,
     deviceData,
     deviceStatus,
-    deviceStatusLabel: DEVICE_STATUS_LABEL[deviceStatus],
+    deviceStatusLabel: deviceStatusLabel(deviceStatus, session.phase),
+    deviceStatusLive: deviceStatusLive(deviceStatus, session.phase),
     deviceError,
     isDeviceRefreshing,
     reloadDevice,
