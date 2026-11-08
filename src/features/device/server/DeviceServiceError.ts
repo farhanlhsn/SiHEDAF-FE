@@ -1,13 +1,3 @@
-export class DeviceServiceError extends Error {
-  constructor(
-    public readonly message: string,
-    public readonly status: number = 500,
-  ) {
-    super(message);
-    this.name = "DeviceServiceError";
-  }
-}
-
 export const DEVICE_SERVICE_UNAVAILABLE =
   "Layanan perangkat sedang bermasalah. Coba lagi beberapa saat.";
 export const DEVICE_NOT_FOUND =
