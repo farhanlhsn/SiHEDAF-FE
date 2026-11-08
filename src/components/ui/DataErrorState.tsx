@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef } from "react";
 
 import { BrokenSignal } from "@/components/ui/BrokenSignal";
+import { focusChain, headingToFocus } from "@/components/ui/FocusHandOff";
 
 type DataErrorStateProps = {
   title: string;
@@ -18,18 +19,25 @@ type DataErrorStateProps = {
 
 /**
  * Moves focus to the nearest heading when the panel disappears while it holds
- * focus (a successful retry replaced it), so focus is not dropped on <body>.
+ * focus (a retry replaced it), so focus is not dropped on <body>: the first
+ * ancestor up to the nearest main, dialog or body that is still in the page
+ * and holds an h1–h4 gives its first one (see FocusHandOff). Only when focus
+ * really was dropped: if something else took it meanwhile, it stays there.
  */
 function useFocusHeadingOnUnmount(ref: React.RefObject<HTMLElement | null>) {
   useLayoutEffect(() => {
     const panel = ref.current;
     return () => {
-      const parent = panel?.parentElement;
-      // The cleanup runs before React removes the panel, so focus is still in it.
-      if (!panel || !parent || !panel.contains(document.activeElement)) return;
+      // The cleanup runs before React removes the panel, so focus is still in
+      // it and its ancestors are still its ancestors.
+      if (!panel || !panel.contains(document.activeElement)) return;
+      const chain = focusChain(panel);
       requestAnimationFrame(() => {
-        if (!parent.isConnected) return;
-        const heading = parent.querySelector<HTMLElement>("h1, h2, h3, h4");
+        const heading = headingToFocus(
+          chain,
+          document.activeElement,
+          document.body,
+        );
         if (!heading) return;
         if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");
         heading.focus({ preventScroll: true });

@@ -59,10 +59,31 @@ test("DataErrorState keeps focus on a waiting retry and hands it on when it unmo
   assert.match(panel, /useLayoutEffect/);
   assert.match(panel, /panel\.contains\(document\.activeElement\)/);
   assert.match(panel, /requestAnimationFrame/);
-  assert.match(panel, /parent\.isConnected/);
-  assert.ok(panel.includes('querySelector<HTMLElement>("h1, h2, h3, h4")'));
-  assert.match(panel, /setAttribute\("tabindex", "-1"\)/);
-  assert.match(panel, /focus\(\{ preventScroll: true \}\)/);
+  assert.match(panel, /if \(!heading\.hasAttribute\("tabindex"\)\) heading\.setAttribute\("tabindex", "-1"\);/);
+  assert.match(panel, /heading\.focus\(\{ preventScroll: true \}\)/);
+});
+
+test("the heading hand-off walks up to the nearest main, dialog or body, and only takes dropped focus", async () => {
+  const panel = await read("components/ui/DataErrorState.tsx");
+  const handOff = await read("components/ui/FocusHandOff.ts");
+
+  // The chain is read in the layout cleanup, while the panel still has its
+  // ancestors; the heading is chosen a frame later from what is still there.
+  assert.match(
+    panel,
+    /if \(!panel \|\| !panel\.contains\(document\.activeElement\)\) return;\s*const chain = focusChain\(panel\);\s*requestAnimationFrame\(\(\) => \{\s*const heading = headingToFocus\(\s*chain,\s*document\.activeElement,\s*document\.body,\s*\);\s*if \(!heading\) return;/,
+  );
+  assert.doesNotMatch(panel, /parent\.isConnected|parent\.querySelector/);
+
+  assert.ok(handOff.includes(`export const FOCUS_CHAIN_END = 'main, [role="dialog"], body';`));
+  assert.ok(handOff.includes('export const FOCUS_HEADINGS = "h1, h2, h3, h4";'));
+  // From the parent upward, including the element it stops at.
+  assert.match(
+    handOff,
+    /for \(let node = panel\.parentElement; node; node = node\.parentElement\) \{\s*chain\.push\(node\);\s*if \(node\.matches\(FOCUS_CHAIN_END\)\) break;\s*\}/,
+  );
+  // Focus that something else took meanwhile (a dialog that just opened) stays.
+  assert.match(handOff, /if \(active && active !== body\) return null;\s*for \(const node of chain\) \{\s*if \(!node\.isConnected\) continue;/);
 });
 
 test("only the secondary error panels announce politely", async () => {
