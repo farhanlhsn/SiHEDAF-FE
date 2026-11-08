@@ -48,7 +48,8 @@ test("raw error messages never reach the UI", async () => {
 
 test("DataErrorState is an alert with a 48px retry", async () => {
   const source = await read("components/ui/DataErrorState.tsx");
-  assert.match(source, /role="alert"/);
+  assert.match(source, /role=\{live\}/);
+  assert.match(source, /live = "alert"/);
   assert.match(source, /Coba lagi/);
   assert.match(source, /h-12/);
 });
@@ -104,7 +105,8 @@ test("a device re-check shows it is working without hiding the card", async () =
 
   const errorState = await read("components/ui/DataErrorState.tsx");
   assert.match(errorState, /retrying\?: boolean/);
-  assert.match(errorState, /disabled=\{retrying\}/);
+  assert.match(errorState, /aria-disabled=\{retrying \|\| undefined\}/);
+  assert.doesNotMatch(errorState, /disabled=\{retrying\}/);
   assert.match(errorState, /aria-busy=\{retrying \|\| undefined\}/);
   assert.ok(errorState.includes('retrying ? "Memuat ulang…" : "Coba lagi"'));
 });

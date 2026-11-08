@@ -45,6 +45,7 @@ export function DeviceOfflineCard({
     return (
       <div className={cardClassName}>
         <DataErrorState
+          live="status"
           message={`${error.title}. ${error.message}`}
           onRetry={onRetry}
           retrying={refreshing}

@@ -155,6 +155,7 @@ export function NotificationPanel({
         ) : loadError ? (
           <DataErrorState
             compact
+            live="status"
             message={loadError.message}
             onRetry={() => setReloadCount((count) => count + 1)}
             title={loadError.title}
