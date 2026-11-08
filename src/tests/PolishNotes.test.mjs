@@ -86,6 +86,29 @@ test("the heading hand-off walks up to the nearest main, dialog or body, and onl
   assert.match(handOff, /if \(active && active !== body\) return null;\s*for \(const node of chain\) \{\s*if \(!node\.isConnected\) continue;/);
 });
 
+test("\"Periksa lagi\" keeps focus while the wristband is checked again", async () => {
+  const card = await read("components/dashboard/DeviceOfflineCard.tsx");
+  const start = card.indexOf("<button");
+  const button = card.slice(start, card.indexOf("</button>", start));
+
+  assert.match(button, /aria-disabled=\{refreshing \|\| undefined\}/);
+  assert.match(button, /aria-busy=\{refreshing \|\| undefined\}/);
+  // No disabled attribute (it would drop focus to <body>); clicks are ignored instead.
+  assert.doesNotMatch(button, /(?<![\w-])disabled=\{/);
+  assert.match(button, /onClick=\{\(\) => \{[\s\S]*?if \(!refreshing\) onRetry\(\);\s*\}\}/);
+  // The same waiting look as before, through aria-disabled variants.
+  for (const variant of [
+    "aria-disabled:cursor-wait",
+    "aria-disabled:border-primary-900/15",
+    "aria-disabled:text-primary-900/70",
+    "aria-disabled:hover:bg-white",
+  ]) {
+    assert.ok(button.includes(variant), `missing ${variant}`);
+  }
+  assert.doesNotMatch(button, /(?<![\w-])disabled:/);
+  assert.ok(button.includes('refreshing ? "Memeriksa…" : "Periksa lagi"'));
+});
+
 test("only the secondary error panels announce politely", async () => {
   const status = [
     "components/dashboard/NotificationPanel.tsx",

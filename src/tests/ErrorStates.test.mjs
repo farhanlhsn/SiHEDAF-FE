@@ -98,7 +98,9 @@ test("a device re-check shows it is working without hiding the card", async () =
   );
 
   const card = await read("components/dashboard/DeviceOfflineCard.tsx");
-  assert.match(card, /disabled=\{refreshing\}/);
+  // "Periksa lagi" waits with aria-disabled, so focus stays on it.
+  assert.match(card, /aria-disabled=\{refreshing \|\| undefined\}/);
+  assert.doesNotMatch(card, /disabled=\{refreshing\}/);
   assert.match(card, /aria-busy=\{refreshing \|\| undefined\}/);
   assert.ok(card.includes('refreshing ? "Memeriksa…" : "Periksa lagi"'));
   assert.match(card, /retrying=\{refreshing\}/);
