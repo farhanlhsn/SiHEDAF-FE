@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   createContext,
   useCallback,
@@ -16,6 +17,7 @@ import {
   type DataError,
 } from "@/components/ui/FetchError";
 import { PulseLoader } from "@/components/ui/PulseLoader";
+import { SESSION_EXPIRED_PATH } from "@/features/auth/session/client/ApiFetch";
 
 import type { UserProfile } from "@/features/profile/shared/ProfileTypes";
 
@@ -41,6 +43,10 @@ export function ProfileProvider({
   const [user, setUser] = useState<UserProfile | null>(initialUser ?? null);
   const [isLoading, setIsLoading] = useState(!initialUser);
   const [error, setError] = useState<DataError | null>(null);
+  // Expired: apiFetch is already sending the reader to /login. The page says
+  // so, with a link in case that navigation was stopped; no error panel and
+  // no second redirect.
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const reload = useCallback(async () => {
     setIsLoading(true);
@@ -48,11 +54,9 @@ export function ProfileProvider({
     const result = await fetchCurrentProfile();
 
     if (!result.success) {
-      // Expired: apiFetch is already sending the reader to /login, so the
-      // loader stays; no error, no second redirect.
-      if (result.status === 401) return;
       setIsLoading(false);
-      setError(describeCaughtError(result.cause, result.status));
+      if (result.status === 401) setSessionExpired(true);
+      else setError(describeCaughtError(result.cause, result.status));
       return;
     }
 
@@ -69,10 +73,9 @@ export function ProfileProvider({
       if (!isActive) return;
 
       if (!result.success) {
-        // Expired: apiFetch is already sending the reader to /login.
-        if (result.status === 401) return;
         setIsLoading(false);
-        setError(describeCaughtError(result.cause, result.status));
+        if (result.status === 401) setSessionExpired(true);
+        else setError(describeCaughtError(result.cause, result.status));
         return;
       }
 
@@ -104,6 +107,27 @@ export function ProfileProvider({
         className="grid min-h-dvh place-items-center bg-paper px-6"
       >
         <PulseLoader label="Memverifikasi sesi..." />
+      </main>
+    );
+  }
+
+  if (sessionExpired) {
+    return (
+      <main className="grid min-h-dvh place-items-center bg-paper px-6">
+        <div className="flex w-full max-w-md flex-col items-center gap-5 rounded-[24px] border border-primary-900/10 bg-white p-8 text-center">
+          <p
+            className="text-[1rem] leading-[1.55] font-semibold text-primary-900"
+            role="status"
+          >
+            Sesimu sudah berakhir. Mengalihkan ke halaman masuk…
+          </p>
+          <Link
+            className="btn-primary inline-flex min-h-12 items-center justify-center rounded-full bg-primary-900 px-6 text-[0.9375rem] font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300"
+            href={SESSION_EXPIRED_PATH}
+          >
+            Masuk lagi
+          </Link>
+        </div>
       </main>
     );
   }
