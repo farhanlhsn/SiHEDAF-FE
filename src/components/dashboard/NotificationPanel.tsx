@@ -16,6 +16,7 @@ import { DataErrorState } from "@/components/ui/DataErrorState";
 import {
   describeCaughtError,
   type DataError,
+  HttpError,
 } from "@/components/ui/FetchError";
 import {
   apiFetch,
@@ -36,12 +37,6 @@ type NotificationPanelProps = {
   onClose: () => void;
   onUnreadChange?: (hasUnread: boolean) => void;
 };
-
-class HttpError extends Error {
-  constructor(readonly status: number) {
-    super(`HTTP ${status}`);
-  }
-}
 
 export function NotificationPanel({
   onClose,

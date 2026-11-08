@@ -43,6 +43,13 @@ export function describeFetchError({ online, status, error }: FetchErrorInput): 
   return { kind, ...COPY[kind] };
 }
 
+/** A response that was not usable; `status` is absent when the body was. */
+export class HttpError extends Error {
+  constructor(readonly status?: number) {
+    super(status === undefined ? "HTTP error" : `HTTP ${status}`);
+  }
+}
+
 export type DataError = { title: string; message: string };
 
 /** Reads the browser's connection state at the moment of the failure. */

@@ -6,6 +6,7 @@ import {
   describeCaughtError,
   latestOutcome,
   type DataError,
+  HttpError,
 } from "@/components/ui/FetchError";
 
 import { useOnlineStatus } from "@/components/ui/hooks/UseOnlineStatus";
@@ -52,12 +53,6 @@ export type MeasurementData = {
     rawPpgData?: number[];
   };
 };
-
-class HttpError extends Error {
-  constructor(readonly status: number) {
-    super(`HTTP ${status}`);
-  }
-}
 
 export function useDashboardOverview() {
   const { user } = useProfile();
