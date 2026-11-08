@@ -15,8 +15,10 @@ export type ReportData = {
 };
 
 function timeOf(item: HistoryItem): number | null {
-  if (!item.requestedAt) return null;
-  const time = Date.parse(item.requestedAt);
+  // The table shows completedAt ?? requestedAt, so the order follows it.
+  const at = item.completedAt ?? item.requestedAt;
+  if (!at) return null;
+  const time = Date.parse(at);
   return Number.isNaN(time) ? null : time;
 }
 
