@@ -1,4 +1,9 @@
-export const SESSION_EXPIRED_PATH = "/login?sesi=berakhir";
+import {
+  SESSION_EXPIRED_PATH,
+  redirectToSessionExpired,
+} from "./SessionExpiredRedirect";
+
+export { SESSION_EXPIRED_PATH };
 
 /** Thrown when the session is over; callers must stay silent (we redirect). */
 export class SessionExpiredError extends Error {
@@ -29,17 +34,19 @@ function isAbort(error: unknown) {
 
 type ApiFetchDeps = {
   fetcher: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
-  navigate: (url: string) => void;
+  /**
+   * Sends the reader to the expired-session login. Called on every 401, so
+   * it guards itself (see createSessionExpiredRedirect).
+   */
+  redirect: () => void;
 };
 
 /**
  * fetch for same-origin API calls: HTTP 401 means the session is over, so
- * send the reader to /login once and reject with SessionExpiredError. A fetch
- * that gets no answer rejects with NetworkError.
+ * send the reader to /login (once, by the redirect's guard) and reject with
+ * SessionExpiredError. A fetch that gets no answer rejects with NetworkError.
  */
-export function createApiFetch({ fetcher, navigate }: ApiFetchDeps) {
-  let hasNavigated = false;
-
+export function createApiFetch({ fetcher, redirect }: ApiFetchDeps) {
   return async function apiFetch(
     input: RequestInfo | URL,
     init?: RequestInit,
@@ -53,10 +60,7 @@ export function createApiFetch({ fetcher, navigate }: ApiFetchDeps) {
     }
 
     if (response.status === 401) {
-      if (!hasNavigated) {
-        hasNavigated = true;
-        navigate(SESSION_EXPIRED_PATH);
-      }
+      redirect();
       throw new SessionExpiredError();
     }
 
@@ -66,5 +70,5 @@ export function createApiFetch({ fetcher, navigate }: ApiFetchDeps) {
 
 export const apiFetch = createApiFetch({
   fetcher: (input, init) => fetch(input, init),
-  navigate: (url) => window.location.assign(url),
+  redirect: redirectToSessionExpired,
 });

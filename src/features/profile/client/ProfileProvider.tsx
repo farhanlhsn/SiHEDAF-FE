@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
 
 import { DataErrorState } from "@/components/ui/DataErrorState";
 import {
@@ -17,7 +16,6 @@ import {
   type DataError,
 } from "@/components/ui/FetchError";
 import { PulseLoader } from "@/components/ui/PulseLoader";
-import { SESSION_EXPIRED_PATH } from "@/features/auth/session/client/ApiFetch";
 
 import type { UserProfile } from "@/features/profile/shared/ProfileTypes";
 
@@ -40,7 +38,6 @@ export function ProfileProvider({
   children: ReactNode;
   initialUser?: UserProfile | null;
 }) {
-  const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(initialUser ?? null);
   const [isLoading, setIsLoading] = useState(!initialUser);
   const [error, setError] = useState<DataError | null>(null);
@@ -51,18 +48,17 @@ export function ProfileProvider({
     const result = await fetchCurrentProfile();
 
     if (!result.success) {
+      // Expired: apiFetch is already sending the reader to /login, so the
+      // loader stays; no error, no second redirect.
+      if (result.status === 401) return;
       setIsLoading(false);
-      if (result.status === 401) {
-        router.replace(SESSION_EXPIRED_PATH);
-        return;
-      }
-      setError(describeCaughtError(undefined, result.status));
+      setError(describeCaughtError(result.cause, result.status));
       return;
     }
 
     setUser(result.user);
     setIsLoading(false);
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     if (initialUser) return;
@@ -73,12 +69,10 @@ export function ProfileProvider({
       if (!isActive) return;
 
       if (!result.success) {
+        // Expired: apiFetch is already sending the reader to /login.
+        if (result.status === 401) return;
         setIsLoading(false);
-        if (result.status === 401) {
-          router.replace(SESSION_EXPIRED_PATH);
-          return;
-        }
-        setError(describeCaughtError(undefined, result.status));
+        setError(describeCaughtError(result.cause, result.status));
         return;
       }
 
@@ -89,7 +83,7 @@ export function ProfileProvider({
     return () => {
       isActive = false;
     };
-  }, [router, initialUser]);
+  }, [initialUser]);
 
   const updateUser = useCallback(
     (changes: Partial<Pick<UserProfile, "fullname">>) => {

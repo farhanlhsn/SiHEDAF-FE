@@ -19,8 +19,9 @@ test("shares backend profile state across dashboard routes", async () => {
 
   assert.match(shell, /ProfileProvider/);
   assert.match(provider, /fetchCurrentProfile/);
-  assert.match(provider, /status === 401/);
-  assert.match(provider, /router\.replace\(SESSION_EXPIRED_PATH\)/);
+  // A 401 is apiFetch's to handle: the provider keeps its loader and stays quiet.
+  assert.match(provider, /if \(result\.status === 401\) return;/);
+  assert.doesNotMatch(provider, /router\.replace\(SESSION_EXPIRED_PATH\)/);
   assert.match(provider, /createContext/);
   assert.match(provider, /useProfile/);
   assert.match(provider, /if \(isLoading\)/);

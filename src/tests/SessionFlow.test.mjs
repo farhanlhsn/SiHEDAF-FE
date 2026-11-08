@@ -37,18 +37,56 @@ test("clients ignore SessionExpiredError silently", async () => {
   }
 });
 
-test("a 401 sends the reader to the expired-session login", async () => {
+test("a 401 sends the reader to the expired-session login through one shared redirect", async () => {
+  // apiFetch is the only client that navigates there, through redirectToSessionExpired.
+  const apiFetch = await readSource("features/auth/session/client/ApiFetch.ts");
+  assert.match(apiFetch, /if \(response\.status === 401\) \{\s*redirect\(\);\s*throw new SessionExpiredError\(\);/);
+  assert.match(apiFetch, /redirect: redirectToSessionExpired,/);
+  assert.doesNotMatch(apiFetch, /hasNavigated|window\.location/);
+
+  // Profile calls go through apiFetch; logout keeps plain fetch (a 401 there is already logged out).
+  const profileClient = await readSource("features/profile/client/services/ProfileClient.ts");
+  assert.match(profileClient, /import \{[^}]*\bapiFetch\b[^}]*\} from "@\/features\/auth\/session\/client\/ApiFetch"/);
+  for (const name of ["fetchCurrentProfile", "updateProfile", "updatePassword"]) {
+    assert.match(
+      profileClient,
+      new RegExp(`export async function ${name}\\([^)]*fetcher: Fetcher = apiFetch,`),
+      name,
+    );
+  }
+  assert.match(profileClient, /export async function logoutAccount\(\s*fetcher: Fetcher = fetch,/);
+
+  // The views stay quiet on 401: no second redirect, no error, no toast.
   for (const file of [
     "features/profile/client/ProfileProvider.tsx",
     "components/dashboard/EditProfileView.tsx",
     "components/dashboard/ProfileView.tsx",
   ]) {
     const source = await readSource(file);
-    assert.match(source, /SESSION_EXPIRED_PATH/, file);
-    assert.doesNotMatch(source, /status === 401\) router\.replace\("\/login"\)/, file);
+    assert.doesNotMatch(source, /SESSION_EXPIRED_PATH/, file);
+    assert.doesNotMatch(source, /router\.replace\("\/login\?/, file);
+    assert.match(source, /if \(result\.status === 401\) return;/, file);
+    assert.match(source, /describeCaughtError\(result\.cause, result\.status\)/, file);
+    assert.doesNotMatch(source, /describeCaughtError\(undefined/, file);
   }
   const profileProvider = await readSource("features/profile/client/ProfileProvider.tsx");
-  assert.doesNotMatch(profileProvider, /replace\("\/login"\)/);
+  assert.doesNotMatch(profileProvider, /replace\("\/login"\)|useRouter/);
+  // The 401 return comes before the loader is dropped, so the loader stays while navigating.
+  const failures = [...profileProvider.matchAll(/if \(!result\.success\) \{([\s\S]*?)\n\s*\}/g)];
+  assert.equal(failures.length, 2);
+  for (const [, body] of failures) {
+    const quiet = body.indexOf("if (result.status === 401) return;");
+    assert.ok(quiet >= 0 && quiet < body.indexOf("setIsLoading(false);"));
+  }
+  // The mutation hooks keep a 401 out of the inline error too.
+  assert.match(
+    await readSource("features/profile/client/hooks/UseUpdateProfile.ts"),
+    /if \(result\.status !== 401\) setError\(result\);/,
+  );
+  assert.match(
+    await readSource("features/profile/client/hooks/UseUpdatePassword.ts"),
+    /if \(!result\.success && result\.status !== 401\) setError\(result\);/,
+  );
 });
 
 test("the dashboard layout checks the session read-only and can reach its redirect", async () => {
