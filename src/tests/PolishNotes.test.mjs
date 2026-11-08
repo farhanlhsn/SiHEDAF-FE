@@ -115,7 +115,6 @@ test("only the secondary error panels announce politely", async () => {
     "components/dashboard/DeviceOfflineCard.tsx",
   ];
   const alert = [
-    "components/dashboard/DashboardOverview.tsx",
     "components/dashboard/HistoryView.tsx",
     "components/dashboard/DoctorReportView.tsx",
     "features/profile/client/ProfileProvider.tsx",
@@ -126,6 +125,13 @@ test("only the secondary error panels announce politely", async () => {
   for (const file of alert) {
     assert.doesNotMatch(await read(file), /live="status"/, `${file} should stay an alert`);
   }
+
+  // The overview's main panel (the last result) stays an alert; only the
+  // chart's panel inside the signal card is polite.
+  const overview = await read("components/dashboard/DashboardOverview.tsx");
+  assert.equal((overview.match(/live="status"/g) ?? []).length, 1);
+  assert.match(overview, /<DataErrorState\s*\{\.\.\.latestError\}\s*className="[^"]*"\s*onRetry=\{reloadLatest\}\s*\/>/);
+  assert.match(overview, /<DataErrorState\s*compact\s*live="status"\s*message=\{signalsError\.message\}/);
 });
 
 test("HttpError has one home", async () => {

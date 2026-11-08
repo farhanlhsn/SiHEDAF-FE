@@ -74,6 +74,10 @@ export function useDashboardOverview() {
   const [latestError, setLatestError] = useState<DataError | null>(null);
   const [latestReloadKey, setLatestReloadKey] = useState(0);
   const [signalsData, setSignalsData] = useState<number[]>([]);
+  // The last /signals read failed: the chart says so instead of "no signal".
+  const [signalsError, setSignalsError] = useState<DataError | null>(null);
+  const [signalsReloadKey, setSignalsReloadKey] = useState(0);
+  const [isSignalsRetrying, setIsSignalsRetrying] = useState(false);
 
   const session = useMonitoringSession({ onFreshResult: setLatestData });
   const { adoptInitial, endedAt: sessionEndedAt, resumeChecked } = session;
@@ -138,11 +142,14 @@ export function useDashboardOverview() {
   }, []);
 
   // /signals only holds COMPLETED recordings, so it changes when a result
-  // arrives, never during a recording: no polling. It is read on mount, on a
-  // range change, on reconnect and when a new result lands.
+  // arrives, never during a recording: no polling. It is read once the first
+  // /latest has answered (it sets the result keys, so a load reads /signals
+  // once), then on a range change, on reconnect, when a new result lands and
+  // on "Coba lagi".
   const resultId = latestData?.id;
   const resultCompletedAt = latestData?.completedAt;
   useEffect(() => {
+    if (!hasLoadedLatest) return;
     // A newer run or unmounting aborts this one, so no late answer lands.
     const run = new AbortController();
 
@@ -152,21 +159,39 @@ export function useDashboardOverview() {
           `/api/v1/measurement/signals?minutes=${monitoringRange}`,
           { signal: requestSignal(run.signal) },
         );
-        const json = await res.json();
+        const json = res.ok ? await res.json() : null;
         if (run.signal.aborted) return;
-        if (json.code === 200 && json.data) {
-          setSignalsData(json.data.rawPpgData || []);
-        }
+        if (json?.code !== 200 || !json.data) throw new HttpError(res.status);
+        setSignalsData(json.data.rawPpgData || []);
+        setSignalsError(null);
       } catch (e) {
         if (run.signal.aborted || e instanceof SessionExpiredError) return;
         console.error("Gagal memuat data sinyal:", e);
+        setSignalsError(
+          describeCaughtError(e, e instanceof HttpError ? e.status : undefined),
+        );
+      } finally {
+        if (!run.signal.aborted) setIsSignalsRetrying(false);
       }
     }
 
     void fetchSignals();
 
     return () => run.abort();
-  }, [monitoringRange, reconnectCount, resultId, resultCompletedAt]);
+  }, [
+    hasLoadedLatest,
+    monitoringRange,
+    reconnectCount,
+    resultId,
+    resultCompletedAt,
+    signalsReloadKey,
+  ]);
+
+  // The error panel stays while retrying, so focus stays on its button.
+  const reloadSignals = useCallback(() => {
+    setIsSignalsRetrying(true);
+    setSignalsReloadKey((key) => key + 1);
+  }, []);
 
   const firstName = user?.fullname ? user.fullname.split(" ")[0] : "Pengguna";
   const result = latestData ? classifyResult(latestData) : "pending";
@@ -220,6 +245,9 @@ export function useDashboardOverview() {
     reloadLatest,
     showFirstRun,
     signalsData,
+    signalsError,
+    reloadSignals,
+    isSignalsRetrying,
     result,
     firstRunGuideSteps,
     isMonitoringActive,

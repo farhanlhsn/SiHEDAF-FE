@@ -52,6 +52,9 @@ export function DashboardOverview() {
     showFirstRun,
     firstRunGuideSteps,
     signalsData,
+    signalsError,
+    reloadSignals,
+    isSignalsRetrying,
     result,
     isMonitoringActive,
     phase,
@@ -369,11 +372,25 @@ export function DashboardOverview() {
               </p>
             </div>
           ) : null}
-          <SignalChart
-            data={signalsData}
-            isActive={isMonitoringActive}
-            rangeMinutes={Number(monitoringRange)}
-          />
+          {/* A failed read is not "no signal": say so, with a retry. */}
+          {signalsError ? (
+            <div className="mt-6 grid min-h-[180px] place-items-center border-y border-primary-900/10 sm:min-h-[200px]">
+              <DataErrorState
+                compact
+                live="status"
+                message={signalsError.message}
+                onRetry={reloadSignals}
+                retrying={isSignalsRetrying}
+                title="Grafik belum bisa dimuat"
+              />
+            </div>
+          ) : (
+            <SignalChart
+              data={signalsData}
+              isActive={isMonitoringActive}
+              rangeMinutes={Number(monitoringRange)}
+            />
+          )}
         </article>
 
         <div className="mt-6 grid items-stretch gap-6 lg:grid-cols-2">
