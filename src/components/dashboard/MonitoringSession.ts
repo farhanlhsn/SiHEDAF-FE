@@ -2,6 +2,7 @@ import { SessionExpiredError } from "@/features/auth/session/client/ApiFetch";
 
 import { classifyResult } from "@/components/dashboard/ResultKind";
 import {
+  AFTER_SESSION_RECHECK_MS,
   answeredAt,
   type DeviceState,
 } from "@/components/dashboard/DeviceState";
@@ -203,17 +204,29 @@ function optionalString(value: unknown) {
 }
 
 /**
- * Reads GET /measurement/history?page=1&limit=1 (newest first, any status):
- * the running session when that newest row is IN_PROGRESS, otherwise null.
- * /latest only returns COMPLETED rows, so this is how a reload resumes.
+ * The newest row of a GET /measurement/history page (newest first, any
+ * status), or null when the answer is not a history page or has no rows.
  */
-export function runningSessionFrom(history: unknown): RunningSession | null {
+export function newestHistoryRow(
+  history: unknown,
+): Record<string, unknown> | null {
   if (!isRecord(history) || history.code !== 200) return null;
   const page = history.data;
   if (!isRecord(page) || !Array.isArray(page.data)) return null;
 
   const row: unknown = page.data[0];
-  if (!isRecord(row)) return null;
+
+  return isRecord(row) ? row : null;
+}
+
+/**
+ * Reads GET /measurement/history?page=1&limit=1 (newest first, any status):
+ * the running session when that newest row is IN_PROGRESS, otherwise null.
+ * /latest only returns COMPLETED rows, so this is how a reload resumes.
+ */
+export function runningSessionFrom(history: unknown): RunningSession | null {
+  const row = newestHistoryRow(history);
+  if (!row) return null;
   if (optionalString(row.status)?.toUpperCase() !== "IN_PROGRESS") return null;
 
   const createdAt = optionalString(row.createdAt);
@@ -400,6 +413,14 @@ export function showsAutoFinishNote(
 }
 
 /**
+ * How far the Date header of an answer (the Next proxy's clock) is ahead of
+ * this device's clock when the answer arrived; 0 without a usable header.
+ */
+export function clockOffset(dateHeader: string | null, localNow: number): number {
+  return answeredAt(dateHeader, localNow) - localNow;
+}
+
+/**
  * A backend time (e.g. a resumed session's requestedAt) on this device's
  * clock: shifted by how far this device's clock is from the Date header of
  * the answer that carried it (the Next proxy's clock), so a phone that runs
@@ -413,7 +434,32 @@ export function toLocalTime(
 ): number | null {
   if (serverTime === null) return null;
 
-  return serverTime - (answeredAt(dateHeader, localNow) - localNow);
+  return serverTime - clockOffset(dateHeader, localNow);
+}
+
+/**
+ * How long ago (ms) the newest history row's session completed, while that is
+ * under 8 s (AFTER_SESSION_RECHECK_MS): a session that ended while the reader
+ * was away from /dashboard still holds the wristband for the rest of the
+ * after-session hold. Its completedAt is moved onto this device's clock with
+ * `offsetMs` (see clockOffset, the same rule as toLocalTime) and compared with
+ * `nowMs` (this device's clock); one in the future (clock skew) counts as
+ * just now. null for any other row: not COMPLETED, no readable completedAt,
+ * or older.
+ */
+export function recentSessionEndAge(
+  row: unknown,
+  offsetMs: number,
+  nowMs: number,
+): number | null {
+  if (!isRecord(row)) return null;
+  if (optionalString(row.status)?.toUpperCase() !== "COMPLETED") return null;
+  const completedAt = parseTime(optionalString(row.completedAt));
+  if (completedAt === null) return null;
+
+  const age = Math.max(0, nowMs - (completedAt - offsetMs));
+
+  return age < AFTER_SESSION_RECHECK_MS ? age : null;
 }
 
 /** A request that timed out or was aborted, as opposed to one that failed. */

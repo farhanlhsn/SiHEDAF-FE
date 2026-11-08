@@ -15,10 +15,13 @@ import {
   afterStopRefused,
   afterToggleTimeout,
   analysisStatusLabel,
+  clockOffset,
   formatElapsed,
   isFreshResult,
   isTimeoutError,
+  newestHistoryRow,
   pollForFreshResult,
+  recentSessionEndAge,
   recordingClock,
   rememberInitial,
   rememberResult,
@@ -33,6 +36,11 @@ import {
   toggleBlock,
   waitFor,
 } from "../components/dashboard/MonitoringSession";
+import {
+  AFTER_SESSION_RECHECK_MS,
+  afterSessionRecheckDelay,
+  sessionHoldsDevice,
+} from "../components/dashboard/DeviceState";
 
 test("polling constants", () => {
   assert.equal(POLL_INTERVAL_MS, 3000);
@@ -714,4 +722,70 @@ test("rememberSession lets the resumed session's own result count as fresh", () 
   assert.equal(known.previousResultId, 499);
   assert.equal(isFreshResult(earlier, known.previousResultId, known), false);
   assert.equal(isFreshResult(own, known.previousResultId, known), true);
+});
+
+test("clockOffset is how far the answer's Date header is ahead of this device's clock", () => {
+  const header = "Sun, 08 Nov 2026 03:00:10 GMT";
+  assert.equal(clockOffset(header, Date.parse("2026-11-08T03:05:10Z")), -300_000, "a phone 5 minutes fast");
+  assert.equal(clockOffset(header, Date.parse("2026-11-08T02:58:10Z")), 120_000, "a phone 2 minutes slow");
+  assert.equal(clockOffset(null, 1_000), 0);
+  assert.equal(clockOffset("nope", 1_000), 0);
+});
+
+test("newestHistoryRow reads the first row of a history page, any status", () => {
+  const row = { id: 511, status: "COMPLETED", completedAt: "2026-11-08T03:00:07Z" };
+  assert.deepEqual(newestHistoryRow(history([row, { id: 510, status: "COMPLETED" }])), row);
+  assert.equal(newestHistoryRow(history([])), null);
+  assert.equal(newestHistoryRow(history([row], 500)), null);
+  assert.equal(newestHistoryRow({ code: 200, data: { data: [null] } }), null);
+  assert.equal(newestHistoryRow("nope"), null);
+});
+
+test("recentSessionEndAge times a session that completed less than 8 s ago", () => {
+  const now = Date.parse("2026-11-08T03:00:10.000Z");
+  const completed = (completedAt: unknown, status: unknown = "COMPLETED") => ({ id: 511, status, completedAt });
+
+  assert.equal(recentSessionEndAge(completed("2026-11-08T03:00:07.000Z"), 0, now), 3_000);
+  assert.equal(recentSessionEndAge(completed("2026-11-08T03:00:07.000Z", "completed"), 0, now), 3_000);
+  assert.equal(recentSessionEndAge(completed("2026-11-08T03:00:02.001Z"), 0, now), 7_999);
+  // At 8 s the hold is over; 9 s certainly.
+  assert.equal(AFTER_SESSION_RECHECK_MS, 8_000);
+  assert.equal(recentSessionEndAge(completed("2026-11-08T03:00:02.000Z"), 0, now), null);
+  assert.equal(recentSessionEndAge(completed("2026-11-08T03:00:01.000Z"), 0, now), null);
+
+  // Only a completed session ended; a running one is resumed instead.
+  for (const status of ["IN_PROGRESS", "FAILED", null]) {
+    assert.equal(recentSessionEndAge(completed("2026-11-08T03:00:07.000Z", status), 0, now), null, String(status));
+  }
+  assert.equal(recentSessionEndAge({ id: 511, completedAt: "2026-11-08T03:00:07.000Z" }, 0, now), null, "no status");
+  // No readable completedAt: no claim.
+  for (const completedAt of [undefined, null, "", "nope", 1_731_034_807_000]) {
+    assert.equal(recentSessionEndAge(completed(completedAt), 0, now), null, String(completedAt));
+  }
+  assert.equal(recentSessionEndAge(null, 0, now), null);
+  assert.equal(recentSessionEndAge("nope", 0, now), null);
+
+  // A completedAt ahead of this clock (skew) counts as just now.
+  assert.equal(recentSessionEndAge(completed("2026-11-08T03:00:12.000Z"), 0, now), 0);
+
+  // Moved onto this device's clock like toLocalTime: a phone 5 minutes fast
+  // reads 03:05:10 while the header says 03:00:10.
+  const fastNow = Date.parse("2026-11-08T03:05:10.000Z");
+  const offset = clockOffset("Sun, 08 Nov 2026 03:00:10 GMT", fastNow);
+  assert.equal(recentSessionEndAge(completed("2026-11-08T03:00:07.000Z"), offset, fastNow), 3_000);
+  assert.equal(recentSessionEndAge(completed("2026-11-08T03:00:07.000Z"), 0, fastNow), null, "without the offset it looks 5 minutes old");
+});
+
+test("a session that completed 3 s before the reload check holds the wristband 6 s more, then is re-checked", () => {
+  // The resume check answers at page time 20 s; the session completed 3 s earlier.
+  const answeredAt = 20_000;
+  const endedAt = answeredAt - 3_000;
+  assert.equal(afterSessionRecheckDelay(endedAt, answeredAt), 6_000);
+  // The first device request went out on mount, before the answer: held.
+  assert.equal(sessionHoldsDevice({ phase: "idle", endedAt, answerRequestedAt: 19_500 }), true);
+  // The re-check request at the remaining time is judged.
+  assert.equal(
+    sessionHoldsDevice({ phase: "idle", endedAt, answerRequestedAt: answeredAt + afterSessionRecheckDelay(endedAt, answeredAt) }),
+    false,
+  );
 });

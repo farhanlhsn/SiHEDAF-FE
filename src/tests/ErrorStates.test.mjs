@@ -186,10 +186,12 @@ test("a session holds the wristband: the overview passes the phase into the devi
   assert.match(session, /markEnded\(\);\s*setPhase\("timeout"\);/);
   assert.match(session, /markEnded\(\);\s*setPhase\("idle"\);\s*toast\.error\(TOGGLE_FAILED\);/);
   assert.match(session, /endedAt,\s*resumeChecked,\s*isTogglingAction,/);
-  // One place sets it, on the monotonic clock, and remembers it for a return to /dashboard.
+  // One place sets it, on the monotonic clock (shifted back for an end that
+  // happened while away, never before a later one already known), and
+  // remembers it for a return to /dashboard.
   assert.match(
     session,
-    /const markEnded = useCallback\(\(\) => \{\s*const at = performance\.now\(\);\s*lastEndedAt = at;\s*setEndedAt\(at\);\s*\}, \[\]\);/,
+    /const markEnded = useCallback\(\(agoMs = 0\) => \{\s*const at = Math\.max\(\s*performance\.now\(\) - agoMs,\s*lastEndedAt \?\? Number\.NEGATIVE_INFINITY,\s*\);\s*lastEndedAt = at;\s*setEndedAt\(at\);\s*\}, \[\]\);/,
   );
   assert.equal((session.match(/setEndedAt\(/g) ?? []).length, 1);
   assert.equal((session.match(/lastEndedAt = /g) ?? []).length, 1);

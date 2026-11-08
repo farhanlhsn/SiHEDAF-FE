@@ -17,9 +17,12 @@ import {
   afterAnalysisTimeout,
   afterStopRefused,
   afterToggleTimeout,
+  clockOffset,
   isFreshResult,
   isTimeoutError,
+  newestHistoryRow,
   pollForFreshResult,
+  recentSessionEndAge,
   recordingClock,
   rememberInitial,
   rememberResult,
@@ -89,33 +92,56 @@ async function fetchLatest(signal: AbortSignal) {
   return json.data ?? null;
 }
 
+/** What the newest history row says about the last session. */
+type NewestSession = {
+  /** The session still recording, or null. */
+  running: RunningSession | null;
+  /** How long ago (ms) the newest session completed, while under 8 s; else null. */
+  endedAgo: number | null;
+};
+
 /**
- * The session still recording, from the newest history row (any status);
- * /latest only ever returns COMPLETED rows. Throws when the read fails.
- * Its start is moved onto this device's clock (see toLocalTime), so the
- * recording clock counts right on a phone whose clock is off.
+ * The newest history row (any status); /latest only ever returns COMPLETED
+ * rows. Throws when the read fails. Its backend times are moved onto this
+ * device's clock with the answer's Date header (see toLocalTime), so the
+ * recording clock counts right, and a just-finished session is timed right,
+ * on a phone whose clock is off.
  */
-async function fetchRunningSession(
-  signal: AbortSignal,
-): Promise<RunningSession | null> {
+async function fetchNewestSession(signal: AbortSignal): Promise<NewestSession> {
   const res = await apiFetch("/api/v1/measurement/history?page=1&limit=1", {
     signal: requestSignal(signal),
   });
   const answeredLocally = Date.now();
-  if (!res.ok) return null;
+  if (!res.ok) return { running: null, endedAgo: null };
 
-  const running = runningSessionFrom(await res.json());
+  const history: unknown = await res.json();
+  const dateHeader = res.headers.get("date");
+  const running = runningSessionFrom(history);
 
-  return running
-    ? {
-        ...running,
-        startedAt: toLocalTime(
-          running.startedAt,
-          res.headers.get("date"),
-          answeredLocally,
-        ),
-      }
-    : null;
+  return {
+    running: running
+      ? {
+          ...running,
+          startedAt: toLocalTime(
+            running.startedAt,
+            dateHeader,
+            answeredLocally,
+          ),
+        }
+      : null,
+    endedAgo: recentSessionEndAge(
+      newestHistoryRow(history),
+      clockOffset(dateHeader, answeredLocally),
+      Date.now(),
+    ),
+  };
+}
+
+/** The session still recording, from the newest history row; throws when the read fails. */
+async function fetchRunningSession(
+  signal: AbortSignal,
+): Promise<RunningSession | null> {
+  return (await fetchNewestSession(signal)).running;
 }
 
 /**
@@ -193,9 +219,15 @@ export function useMonitoringSession({
     watchRef.current = null;
   }, []);
 
-  /** The session ended just now: hold the wristband until it is asked again. */
-  const markEnded = useCallback(() => {
-    const at = performance.now();
+  /**
+   * The session ended `agoMs` ago (just now by default): hold the wristband
+   * until it is asked again. A later end already known is kept.
+   */
+  const markEnded = useCallback((agoMs = 0) => {
+    const at = Math.max(
+      performance.now() - agoMs,
+      lastEndedAt ?? Number.NEGATIVE_INFINITY,
+    );
     lastEndedAt = at;
     setEndedAt(at);
   }, []);
@@ -219,25 +251,32 @@ export function useMonitoringSession({
   );
 
   /**
-   * After a reload: resume a session the newest history row still records.
+   * After a reload or a return to /dashboard: resume a session the newest
+   * history row still records, or keep the after-session hold for one that
+   * completed less than 8 s ago while the reader was elsewhere (its end is
+   * shifted back by its age, so the re-check waits only for the rest).
    * Settles resumeChecked however the read ends, but never after unmount.
    */
   const resumeRunningSession = useCallback(
     (lifetime: AbortSignal) =>
-      fetchRunningSession(lifetime)
+      fetchNewestSession(lifetime)
         // Expired session (redirecting), no network or a timeout: stay idle.
         .catch(() => null)
-        .then((running) => {
+        .then((newest) => {
           if (lifetime.aborted) return;
           setResumeChecked(true);
-          if (!running || userActedRef.current) return;
+          if (!newest || userActedRef.current) return;
+
+          const { running, endedAgo } = newest;
+          if (endedAgo !== null) markEnded(endedAgo);
+          if (!running) return;
 
           // Its own result will count as fresh once the server completes it.
           baselineRef.current = rememberSession(baselineRef.current, running);
           startClock(running.startedAt ?? Date.now());
           setPhase("recording");
         }),
-    [startClock],
+    [markEnded, startClock],
   );
 
   // Created in the effect body so a StrictMode remount gets a live one again.
