@@ -53,8 +53,12 @@ function EditProfileForm({ user }: { user: UserProfile }) {
     if (!result) return;
 
     if (!result.success) {
-      // Expired: apiFetch is already sending the reader to /login.
-      if (result.status === 401) return;
+      // Expired: apiFetch is already sending the reader to /login. Close the
+      // confirm modal so it is not left open if that navigation stalls.
+      if (result.status === 401) {
+        setShowConfirm(false);
+        return;
+      }
       for (const [field, messages] of Object.entries(
         result.fieldErrors ?? {},
       )) {

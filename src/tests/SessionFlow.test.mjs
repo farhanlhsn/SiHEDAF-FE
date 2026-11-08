@@ -69,10 +69,15 @@ test("a 401 sends the reader to the expired-session login through one shared red
     assert.doesNotMatch(source, /describeCaughtError\(undefined/, file);
   }
   for (const file of ["components/dashboard/EditProfileView.tsx", "components/dashboard/ProfileView.tsx"]) {
-    const source = await readSource(file);
-    assert.doesNotMatch(source, /SESSION_EXPIRED_PATH/, file);
-    assert.match(source, /if \(result\.status === 401\) return;/, file);
+    assert.doesNotMatch(await readSource(file), /SESSION_EXPIRED_PATH/, file);
   }
+  assert.match(await readSource("components/dashboard/ProfileView.tsx"), /if \(result\.status === 401\) return;/);
+  // Edit profile closes its confirm modal before going quiet, so it is not
+  // left open if the navigation stalls.
+  assert.match(
+    await readSource("components/dashboard/EditProfileView.tsx"),
+    /if \(result\.status === 401\) \{\s*setShowConfirm\(false\);\s*return;\s*\}\s*for \(const \[field, messages\]/,
+  );
   const profileProvider = await readSource("features/profile/client/ProfileProvider.tsx");
   assert.doesNotMatch(profileProvider, /replace\("\/login"\)|useRouter/);
   // The gate drops its loader on 401 and says it is redirecting (see the
