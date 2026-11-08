@@ -49,6 +49,23 @@ test("connects dashboard profile and monitoring range controls", async () => {
   );
 });
 
+test("/signals is read on mount, range change, reconnect and a new result, never polled", async () => {
+  const hook = await readSource("components/dashboard/hooks/UseDashboardOverview.ts");
+  // The backend only returns COMPLETED sessions: polling while recording is wasted traffic.
+  assert.doesNotMatch(hook, /setInterval/);
+  assert.doesNotMatch(hook, /isMonitoringActive\]/);
+  const start = hook.indexOf("async function fetchSignals()");
+  const end = hook.indexOf("\n  }, [", start);
+  const effect = hook.slice(start, hook.indexOf("\n", end + 1));
+  assert.match(effect, /\}, \[monitoringRange, reconnectCount, resultId, resultCompletedAt\]\);/);
+  assert.match(hook, /const resultId = latestData\?\.id;\s*const resultCompletedAt = latestData\?\.completedAt;/);
+  // A newer run or unmounting aborts the request; a late answer is ignored.
+  assert.match(effect, /signal: requestSignal\(run\.signal\)/);
+  assert.match(effect, /if \(run\.signal\.aborted\) return;\s*if \(json\.code === 200 && json\.data\)/);
+  assert.match(effect, /if \(run\.signal\.aborted \|\| e instanceof SessionExpiredError\) return;/);
+  assert.match(effect, /return \(\) => run\.abort\(\);/);
+});
+
 test("paginates history rows and lets users choose page size", async () => {
   const [historyComponent, historyHook] = await Promise.all([
     readSource("components/dashboard/HistoryView.tsx"),

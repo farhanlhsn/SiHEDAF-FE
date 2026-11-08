@@ -28,6 +28,7 @@ import {
 import { firstRunSteps } from "@/components/dashboard/FirstRun";
 import { classifyResult } from "@/components/dashboard/ResultKind";
 import {
+  requestSignal,
   restartAction,
   toggleBlock,
 } from "@/components/dashboard/MonitoringSession";
@@ -141,33 +142,36 @@ export function useDashboardOverview() {
     setLatestReloadKey((key) => key + 1);
   }, []);
 
+  // /signals only holds COMPLETED recordings, so it changes when a result
+  // arrives, never during a recording: no polling. It is read on mount, on a
+  // range change, on reconnect and when a new result lands.
+  const resultId = latestData?.id;
+  const resultCompletedAt = latestData?.completedAt;
   useEffect(() => {
+    // A newer run or unmounting aborts this one, so no late answer lands.
+    const run = new AbortController();
+
     async function fetchSignals() {
       try {
         const res = await apiFetch(
           `/api/v1/measurement/signals?minutes=${monitoringRange}`,
+          { signal: requestSignal(run.signal) },
         );
         const json = await res.json();
+        if (run.signal.aborted) return;
         if (json.code === 200 && json.data) {
           setSignalsData(json.data.rawPpgData || []);
         }
       } catch (e) {
-        if (e instanceof SessionExpiredError) return;
+        if (run.signal.aborted || e instanceof SessionExpiredError) return;
         console.error("Gagal memuat data sinyal:", e);
       }
     }
 
-    fetchSignals();
+    void fetchSignals();
 
-    let intervalId: NodeJS.Timeout;
-    if (isMonitoringActive) {
-      intervalId = setInterval(fetchSignals, 3000);
-    }
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [monitoringRange, isMonitoringActive]);
+    return () => run.abort();
+  }, [monitoringRange, reconnectCount, resultId, resultCompletedAt]);
 
   const firstName = user?.fullname ? user.fullname.split(" ")[0] : "Pengguna";
   const result = latestData ? classifyResult(latestData) : "pending";
