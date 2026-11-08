@@ -49,10 +49,21 @@ test("a 401 sends the reader to the expired-session login", async () => {
   }
   const profileProvider = await readSource("features/profile/client/ProfileProvider.tsx");
   assert.doesNotMatch(profileProvider, /replace\("\/login"\)/);
+});
 
+test("the dashboard layout checks the session read-only and can reach its redirect", async () => {
   const layout = await readSource("app/(dashboard)/layout.tsx");
-  assert.match(layout, /redirect\(SESSION_EXPIRED_PATH\)/);
+  // A Server Component cannot write cookies: no refresh from the layout.
+  assert.doesNotMatch(layout, /withSessionRefresh/);
+  assert.match(layout, /const session = await readLayoutProfile\(\);/);
+  // Outside any try/catch, so the redirect is not swallowed.
+  assert.doesNotMatch(layout, /\btry\b|\bcatch\b/);
+  assert.match(layout, /if \(!session\.hasSession\) redirect\(SESSION_EXPIRED_PATH\);/);
   assert.doesNotMatch(layout, /redirect\("\/login"\)/);
+  assert.match(layout, /<DashboardShell initialUser=\{session\.user\}>/);
+
+  const helper = await readSource("features/auth/session/server/ReadLayoutProfile.ts");
+  assert.doesNotMatch(helper, /\.set\(|\.delete\(|writeAccessTokenCookie|clearSessionCookies|refreshAccessToken/);
 });
 
 test("login page shows the notice inside Suspense so it stays static", async () => {
