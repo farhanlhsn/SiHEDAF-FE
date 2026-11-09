@@ -1,23 +1,23 @@
 import { InView } from "@/components/landing/InView";
 
-/** "Hampir 50%" of AF cases go undiagnosed → 48 of 100 hollow. */
-const undiagnosedOutOf100 = 48;
+/** About a third of people with AF feel no symptoms (silent AF) → 33 of 100 hollow. */
+const silentOutOf100 = 33;
 
 function UndiagnosedDots() {
   return (
     <div className="mt-8">
       <div
-        aria-label={`Dari 100 kasus AF, sekitar ${undiagnosedOutOf100} tidak terdiagnosis`}
+        aria-label={`Dari 100 penderita AF, sekitar ${silentOutOf100} tidak merasakan gejala`}
         className="grid w-full max-w-[300px] grid-cols-10 gap-[7px]"
         role="img"
       >
         {Array.from({ length: 100 }, (_, index) => {
-          const isUndiagnosed = index >= 100 - undiagnosedOutOf100;
+          const isSilent = index >= 100 - silentOutOf100;
 
           return (
             <span
               className={`pop aspect-square rounded-full ${
-                isUndiagnosed ? "border-2 border-af-500" : "bg-primary-300"
+                isSilent ? "border-2 border-af-500" : "bg-primary-300"
               }`}
               key={index}
               style={{ "--i": index } as React.CSSProperties}
@@ -30,11 +30,11 @@ function UndiagnosedDots() {
         className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[0.875rem] font-medium text-primary-900/80"
       >
         <span className="inline-flex items-center gap-2">
-          <span className="size-3 rounded-full bg-primary-300" /> terdiagnosis
+          <span className="size-3 rounded-full bg-primary-300" /> bergejala
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className="size-3 rounded-full border-2 border-af-500" /> tidak
-          terdiagnosis
+          <span className="size-3 rounded-full border-2 border-af-500" /> tanpa
+          gejala
         </span>
       </p>
     </div>
@@ -52,16 +52,16 @@ function RiskBars() {
     },
     {
       label: "Dengan AF",
-      value: "5–7×",
+      value: "≈5×",
       solid: 5,
-      range: 2,
+      range: 0,
       tone: "bg-af-500",
     },
   ];
 
   return (
     <div
-      aria-label="Risiko stroke: 1 kali tanpa AF, 5 sampai 7 kali dengan AF"
+      aria-label="Risiko stroke: 1 kali tanpa AF, sekitar 5 kali dengan AF"
       className="mt-8 space-y-4"
       role="img"
     >
@@ -78,7 +78,7 @@ function RiskBars() {
               className={`grow-x h-full rounded-l-[4px] ${row.range === 0 ? "rounded-r-[4px]" : ""} ${row.tone}`}
               style={
                 {
-                  width: `${(row.solid / 7) * 100}%`,
+                  width: `${(row.solid / 5) * 100}%`,
                   "--i": index,
                 } as React.CSSProperties
               }
@@ -88,7 +88,7 @@ function RiskBars() {
                 className="grow-x hatch-af ml-[2px] h-full rounded-r-[4px]"
                 style={
                   {
-                    width: `${(row.range / 7) * 100}%`,
+                    width: `${(row.range / 5) * 100}%`,
                     "--i": index + 1,
                   } as React.CSSProperties
                 }
@@ -100,9 +100,6 @@ function RiskBars() {
           </span>
         </div>
       ))}
-      <p className="text-[0.875rem] text-primary-900/75">
-        Garis arsir: rentang 5–7 kali.
-      </p>
     </div>
   );
 }
@@ -110,14 +107,14 @@ function RiskBars() {
 function StrokeShare() {
   return (
     <div
-      aria-label="20 sampai 25 persen stroke iskemik berasal dari AF"
+      aria-label="15 sampai 30 persen stroke iskemik berasal dari AF"
       className="mt-8"
       role="img"
     >
       <span className="relative flex h-4 overflow-hidden rounded-[4px] bg-primary-900/10">
-        <span className="grow-x h-full w-[20%] bg-af-500" />
+        <span className="grow-x h-full w-[15%] bg-af-500" />
         <span
-          className="grow-x hatch-af ml-[2px] h-full w-[5%]"
+          className="grow-x hatch-af ml-[2px] h-full w-[15%]"
           style={{ "--i": 1 } as React.CSSProperties}
         />
       </span>
@@ -134,40 +131,47 @@ function StrokeShare() {
 
 const facts = [
   {
-    figure: "≈ 1 dari 2",
-    text: "kasus AF tidak terdiagnosis karena sering datang tanpa gejala (silent AF).",
+    figure: "≈ 1 dari 3",
+    text: "penderita AF tidak merasakan gejala (silent AF), sehingga bisa lama tidak disadari.",
     chart: <UndiagnosedDots />,
   },
   {
-    figure: "5–7×",
-    text: "lebih tinggi risiko stroke pada penderita AF dibanding populasi umum.",
+    figure: "≈5×",
+    text: "lebih tinggi risiko stroke pada penderita AF dibanding orang tanpa AF.",
     chart: <RiskBars />,
   },
   {
-    figure: "20–25%",
-    text: "stroke iskemik berasal dari gumpalan darah di jantung akibat AF.",
+    figure: "15–30%",
+    text: "stroke iskemik dikaitkan dengan AF, tergantung usia dan cara menghitungnya.",
     chart: <StrokeShare />,
   },
 ];
 
 export function AfFacts() {
   return (
-    <InView className="mt-32 grid gap-16 pl-10 lg:mt-48 lg:grid-cols-3 lg:gap-0 lg:pl-14">
-      {facts.map((fact, index) => (
-        <div
-          className="reveal lg:border-l lg:border-primary-900/10 lg:px-10 lg:first:border-l-0 lg:first:pl-0 lg:last:pr-0"
-          key={fact.figure}
-          style={{ "--i": index } as React.CSSProperties}
-        >
-          <p className="text-[clamp(3rem,5vw,4.75rem)] leading-none font-bold tracking-[-0.055em] text-primary-900 tabular-nums">
-            {fact.figure}
-          </p>
-          <p className="mt-4 max-w-[360px] text-[1.0625rem] leading-[1.5] text-primary-900/80">
-            {fact.text}
-          </p>
-          {fact.chart}
-        </div>
-      ))}
-    </InView>
+    <>
+      <InView className="mt-32 grid gap-16 pl-10 lg:mt-48 lg:grid-cols-3 lg:gap-0 lg:pl-14">
+        {facts.map((fact, index) => (
+          <div
+            className="reveal lg:border-l lg:border-primary-900/10 lg:px-10 lg:first:border-l-0 lg:first:pl-0 lg:last:pr-0"
+            key={fact.figure}
+            style={{ "--i": index } as React.CSSProperties}
+          >
+            <p className="text-[clamp(3rem,5vw,4.75rem)] leading-none font-bold tracking-[-0.055em] text-primary-900 tabular-nums">
+              {fact.figure}
+            </p>
+            <p className="mt-4 max-w-[360px] text-[1.0625rem] leading-[1.5] text-primary-900/80">
+              {fact.text}
+            </p>
+            {fact.chart}
+          </div>
+        ))}
+      </InView>
+      <p className="mt-12 max-w-[640px] pl-10 text-[0.875rem] leading-[1.5] text-primary-900/75 lg:pl-14">
+        Angka-angka ini perkiraan dari literatur, misalnya studi Framingham
+        (Wolf dkk., <cite>Stroke</cite> 1991), dan bisa berbeda antar populasi
+        dan usia.
+      </p>
+    </>
   );
 }

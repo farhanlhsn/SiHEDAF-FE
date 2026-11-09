@@ -12,7 +12,7 @@ const features = [
   {
     title: "Deteksi AI",
     description:
-      "Setiap rekaman diklasifikasikan Normal atau AF oleh model dengan akurasi di atas 90%.",
+      "Setiap rekaman dianalisis oleh model AI dan diklasifikasikan sebagai Normal atau AF.",
   },
   {
     title: "Riwayat di dashboard",

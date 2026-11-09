@@ -280,3 +280,20 @@ test("threads one continuous line through every section", async (context) => {
   assert.match(thread, /passive: true/);
   assert.match(thread, /cancelAnimationFrame/);
 });
+
+test("landing medical figures stay within what the literature supports", async () => {
+  const facts = await readFile(
+    path.join(sourceDirectory, "components/landing/AfFacts.tsx"),
+    "utf8",
+  );
+  const features = await readFile(
+    path.join(sourceDirectory, "components/sections/FeaturesSection.tsx"),
+    "utf8",
+  );
+
+  // Earlier copy ("1 dari 2 tidak terdiagnosis", "5–7×", "20–25%") had no source.
+  assert.doesNotMatch(facts, /1 dari 2|5–7×|20–25%/);
+  assert.match(facts, /Framingham/);
+  // No model accuracy is claimed until validation results are published.
+  assert.doesNotMatch(features, /akurasi/i);
+});
