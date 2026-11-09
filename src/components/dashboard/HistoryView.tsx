@@ -46,6 +46,7 @@ export function HistoryView() {
     isLoading,
     error,
     summaries,
+    hasSummary,
     reload,
     selectedItem,
     setSelectedItem,
@@ -122,7 +123,7 @@ export function HistoryView() {
                       : "text-primary-900"
                 }`}
               >
-                {summary.value}
+                {hasSummary ? summary.value : "—"}
               </p>
               <p className="mt-2 text-[0.875rem] leading-[1.35] font-medium text-primary-900/80 sm:text-[0.9375rem]">
                 {summary.label}
@@ -137,11 +138,15 @@ export function HistoryView() {
 
         <figure className="mt-6">
           <div
-            aria-label={`${normalShare}% ritme normal, ${afShare}% terdeteksi AF`}
+            aria-label={
+              hasSummary
+                ? `${normalShare}% ritme normal, ${afShare}% terdeteksi AF`
+                : "Ringkasan belum tersedia"
+            }
             className="flex h-4 overflow-hidden rounded-full bg-primary-900/10"
             role="img"
           >
-            {total > 0 ? (
+            {hasSummary && total > 0 ? (
               <>
                 <span
                   className="h-full bg-primary-300"
@@ -160,14 +165,14 @@ export function HistoryView() {
                 aria-hidden="true"
                 className="size-3 rounded-full bg-primary-300"
               />
-              Ritme normal {normalShare}%
+              Ritme normal {hasSummary ? `${normalShare}%` : "—"}
             </span>
             <span className="inline-flex items-center gap-2">
               <span
                 aria-hidden="true"
                 className="size-3 rounded-full bg-af-500"
               />
-              Terdeteksi AF {afShare}%
+              Terdeteksi AF {hasSummary ? `${afShare}%` : "—"}
             </span>
           </figcaption>
         </figure>

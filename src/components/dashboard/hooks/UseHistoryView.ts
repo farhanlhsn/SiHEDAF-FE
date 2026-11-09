@@ -41,6 +41,8 @@ export function useHistoryView() {
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
   const [reloadCount, setReloadCount] = useState(0);
 
+  // False until a read has answered: the cards say "—", not a made-up 0.
+  const [hasSummary, setHasSummary] = useState(false);
   const [summaries, setSummaries] = useState([
     { label: "Total jumlah monitoring", value: 0 },
     { label: "Terdeteksi AF", value: 0 },
@@ -80,6 +82,7 @@ export function useHistoryView() {
         if (json.code === 200 && json.data) {
           setHistoryData(json.data.data || []);
           setTotalPages(json.data.metadata?.totalPages || 1);
+          setHasSummary(true);
           setSummaries([
             {
               label: "Total jumlah monitoring",
@@ -123,6 +126,7 @@ export function useHistoryView() {
     isLoading,
     error,
     summaries,
+    hasSummary,
     reload: () => setReloadCount((count) => count + 1),
     selectedItem,
     setSelectedItem,

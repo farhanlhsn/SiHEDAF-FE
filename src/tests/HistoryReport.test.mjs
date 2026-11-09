@@ -301,3 +301,20 @@ test("detail Device ID is the paired number; the doctor report window and Waktu 
   assert.match(report, /formatWib\(item\.completedAt \?\? item\.requestedAt\)/);
   assert.doesNotMatch(report, /formatWib\(item\.requestedAt\)/);
 });
+
+test("loading screens never show invented numbers or empty-state copy", async () => {
+  const hook = await read("components/dashboard/hooks/UseHistoryView.ts");
+  const view = await read("components/dashboard/HistoryView.tsx");
+  const chart = await read("components/dashboard/SignalChart.tsx");
+  const overview = await read("components/dashboard/DashboardOverview.tsx");
+
+  // History summary: "—" until the first answer, never a made-up 0 or 0%.
+  assert.match(hook, /const \[hasSummary, setHasSummary\] = useState\(false\)/);
+  assert.match(view, /hasSummary \? summary\.value : "—"/);
+  assert.match(view, /Ritme normal \{hasSummary \?/);
+  assert.match(view, /Terdeteksi AF \{hasSummary \?/);
+  // Chart and last-result card say they load before they say "nothing here".
+  assert.match(chart, /isLoading\s*\?\s*"Memuat sinyal\.\.\."/);
+  assert.match(overview, /isLoading=\{!hasLoadedSignals\}/);
+  assert.match(overview, /!hasLoadedLatest\s*\?\s*"Memuat riwayat terbaru\.\.\."/);
+});

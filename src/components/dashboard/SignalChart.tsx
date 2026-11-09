@@ -3,6 +3,8 @@ import { tracePath } from "@/components/dashboard/DashboardFormat";
 type SignalChartProps = {
   isActive?: boolean;
   data?: number[];
+  /** No answer yet: say it loads instead of "no signal". */
+  isLoading?: boolean;
   /** Window shown on the chart, in minutes. */
   rangeMinutes?: number;
 };
@@ -22,6 +24,7 @@ function minutesLabel(minutes: number) {
 export function SignalChart({
   isActive = true,
   data,
+  isLoading = false,
   rangeMinutes = 12,
 }: SignalChartProps) {
   const hasData = Boolean(data && data.length > 1);
@@ -62,7 +65,9 @@ export function SignalChart({
         </svg>
         {!hasData ? (
           <p className="absolute inset-0 grid place-items-center text-[0.9375rem] font-medium text-primary-900/75">
-            Belum ada sinyal pada rentang ini.
+            {isLoading
+              ? "Memuat sinyal..."
+              : "Belum ada sinyal pada rentang ini."}
           </p>
         ) : null}
       </div>

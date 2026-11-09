@@ -75,7 +75,7 @@ test("a failed /signals read is kept as an error with a retry, never shown as no
   const hook = await readSource("components/dashboard/hooks/UseDashboardOverview.ts");
   assert.match(hook, /const \[signalsError, setSignalsError\] = useState<DataError \| null>\(null\);/);
   // A non-200 answer is an HttpError; a good answer clears the error.
-  assert.match(hook, /if \(json\?\.code !== 200 \|\| !json\.data\) throw new HttpError\(res\.status\);\s*setSignalsData\(json\.data\.rawPpgData \|\| \[\]\);\s*setSignalsError\(null\);/);
+  assert.match(hook, /if \(json\?\.code !== 200 \|\| !json\.data\) throw new HttpError\(res\.status\);\s*setSignalsData\(json\.data\.rawPpgData \|\| \[\]\);\s*setHasLoadedSignals\(true\);\s*setSignalsError\(null\);/);
   assert.match(
     hook,
     /console\.error\("Gagal memuat data sinyal:", e\);\s*setSignalsError\(\s*describeCaughtError\(e, e instanceof HttpError \? e\.status : undefined\),\s*\);/,

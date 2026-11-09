@@ -76,6 +76,8 @@ export function useDashboardOverview() {
   const [signalsData, setSignalsData] = useState<number[]>([]);
   // The last /signals read failed: the chart says so instead of "no signal".
   const [signalsError, setSignalsError] = useState<DataError | null>(null);
+  // True after the first /signals answer: until then the chart says it loads.
+  const [hasLoadedSignals, setHasLoadedSignals] = useState(false);
   const [signalsReloadKey, setSignalsReloadKey] = useState(0);
   const [isSignalsRetrying, setIsSignalsRetrying] = useState(false);
 
@@ -163,6 +165,7 @@ export function useDashboardOverview() {
         if (run.signal.aborted) return;
         if (json?.code !== 200 || !json.data) throw new HttpError(res.status);
         setSignalsData(json.data.rawPpgData || []);
+        setHasLoadedSignals(true);
         setSignalsError(null);
       } catch (e) {
         if (run.signal.aborted || e instanceof SessionExpiredError) return;
@@ -245,6 +248,7 @@ export function useDashboardOverview() {
     reloadLatest,
     showFirstRun,
     signalsData,
+    hasLoadedSignals,
     signalsError,
     reloadSignals,
     isSignalsRetrying,

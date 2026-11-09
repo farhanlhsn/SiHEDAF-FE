@@ -52,6 +52,7 @@ export function DashboardOverview() {
     showFirstRun,
     firstRunGuideSteps,
     signalsData,
+    hasLoadedSignals,
     signalsError,
     reloadSignals,
     isSignalsRetrying,
@@ -388,6 +389,7 @@ export function DashboardOverview() {
             <SignalChart
               data={signalsData}
               isActive={isMonitoringActive}
+              isLoading={!hasLoadedSignals}
               rangeMinutes={Number(monitoringRange)}
             />
           )}
@@ -447,7 +449,11 @@ export function DashboardOverview() {
               </div>
             ) : (
               <p className="flex-1 py-8 text-center text-[0.9375rem] text-primary-900/75">
-                Belum ada riwayat terbaru.
+                {!hasLoadedLatest
+                  ? "Memuat riwayat terbaru..."
+                  : latestError
+                    ? "Riwayat terbaru belum bisa dimuat."
+                    : "Belum ada riwayat terbaru."}
               </p>
             )}
             <Link

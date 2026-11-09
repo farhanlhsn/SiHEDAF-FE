@@ -72,3 +72,25 @@ test("profile page shows the account", async ({ page }) => {
     page.getByText("Pengguna Demo").locator("visible=true").first(),
   ).toBeVisible();
 });
+
+test("loading screens show dashes and loading copy, not zeros or empty states", async ({
+  page,
+}) => {
+  await signIn(page);
+  await page.route(/\/api\/v1\/measurement\//, () => {
+    // Never answer: the page stays in its loading state.
+  });
+
+  await page.goto("/riwayat");
+  await expect(page.getByText("Memuat riwayat...")).toBeVisible();
+  await expect(page.getByText("Ritme normal —")).toBeVisible();
+  await expect(page.getByText("Terdeteksi AF —")).toBeVisible();
+
+  await page.goto("/dashboard");
+  await expect(page.getByText("Memuat sinyal...")).toBeVisible();
+  await expect(page.getByText("Memuat riwayat terbaru...")).toBeVisible();
+  await expect(
+    page.getByText("Belum ada sinyal pada rentang ini."),
+  ).toBeHidden();
+  await expect(page.getByText("Belum ada riwayat terbaru.")).toBeHidden();
+});
