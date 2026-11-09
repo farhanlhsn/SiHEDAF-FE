@@ -12,16 +12,8 @@ export function HeroSection() {
       className="relative flex min-h-[calc(100svh-76px)] flex-col justify-between gap-12 pt-10 lg:pt-14"
     >
       <div className="mx-auto w-full max-w-[1440px] px-5 lg:px-10">
-        <p
-          className="hero-stagger flex items-center gap-3 text-[0.9375rem] font-medium text-primary-900/80"
-          style={{ "--stagger": 0 } as React.CSSProperties}
-        >
-          <span aria-hidden="true" className="live-dot" />
-          Deteksi dini risiko stroke dengan AI
-        </p>
-
         <h1
-          className="hero-stagger mt-6 text-[clamp(3.1rem,7.6vw,8rem)] leading-[0.9] tracking-[-0.06em] text-primary-900"
+          className="hero-stagger text-[clamp(3.1rem,7.6vw,8rem)] leading-[0.9] tracking-[-0.06em] text-primary-900"
           id="hero-title"
           style={{ "--stagger": 1 } as React.CSSProperties}
         >

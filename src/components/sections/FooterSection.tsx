@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { InView } from "@/components/landing/InView";
+import { buildSvgPath, rhythmWindow } from "@/components/landing/PulseWaveform";
 import { BrandLogo } from "@/components/ui/BrandLogo";
 
 const footerNavigation = [
@@ -13,6 +15,20 @@ const accountNavigation = [
   { label: "Masuk", href: "/login" },
   { label: "Daftar", href: "/register" },
 ];
+
+const wordmark = "SiHEDAF".split("");
+
+/** Same normal-rhythm strip as the "Bisa bedakan?" comparison, drawn once through the wordmark. */
+const pulsePath = buildSvgPath(
+  rhythmWindow({
+    rhythm: "normal",
+    samples: 420,
+    seed: 21,
+    beats: 7,
+  }).points.map((point) => point.value * 0.92),
+  1000,
+  100,
+);
 
 export function FooterSection() {
   return (
@@ -72,12 +88,42 @@ export function FooterSection() {
           </nav>
         </div>
 
-        <p
-          aria-hidden="true"
-          className="mt-20 -mb-[0.16em] text-[clamp(5rem,23vw,21rem)] leading-[0.8] font-bold tracking-[-0.075em] text-primary-800 select-none"
-        >
-          SiHEDAF
-        </p>
+        <InView className="relative mt-20 -mb-[0.16em]">
+          <p
+            aria-hidden="true"
+            className="text-[clamp(5rem,23vw,21rem)] leading-[0.8] font-bold tracking-[-0.075em] text-primary-700/70 select-none"
+          >
+            {wordmark.map((letter, index) => (
+              <span
+                className="footer-letter"
+                key={`${letter}-${index}`}
+                style={{ "--i": index } as React.CSSProperties}
+              >
+                {letter}
+              </span>
+            ))}
+          </p>
+          <svg
+            aria-hidden="true"
+            className="footer-pulse pointer-events-none absolute inset-x-0 top-[38%] h-[28%] w-full overflow-visible"
+            fill="none"
+            preserveAspectRatio="none"
+            viewBox="0 0 1000 100"
+          >
+            <path
+              className="stroke-primary-300"
+              d={pulsePath}
+              pathLength="1"
+              strokeLinejoin="round"
+              strokeWidth="2.5"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-b from-transparent to-primary-900/70"
+          />
+        </InView>
       </div>
 
       <div className="relative border-t border-white/10 bg-primary-900">

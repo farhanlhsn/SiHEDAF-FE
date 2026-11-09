@@ -72,12 +72,8 @@ export default function OpenGraphImage() {
       </div>
 
       <div style={{ display: "flex", flexDirection: "column" }}>
-        <span style={{ fontSize: 30, color: "#0058c9", fontWeight: 600 }}>
-          Deteksi dini risiko stroke dengan AI
-        </span>
         <span
           style={{
-            marginTop: 18,
             fontSize: 76,
             lineHeight: 1,
             fontWeight: 700,

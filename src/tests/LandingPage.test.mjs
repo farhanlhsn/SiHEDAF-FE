@@ -131,7 +131,6 @@ test("composes the sections in order with the approved story, assets, and anchor
   }
 
   for (const copy of [
-    "Deteksi dini risiko stroke",
     "Jantungmu bisa",
     "berdetak",
     "kacau",
@@ -184,6 +183,9 @@ test("labels demo signals as illustrations and keeps the medical disclaimer", as
 
   assert.match(`${hero}\n${monitor}`, /Ilustrasi sinyal/);
   assert.match(footer, /bukan pengganti diagnosis\s+dokter/);
+  assert.match(footer, /<InView\b/);
+  assert.match(footer, /footer-letter/);
+  assert.match(footer, /footer-pulse/);
 });
 
 test("pauses looping motion offscreen and honours reduced motion", async (context) => {

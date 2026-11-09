@@ -30,12 +30,12 @@ export const metadata: Metadata = {
     type: "website",
     locale: "id_ID",
     siteName: "SiHEDAF",
-    title: "SiHEDAF — Deteksi dini risiko stroke dengan AI",
+    title: "SiHEDAF — Pemantauan irama jantung dari pergelangan tangan",
     description: siteDescription,
   },
   twitter: {
     card: "summary_large_image",
-    title: "SiHEDAF — Deteksi dini risiko stroke dengan AI",
+    title: "SiHEDAF — Pemantauan irama jantung dari pergelangan tangan",
     description: siteDescription,
   },
 };
