@@ -127,7 +127,7 @@ export function NotificationPanel({
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
-    <aside className="h-full w-full overflow-y-auto bg-paper px-6 py-7 xl:min-h-[calc(100dvh-72px)] xl:w-[340px] xl:border-l xl:border-primary-900/10">
+    <aside className="h-full w-full overflow-y-auto bg-white px-6 py-7 xl:min-h-[calc(100dvh-72px)] xl:w-[340px] xl:border-l xl:border-primary-900/15">
       <div className="flex items-center gap-3">
         <button
           aria-label="Sembunyikan notifikasi"

@@ -104,7 +104,7 @@ export function ProfileProvider({
     return (
       <main
         aria-busy="true"
-        className="grid min-h-dvh place-items-center bg-paper px-6"
+        className="grid min-h-dvh place-items-center bg-white px-6"
       >
         <PulseLoader label="Memverifikasi sesi..." />
       </main>
@@ -113,8 +113,8 @@ export function ProfileProvider({
 
   if (sessionExpired) {
     return (
-      <main className="grid min-h-dvh place-items-center bg-paper px-6">
-        <div className="flex w-full max-w-md flex-col items-center gap-5 rounded-[24px] border border-primary-900/10 bg-white p-8 text-center">
+      <main className="grid min-h-dvh place-items-center bg-white px-6">
+        <div className="flex w-full max-w-md flex-col items-center gap-5 rounded-[24px] border border-primary-900/15 bg-white p-8 text-center">
           <p
             className="text-[1rem] leading-[1.55] font-semibold text-primary-900"
             role="status"
@@ -134,8 +134,8 @@ export function ProfileProvider({
 
   if (error || !user) {
     return (
-      <main className="grid min-h-dvh place-items-center bg-paper px-6">
-        <div className="w-full max-w-md rounded-[24px] border border-primary-900/10 bg-white p-8 text-center">
+      <main className="grid min-h-dvh place-items-center bg-white px-6">
+        <div className="w-full max-w-md rounded-[24px] border border-primary-900/15 bg-white p-8 text-center">
           <h1 className="text-[1.5rem] font-bold tracking-[-0.035em] text-primary-900">
             Sesi belum dapat diverifikasi
           </h1>

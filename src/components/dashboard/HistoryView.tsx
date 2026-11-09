@@ -172,7 +172,7 @@ export function HistoryView() {
           </figcaption>
         </figure>
 
-        <article className="mt-10 overflow-hidden rounded-[24px] border border-primary-900/10 bg-white">
+        <article className="mt-10 overflow-hidden rounded-[24px] border border-primary-900/15 bg-white">
           <div className="px-5 py-5 sm:px-7 sm:py-6">
             <h2 className="text-[1.25rem] font-bold tracking-[-0.03em] text-primary-900">
               Daftar Riwayat

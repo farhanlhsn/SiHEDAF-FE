@@ -65,7 +65,7 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
           </button>
         </div>
 
-        <article className="mt-6 rounded-[24px] border border-primary-900/10 bg-white p-6 sm:p-10 print:mt-0 print:rounded-none print:border-0 print:p-0">
+        <article className="mt-6 rounded-[24px] border border-primary-900/15 bg-white p-6 sm:p-10 print:mt-0 print:rounded-none print:border-0 print:p-0">
           <header className="flex flex-wrap items-start justify-between gap-4 border-b border-primary-900/10 pb-6">
             <div>
               <BrandLogo />

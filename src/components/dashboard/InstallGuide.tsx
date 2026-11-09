@@ -18,7 +18,7 @@ export function InstallGuide() {
   if (isStandalone !== false) return null;
 
   return (
-    <article className="mt-6 overflow-hidden rounded-[24px] border border-primary-900/10 bg-white">
+    <article className="mt-6 overflow-hidden rounded-[24px] border border-primary-900/15 bg-white">
       <h2 className="px-6 pt-5 text-[1.25rem] font-bold tracking-[-0.03em] text-primary-900 sm:px-7">
         Pasang SiHEDAF di HP
       </h2>

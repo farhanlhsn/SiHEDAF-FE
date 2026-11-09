@@ -28,7 +28,7 @@ const titles = {
 } as const;
 
 const cardClassName =
-  "mt-10 rounded-[24px] border border-primary-900/10 bg-white px-5 py-6 sm:px-7";
+  "mt-10 rounded-[24px] border border-primary-900/15 bg-white px-5 py-6 sm:px-7";
 const linkClassName =
   "font-semibold text-primary-500 underline underline-offset-4 transition-colors hover:text-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300";
 

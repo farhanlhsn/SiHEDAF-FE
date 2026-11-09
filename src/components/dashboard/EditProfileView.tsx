@@ -86,7 +86,7 @@ function EditProfileForm({ user }: { user: UserProfile }) {
     <>
       <form
         aria-busy={isPending}
-        className="mt-8 rounded-[24px] border border-primary-900/10 bg-white p-6 sm:p-8"
+        className="mt-8 rounded-[24px] border border-primary-900/15 bg-white p-6 sm:p-8"
         onSubmit={handleSubmit(() => setShowConfirm(true))}
       >
         <div className="flex items-center gap-5 border-b border-primary-900/10 pb-6">

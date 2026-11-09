@@ -29,7 +29,7 @@ import { Sparkline } from "@/components/dashboard/Sparkline";
 import { StatusMark } from "@/components/dashboard/StatusMark";
 import { useDashboardOverview } from "@/components/dashboard/hooks/UseDashboardOverview";
 
-const panelClassName = "rounded-[24px] border border-primary-900/10 bg-white";
+const panelClassName = "rounded-[24px] border border-primary-900/15 bg-white";
 const labelClassName = "text-[0.875rem] font-medium text-primary-900/75";
 const toggleHintId = "monitoring-toggle-hint";
 const stalledHintId = "monitoring-stalled-hint";

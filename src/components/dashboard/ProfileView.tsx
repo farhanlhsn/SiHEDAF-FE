@@ -179,7 +179,7 @@ export function ProfileView() {
           </div>
         </article>
 
-        <article className="mt-8 overflow-hidden rounded-[24px] border border-primary-900/10 bg-white">
+        <article className="mt-8 overflow-hidden rounded-[24px] border border-primary-900/15 bg-white">
           <div className="flex items-center justify-between gap-3 px-6 py-5 sm:px-7">
             <h2 className="text-[1.25rem] font-bold tracking-[-0.03em] text-primary-900">
               Informasi Profil
@@ -228,7 +228,7 @@ export function ProfileView() {
           </dl>
         </article>
 
-        <article className="mt-6 overflow-hidden rounded-[24px] border border-primary-900/10 bg-white">
+        <article className="mt-6 overflow-hidden rounded-[24px] border border-primary-900/15 bg-white">
           <h2 className="px-6 pt-5 text-[1.25rem] font-bold tracking-[-0.03em] text-primary-900 sm:px-7">
             Tampilan
           </h2>
@@ -239,7 +239,7 @@ export function ProfileView() {
 
         <div className="mt-6 space-y-3">
           <button
-            className="group flex h-16 w-full items-center rounded-[18px] border border-primary-900/10 bg-white px-6 text-[1rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
+            className="group flex h-16 w-full items-center rounded-[18px] border border-primary-900/15 bg-white px-6 text-[1rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300"
             onClick={openPasswordModal}
             type="button"
           >
@@ -254,7 +254,7 @@ export function ProfileView() {
             />
           </button>
           <button
-            className="group flex h-16 w-full items-center rounded-[18px] border border-primary-900/10 bg-white px-6 text-[1rem] font-semibold text-af-700 transition-colors hover:bg-af-50 focus-visible:outline-2 focus-visible:outline-primary-300"
+            className="group flex h-16 w-full items-center rounded-[18px] border border-primary-900/15 bg-white px-6 text-[1rem] font-semibold text-af-700 transition-colors hover:bg-af-50 focus-visible:outline-2 focus-visible:outline-primary-300"
             onClick={() => setActiveModal("logout")}
             type="button"
           >

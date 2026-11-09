@@ -32,10 +32,10 @@ export function DashboardSidebar({
   pathname,
 }: DashboardSidebarProps) {
   return (
-    <div className="flex h-full flex-col bg-paper">
+    <div className="flex h-full flex-col bg-white">
       <Link
         aria-label="SiHEDAF"
-        className={`flex h-[72px] shrink-0 items-center overflow-hidden border-b border-primary-900/10 ${
+        className={`flex h-[72px] shrink-0 items-center overflow-hidden border-b border-primary-900/15 ${
           collapsed ? "justify-center px-3" : "px-6"
         }`}
         href="/dashboard"
@@ -77,7 +77,7 @@ export function DashboardSidebar({
                   aria-current={isActive ? "page" : undefined}
                   className={`group flex h-14 items-center rounded-[14px] transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-primary-300 ${
                     collapsed ? "justify-center px-0" : "gap-3.5 px-3"
-                  } ${isActive ? "bg-white" : "hover:bg-paper-deep"}`}
+                  } ${isActive ? "bg-primary-50" : "hover:bg-paper-deep"}`}
                   href={item.href}
                   onClick={onNavigate}
                   title={collapsed ? item.label : undefined}
@@ -86,7 +86,7 @@ export function DashboardSidebar({
                     className={`grid size-9 shrink-0 place-items-center rounded-full border-2 transition-colors duration-200 ${
                       isActive
                         ? "border-primary-900 bg-primary-900 text-white"
-                        : "border-primary-900/20 bg-paper text-primary-900 group-hover:border-primary-900/40"
+                        : "border-primary-900/20 bg-white text-primary-900 group-hover:border-primary-900/40"
                     }`}
                   >
                     <DashboardIcon
