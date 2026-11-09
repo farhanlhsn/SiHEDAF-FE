@@ -133,9 +133,9 @@ test("a device that is still loading is not reported offline", () => {
   // Every device claim follows the one deviceState (loading, error, none…).
   assert.match(overviewHook, /restartAction\(session\.phase, \{\s*device: deviceStatus,/);
   assert.match(overviewHook, /toggleBlock\(session\.phase, \{\s*device: deviceStatus,/);
-  assert.match(overviewHook, /DEVICE_STATUS_LABEL\[deviceStatus\]/);
+  assert.match(overviewHook, /deviceStatusLabel\(deviceStatus, session\.phase\)/);
   assert.match(overview, /\{deviceStatusLabel\}/);
-  assert.doesNotMatch(overview, /"Memuat\.\.\."/, "the status value comes from DEVICE_STATUS_LABEL");
+  assert.doesNotMatch(overview, /"Memuat\.\.\."/, "the status value comes from deviceStatusLabel");
   assert.doesNotMatch(overview, /deviceData\?\.status/);
 });
 
@@ -197,8 +197,27 @@ test("a reload resumes a running session from the newest history row", () => {
   assert.match(sessionHook, /runningSessionFrom\(/);
   assert.match(sessionHook, /rememberSession\(baselineRef\.current, running\)/);
   // Ignored once the user started or stopped meanwhile; never after unmount.
-  assert.match(sessionHook, /if \(lifetime\.aborted \|\| !running \|\| userActedRef\.current\) return;/);
+  assert.match(sessionHook, /if \(lifetime\.aborted\) return;\s*setResumeChecked\(true\);\s*if \(!newest \|\| userActedRef\.current\) return;/);
+  assert.match(sessionHook, /if \(!running\) return;\s*\/\/[^\n]*\n\s*baselineRef\.current = rememberSession\(baselineRef\.current, running\);/);
   assert.match(sessionHook, /void resumeRunningSession\(lifetime\.signal\);/);
+});
+
+test("the reload check reports when it finished, in any way, and never after unmount", () => {
+  assert.match(sessionHook, /const \[resumeChecked, setResumeChecked\] = useState\(false\);/);
+  const start = sessionHook.indexOf("const resumeRunningSession = useCallback(");
+  const body = sessionHook.slice(start, sessionHook.indexOf("[markEnded, startClock],", start));
+  // A failed or timed-out read reaches the same line as an answer.
+  assert.match(body, /fetchNewestSession\(lifetime\)\s*\/\/[^\n]*\n\s*\.catch\(\(\) => null\)\s*\.then\(\(newest\) => \{\s*if \(lifetime\.aborted\) return;\s*setResumeChecked\(true\);/);
+  assert.equal((sessionHook.match(/setResumeChecked\(/g) ?? []).length, 1);
+  assert.match(sessionHook, /endedAt,\s*resumeChecked,\s*isTogglingAction,/);
+});
+
+test("until the reload check finished the overview does not judge the wristband", () => {
+  assert.match(overviewHook, /const \{ adoptInitial, endedAt: sessionEndedAt, resumeChecked \} = session;/);
+  assert.match(
+    overviewHook,
+    /deviceState\(\{[\s\S]*?sessionActive: sessionHoldsDevice\(\{[\s\S]*?\}\),\s*resumeChecked,\s*\}\);/,
+  );
 });
 
 test("a refused start gets a fixed wristband hint and no server text reaches a toast", () => {
@@ -272,16 +291,47 @@ test("an analysis that timed out checks the newest history row before reporting 
   assert.match(body, /\}\s*if \(isCancelled\(\)\) return;\s*pollRef\.current = null;\s*if \(afterAnalysisTimeout\(running\)/);
   assert.match(
     body,
-    /afterAnalysisTimeout\(running\) === "recording" && running\) \{\s*baselineRef\.current = rememberSession\(baselineRef\.current, running\);\s*setIsModalOpen\(false\);\s*beginRecording\(running\.startedAt \?\? Date\.now\(\)\);\s*toast\.error\(TOGGLE_ERROR\);\s*\} else \{\s*setEndedAt\(Date\.now\(\)\);\s*setPhase\("timeout"\);\s*setModalView\("timeout"\);/,
+    /afterAnalysisTimeout\(running\) === "recording" && running\) \{\s*baselineRef\.current = rememberSession\(baselineRef\.current, running\);\s*setIsModalOpen\(false\);\s*beginRecording\(running\.startedAt \?\? Date\.now\(\)\);\s*toast\.error\(TOGGLE_ERROR\);\s*\} else \{\s*markEnded\(\);\s*setPhase\("timeout"\);\s*setModalView\("timeout"\);/,
   );
 });
 
 test("a resumed session's start is counted on this device's clock via the Date header", () => {
-  const start = sessionHook.indexOf("async function fetchRunningSession(");
+  const start = sessionHook.indexOf("async function fetchNewestSession(");
   const body = sessionHook.slice(start, sessionHook.indexOf("\n}\n", start));
   assert.match(body, /const answeredLocally = Date\.now\(\);/);
+  assert.match(body, /const dateHeader = res\.headers\.get\("date"\);/);
   assert.match(
     body,
-    /startedAt: toLocalTime\(\s*running\.startedAt,\s*res\.headers\.get\("date"\),\s*answeredLocally,\s*\)/,
+    /startedAt: toLocalTime\(\s*running\.startedAt,\s*dateHeader,\s*answeredLocally,\s*\)/,
+  );
+  // The other callers only need the running session.
+  assert.match(
+    sessionHook,
+    /async function fetchRunningSession\(\s*signal: AbortSignal,\s*\): Promise<RunningSession \| null> \{\s*return \(await fetchNewestSession\(signal\)\)\.running;\s*\}/,
+  );
+});
+
+test("a session that completed less than 8 s before the resume check keeps the after-session hold", () => {
+  // The newest row's completedAt goes onto this device's clock with the same
+  // Date-header offset as a resumed start.
+  const start = sessionHook.indexOf("async function fetchNewestSession(");
+  const body = sessionHook.slice(start, sessionHook.indexOf("\n}\n", start));
+  assert.match(
+    body,
+    /endedAgo: recentSessionEndAge\(\s*newestHistoryRow\(history\),\s*clockOffset\(dateHeader, answeredLocally\),\s*Date\.now\(\),\s*\)/,
+  );
+  // Unless the user already acted, the end is shifted back by its age; the
+  // overview's timer then waits only for the rest of the 9 s.
+  assert.match(
+    sessionHook,
+    /if \(!newest \|\| userActedRef\.current\) return;\s*const \{ running, endedAgo \} = newest;\s*if \(endedAgo !== null\) markEnded\(endedAgo\);\s*if \(!running\) return;/,
+  );
+  assert.match(
+    sessionHook,
+    /const markEnded = useCallback\(\(agoMs = 0\) => \{\s*const at = Math\.max\(\s*performance\.now\(\) - agoMs,\s*lastEndedAt \?\? Number\.NEGATIVE_INFINITY,\s*\);\s*lastEndedAt = at;\s*setEndedAt\(at\);\s*\}, \[\]\);/,
+  );
+  assert.match(
+    overviewHook,
+    /afterSessionRecheckDelay\(sessionEndedAt, performance\.now\(\)\)/,
   );
 });

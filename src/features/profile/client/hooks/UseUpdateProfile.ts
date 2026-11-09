@@ -29,7 +29,8 @@ export function useUpdateProfile() {
       try {
         const result = await updateProfile(input);
         if (!result.success) {
-          setError(result);
+          // Expired: apiFetch is already sending the reader to /login.
+          if (result.status !== 401) setError(result);
         } else {
           updateUser({ fullname: input.fullname });
         }

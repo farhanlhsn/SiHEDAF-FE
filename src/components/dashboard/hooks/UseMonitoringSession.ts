@@ -17,9 +17,12 @@ import {
   afterAnalysisTimeout,
   afterStopRefused,
   afterToggleTimeout,
+  clockOffset,
   isFreshResult,
   isTimeoutError,
+  newestHistoryRow,
   pollForFreshResult,
+  recentSessionEndAge,
   recordingClock,
   rememberInitial,
   rememberResult,
@@ -36,6 +39,7 @@ import {
   type ResultModalView,
   type RunningSession,
 } from "@/components/dashboard/MonitoringSession";
+import { rememberedSessionEnd } from "@/components/dashboard/DeviceState";
 import type { MeasurementData } from "@/components/dashboard/hooks/UseDashboardOverview";
 
 type UseMonitoringSessionOptions = {
@@ -53,6 +57,13 @@ const TOGGLE_ERROR =
   "Terjadi kesalahan saat mengubah status monitoring. Coba lagi.";
 const START_REFUSED =
   "Wristband belum siap untuk merekam. Pastikan wristband menyala, terhubung ke internet, dan tidak sedang merekam, lalu coba lagi.";
+
+/**
+ * When the last session in this page life ended (monotonic page clock).
+ * Written only when a session ends, so leaving /dashboard and coming back
+ * keeps the after-session hold on the wristband; a full reload starts fresh.
+ */
+let lastEndedAt: number | null = null;
 
 /** Start or stop a session; throws on network errors and timeouts. */
 async function postMeasurement(
@@ -81,33 +92,56 @@ async function fetchLatest(signal: AbortSignal) {
   return json.data ?? null;
 }
 
+/** What the newest history row says about the last session. */
+type NewestSession = {
+  /** The session still recording, or null. */
+  running: RunningSession | null;
+  /** How long ago (ms) the newest session completed, while under 8 s; else null. */
+  endedAgo: number | null;
+};
+
 /**
- * The session still recording, from the newest history row (any status);
- * /latest only ever returns COMPLETED rows. Throws when the read fails.
- * Its start is moved onto this device's clock (see toLocalTime), so the
- * recording clock counts right on a phone whose clock is off.
+ * The newest history row (any status); /latest only ever returns COMPLETED
+ * rows. Throws when the read fails. Its backend times are moved onto this
+ * device's clock with the answer's Date header (see toLocalTime), so the
+ * recording clock counts right, and a just-finished session is timed right,
+ * on a phone whose clock is off.
  */
-async function fetchRunningSession(
-  signal: AbortSignal,
-): Promise<RunningSession | null> {
+async function fetchNewestSession(signal: AbortSignal): Promise<NewestSession> {
   const res = await apiFetch("/api/v1/measurement/history?page=1&limit=1", {
     signal: requestSignal(signal),
   });
   const answeredLocally = Date.now();
-  if (!res.ok) return null;
+  if (!res.ok) return { running: null, endedAgo: null };
 
-  const running = runningSessionFrom(await res.json());
+  const history: unknown = await res.json();
+  const dateHeader = res.headers.get("date");
+  const running = runningSessionFrom(history);
 
-  return running
-    ? {
-        ...running,
-        startedAt: toLocalTime(
-          running.startedAt,
-          res.headers.get("date"),
-          answeredLocally,
-        ),
-      }
-    : null;
+  return {
+    running: running
+      ? {
+          ...running,
+          startedAt: toLocalTime(
+            running.startedAt,
+            dateHeader,
+            answeredLocally,
+          ),
+        }
+      : null,
+    endedAgo: recentSessionEndAge(
+      newestHistoryRow(history),
+      clockOffset(dateHeader, answeredLocally),
+      Date.now(),
+    ),
+  };
+}
+
+/** The session still recording, from the newest history row; throws when the read fails. */
+async function fetchRunningSession(
+  signal: AbortSignal,
+): Promise<RunningSession | null> {
+  return (await fetchNewestSession(signal)).running;
 }
 
 /**
@@ -148,9 +182,16 @@ export function useMonitoringSession({
   const [isTogglingAction, setIsTogglingAction] = useState(false);
   // The shown result ended without Stop: the wristband finished after 3 minutes.
   const [autoFinished, setAutoFinished] = useState(false);
-  // When the last session on this page ended (this device's clock): the
-  // wristband is judged again only by a device answer asked for 8 s later.
-  const [endedAt, setEndedAt] = useState<number | null>(null);
+  // When the last session ended (monotonic page clock, kept across a visit to
+  // another dashboard page): the wristband is judged again only by a device
+  // answer asked for 8 s later.
+  const [endedAt, setEndedAt] = useState<number | null>(() =>
+    rememberedSessionEnd(lastEndedAt, performance.now()),
+  );
+  // The reload check (is a session still recording?) has finished in any way:
+  // resumed, nothing running, failed or timed out. Until then the wristband
+  // is not judged (its lastSeen is frozen while it records).
+  const [resumeChecked, setResumeChecked] = useState(false);
 
   const baselineRef = useRef<ResultBaseline>(EMPTY_BASELINE);
   // The running session's start (this device's clock), for the auto-finish note.
@@ -178,6 +219,19 @@ export function useMonitoringSession({
     watchRef.current = null;
   }, []);
 
+  /**
+   * The session ended `agoMs` ago (just now by default): hold the wristband
+   * until it is asked again. A later end already known is kept.
+   */
+  const markEnded = useCallback((agoMs = 0) => {
+    const at = Math.max(
+      performance.now() - agoMs,
+      lastEndedAt ?? Number.NEGATIVE_INFINITY,
+    );
+    lastEndedAt = at;
+    setEndedAt(at);
+  }, []);
+
   /** Start the recording clock at `startedAtMs` (this device's clock). */
   const startClock = useCallback((startedAtMs: number) => {
     startedAtRef.current = startedAtMs;
@@ -196,22 +250,34 @@ export function useMonitoringSession({
     [],
   );
 
-  /** After a reload: resume a session the newest history row still records. */
-  const resumeRunningSession = useCallback(async (lifetime: AbortSignal) => {
-    let running: RunningSession | null;
-    try {
-      running = await fetchRunningSession(lifetime);
-    } catch {
-      // Expired session (redirecting), no network or a timeout: stay idle.
-      return;
-    }
-    if (lifetime.aborted || !running || userActedRef.current) return;
+  /**
+   * After a reload or a return to /dashboard: resume a session the newest
+   * history row still records, or keep the after-session hold for one that
+   * completed less than 8 s ago while the reader was elsewhere (its end is
+   * shifted back by its age, so the re-check waits only for the rest).
+   * Settles resumeChecked however the read ends, but never after unmount.
+   */
+  const resumeRunningSession = useCallback(
+    (lifetime: AbortSignal) =>
+      fetchNewestSession(lifetime)
+        // Expired session (redirecting), no network or a timeout: stay idle.
+        .catch(() => null)
+        .then((newest) => {
+          if (lifetime.aborted) return;
+          setResumeChecked(true);
+          if (!newest || userActedRef.current) return;
 
-    // Its own result will count as fresh once the server completes it.
-    baselineRef.current = rememberSession(baselineRef.current, running);
-    startClock(running.startedAt ?? Date.now());
-    setPhase("recording");
-  }, [startClock]);
+          const { running, endedAgo } = newest;
+          if (endedAgo !== null) markEnded(endedAgo);
+          if (!running) return;
+
+          // Its own result will count as fresh once the server completes it.
+          baselineRef.current = rememberSession(baselineRef.current, running);
+          startClock(running.startedAt ?? Date.now());
+          setPhase("recording");
+        }),
+    [markEnded, startClock],
+  );
 
   // Created in the effect body so a StrictMode remount gets a live one again.
   useEffect(() => {
@@ -265,13 +331,13 @@ export function useMonitoringSession({
         automatic &&
         showsAutoFinishNote(data, started === null ? null : Date.now() - started);
       setAutoFinished(note);
-      setEndedAt(Date.now());
+      markEnded();
       setPhase("result");
       setModalView("result");
       // After Stop the modal is open already, or the reader closed it on purpose.
       if (automatic) setIsModalOpen(true);
     },
-    [],
+    [markEnded],
   );
 
   const beginRecording = useCallback(
@@ -331,12 +397,12 @@ export function useMonitoringSession({
         beginRecording(running.startedAt ?? Date.now());
         toast.error(TOGGLE_ERROR);
       } else {
-        setEndedAt(Date.now());
+        markEnded();
         setPhase("timeout");
         setModalView("timeout");
       }
     },
-    [beginRecording, cancelPolling, isFreshNow, showResult],
+    [beginRecording, cancelPolling, isFreshNow, markEnded, showResult],
   );
 
   // The recording watch runs only while recording with no start/stop in
@@ -432,12 +498,12 @@ export function useMonitoringSession({
         showResult(next.data, { automatic: true });
       } else {
         cancelPolling();
-        setEndedAt(Date.now());
+        markEnded();
         setPhase("idle");
         toast.error(TOGGLE_FAILED);
       }
     },
-    [cancelPolling, isFreshNow, showResult],
+    [cancelPolling, isFreshNow, markEnded, showResult],
   );
 
   const toggle = useCallback(
@@ -516,6 +582,7 @@ export function useMonitoringSession({
     clock,
     autoFinished,
     endedAt,
+    resumeChecked,
     isTogglingAction,
     isModalOpen,
     modalView,

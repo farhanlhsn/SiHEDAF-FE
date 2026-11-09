@@ -15,6 +15,10 @@ import {
   RESULT_COPY,
 } from "@/components/dashboard/ResultKind";
 import { HistoryDetailModal } from "@/components/dashboard/HistoryDetailModal";
+import {
+  dateFilterNote,
+  SUMMARY_COMPUTED_NOTE,
+} from "@/components/dashboard/HistoryNotes";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { Sparkline } from "@/components/dashboard/Sparkline";
 import { StatusMark } from "@/components/dashboard/StatusMark";
@@ -57,6 +61,9 @@ export function HistoryView() {
     setCurrentPage(1);
   }
 
+  const filterNote = dateRange?.from
+    ? dateFilterNote(-dateRange.from.getTimezoneOffset())
+    : null;
   const [total, afCount, normalCount] = summaries.map(
     (summary) => summary.value,
   );
@@ -85,6 +92,11 @@ export function HistoryView() {
             </Link>
           </div>
         </div>
+        {filterNote ? (
+          <p className="mt-3 max-w-[640px] text-[0.875rem] leading-[1.5] text-primary-900/80">
+            {filterNote}
+          </p>
+        ) : null}
 
         <h2 className="mt-10 text-[1.0625rem] font-bold text-primary-900">
           Ringkasan sepanjang waktu
@@ -118,6 +130,10 @@ export function HistoryView() {
             </div>
           ))}
         </div>
+
+        <p className="mt-3 max-w-[640px] text-[0.875rem] leading-[1.5] text-primary-900/80">
+          {SUMMARY_COMPUTED_NOTE}
+        </p>
 
         <figure className="mt-6">
           <div

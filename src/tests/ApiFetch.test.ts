@@ -7,6 +7,16 @@ import {
   SessionExpiredError,
   createApiFetch,
 } from "../features/auth/session/client/ApiFetch";
+import { createSessionExpiredRedirect } from "../features/auth/session/client/SessionExpiredRedirect";
+
+/** The app's redirect guard on a dashboard page, recording where it went. */
+function redirectInto(navigated: string[]) {
+  return createSessionExpiredRedirect({
+    navigate: (url) => navigated.push(url),
+    currentPath: () => "/dashboard",
+    onPageShow: () => {},
+  });
+}
 
 test("returns non-401 responses untouched", async () => {
   const navigated: string[] = [];
@@ -15,7 +25,7 @@ test("returns non-401 responses untouched", async () => {
   const responses = [ok, bad];
   const apiFetch = createApiFetch({
     fetcher: async () => responses.shift() as Response,
-    navigate: (url) => navigated.push(url),
+    redirect: redirectInto(navigated),
   });
 
   assert.equal(await apiFetch("/api/v1/x"), ok);
@@ -27,7 +37,7 @@ test("redirects once and throws on 401", async () => {
   const navigated: string[] = [];
   const apiFetch = createApiFetch({
     fetcher: async () => new Response("{}", { status: 401 }),
-    navigate: (url) => navigated.push(url),
+    redirect: redirectInto(navigated),
   });
 
   for (let i = 0; i < 3; i += 1) {
@@ -44,7 +54,7 @@ test("wraps a failed fetch in NetworkError", async () => {
     fetcher: async () => {
       throw failure;
     },
-    navigate: (url) => navigated.push(url),
+    redirect: redirectInto(navigated),
   });
 
   await assert.rejects(
@@ -61,7 +71,7 @@ test("lets aborts and timeouts through untouched", async () => {
       fetcher: async () => {
         throw failure;
       },
-      navigate: () => {},
+      redirect: () => {},
     });
 
     await assert.rejects(

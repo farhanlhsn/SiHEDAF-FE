@@ -222,16 +222,6 @@ footer[id] {
   }
 }
 
-@keyframes signal-draw {
-  from {
-    stroke-dashoffset: 1800;
-  }
-
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
 @keyframes stagger-enter {
   from {
     opacity: 0;
@@ -315,12 +305,6 @@ footer[id] {
       animation-timeline: view();
     }
   }
-}
-
-.signal-draw {
-  stroke-dasharray: 1800;
-  stroke-dashoffset: 1800;
-  animation: signal-draw 1.35s cubic-bezier(0.22, 1, 0.36, 1) 120ms forwards;
 }
 
 .stagger-item {
@@ -645,32 +629,6 @@ footer[id] {
   box-shadow: inset 0 0 0 1px rgb(255 69 114 / 0.6);
 }
 
-/* Dashboard monitor: a sweep head passes over the live PPG trace. */
-.monitor-sweep {
-  position: absolute;
-  inset-block: 0;
-  left: 0;
-  width: 100%;
-  background: linear-gradient(
-    to right,
-    transparent calc(100% - 96px),
-    rgb(0 110 251 / 0.12) calc(100% - 2px),
-    #006efb calc(100% - 2px)
-  );
-  pointer-events: none;
-  animation: monitor-sweep 3.2s linear infinite;
-}
-
-@keyframes monitor-sweep {
-  from {
-    transform: translateX(-100%);
-  }
-
-  to {
-    transform: translateX(0);
-  }
-}
-
 /* Loading: a short signal travels along a PPG trace. */
 .pulse-loader-track,
 .pulse-loader-line {
@@ -794,10 +752,6 @@ footer[id] {
   .watch-float,
   .header-bar {
     animation: none !important;
-  }
-
-  .monitor-sweep {
-    display: none;
   }
 
   .pulse-loader-line,

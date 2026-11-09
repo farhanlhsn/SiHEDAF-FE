@@ -61,19 +61,33 @@ test("fetches once for an empty range", async () => {
   assert.deepEqual(report.summary, { total: 0, af: 0, flutter: 0, normal: 0, other: 0 });
 });
 
-test("keeps AF and AFL results, newest first, undated last", async () => {
+test("keeps AF and AFL results, newest first", async () => {
   const { fetchPage } = recorder(() => ({
     items: [
-      normal(1, { requestedAt: "2026-11-03T08:00:00Z" }),
-      af(2, { requestedAt: "2026-11-01T08:00:00Z" }),
-      af(3),
-      flutter(4, { requestedAt: "2026-11-05T08:00:00Z" }),
-      done({ id: 5, requestedAt: "2026-11-04T08:00:00Z" }),
+      normal(1, { completedAt: "2026-11-03T08:00:00Z" }),
+      af(2, { completedAt: "2026-11-01T08:00:00Z" }),
+      af(3, { completedAt: "2026-10-20T08:00:00Z" }),
+      flutter(4, { completedAt: "2026-11-05T08:00:00Z" }),
+      done({ id: 5, completedAt: "2026-11-04T08:00:00Z" }),
     ],
     totalPages: 1,
   }));
   const report = await collectReport(fetchPage, range);
   assert.deepEqual(report.afEvents.map((e) => e.id), [4, 2, 3]);
+});
+
+test("orders events by completedAt, the time the table shows, not by requestedAt", async () => {
+  const { fetchPage } = recorder(() => ({
+    items: [
+      // Requested first but finished last: it is the newest event.
+      af(1, { requestedAt: "2026-11-01T08:00:00Z", completedAt: "2026-11-04T08:00:00Z" }),
+      af(2, { requestedAt: "2026-11-03T08:00:00Z", completedAt: "2026-11-02T08:00:00Z" }),
+      af(3, { requestedAt: "2026-11-05T12:00:00Z", completedAt: "2026-11-03T12:00:00Z" }),
+    ],
+    totalPages: 1,
+  }));
+  const report = await collectReport(fetchPage, range);
+  assert.deepEqual(report.afEvents.map((e) => e.id), [1, 3, 2]);
 });
 
 test("queries from the day before the period through its last day", async () => {
@@ -166,8 +180,8 @@ test("drops duplicate items across pages", async () => {
   const { fetchPage } = recorder((page) => ({
     items:
       page === 1
-        ? [af(1, { requestedAt: "2026-11-01T08:00:00Z" }), normal(2), af(undefined as unknown as number, { id: undefined })]
-        : [normal(2), af(3, { requestedAt: "2026-11-02T08:00:00Z" }), af(undefined as unknown as number, { id: undefined })],
+        ? [af(1, { completedAt: "2026-11-01T08:00:00Z" }), normal(2), af(undefined as unknown as number, { id: undefined, completedAt: "2026-10-30T08:00:00Z" })]
+        : [normal(2), af(3, { completedAt: "2026-11-02T08:00:00Z" }), af(undefined as unknown as number, { id: undefined, completedAt: "2026-10-30T08:00:00Z" })],
     totalPages: 2,
   }));
   const report = await collectReport(fetchPage, range);

@@ -11,6 +11,7 @@ import {
 import {
   describeCaughtError,
   type DataError,
+  HttpError,
 } from "@/components/ui/FetchError";
 import { useOnlineStatus } from "@/components/ui/hooks/UseOnlineStatus";
 import { useMyDevice } from "@/components/dashboard/hooks/UseMyDevice";
@@ -28,12 +29,6 @@ import {
   type ReportRange,
 } from "@/components/dashboard/ReportRange";
 import { useProfile } from "@/features/profile/client/ProfileProvider";
-
-class HttpError extends Error {
-  constructor(readonly status?: number) {
-    super("Gagal mengambil riwayat.");
-  }
-}
 
 type InitialParams = { from?: string | string[]; to?: string | string[] };
 

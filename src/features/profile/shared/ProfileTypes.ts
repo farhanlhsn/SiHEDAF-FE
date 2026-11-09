@@ -28,6 +28,8 @@ export type ProfileFailure = {
   message: string;
   fieldErrors?: ProfileFieldErrors;
   status?: number;
+  /** What the request threw (no answer at all, for instance); see describeCaughtError. */
+  cause?: unknown;
 };
 
 export type ProfileResponse = ProfileSuccess | ProfileFailure;

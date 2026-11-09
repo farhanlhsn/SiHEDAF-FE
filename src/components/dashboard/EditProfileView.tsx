@@ -10,10 +10,10 @@ import { toast } from "sonner";
 
 import { DashboardModal } from "@/components/dashboard/DashboardModal";
 import { ProfileAvatar } from "@/components/dashboard/ProfileAvatar";
+import { describeCaughtError } from "@/components/ui/FetchError";
 import { PulseLoader } from "@/components/ui/PulseLoader";
 import { useMyDevice } from "@/components/dashboard/hooks/UseMyDevice";
 import { useUpdateProfile } from "@/features/profile/client/hooks/UseUpdateProfile";
-import { SESSION_EXPIRED_PATH } from "@/features/auth/session/client/ApiFetch";
 import { useProfile } from "@/features/profile/client/ProfileProvider";
 import {
   type UpdateProfileRequest,
@@ -53,6 +53,12 @@ function EditProfileForm({ user }: { user: UserProfile }) {
     if (!result) return;
 
     if (!result.success) {
+      // Expired: apiFetch is already sending the reader to /login. Close the
+      // confirm modal so it is not left open if that navigation stalls.
+      if (result.status === 401) {
+        setShowConfirm(false);
+        return;
+      }
       for (const [field, messages] of Object.entries(
         result.fieldErrors ?? {},
       )) {
@@ -60,11 +66,13 @@ function EditProfileForm({ user }: { user: UserProfile }) {
           setError("fullname", { message: messages?.[0], type: "server" });
         }
       }
-      if (result.status === 401) {
-        router.replace(SESSION_EXPIRED_PATH);
-        return;
+      if (result.cause === undefined) {
+        toast.error(result.message);
+      } else {
+        // No answer at all says "Koneksi internet terputus".
+        const failure = describeCaughtError(result.cause, result.status);
+        toast.error(failure.title, { description: failure.message });
       }
-      toast.error(result.message);
       setShowConfirm(false);
       return;
     }

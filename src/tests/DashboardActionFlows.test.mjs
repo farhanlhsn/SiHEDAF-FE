@@ -49,6 +49,57 @@ test("connects dashboard profile and monitoring range controls", async () => {
   );
 });
 
+test("/signals is read once the first /latest answered, then on range change, reconnect, a new result and a retry; never polled", async () => {
+  const hook = await readSource("components/dashboard/hooks/UseDashboardOverview.ts");
+  // The backend only returns COMPLETED sessions: polling while recording is wasted traffic.
+  assert.doesNotMatch(hook, /setInterval/);
+  assert.doesNotMatch(hook, /isMonitoringActive\]/);
+  const start = hook.indexOf("if (!hasLoadedLatest) return;");
+  assert.ok(start > 0, "the signals effect waits for the first /latest");
+  const effect = hook.slice(start, hook.indexOf("\n  ]);", start) + 6);
+  // Waiting for the first /latest (which sets the result keys) makes a load read /signals once.
+  assert.match(hook, /useEffect\(\(\) => \{\s*if \(!hasLoadedLatest\) return;\s*\/\/[^\n]*\n\s*const run = new AbortController\(\);/);
+  assert.match(
+    effect,
+    /\}, \[\s*hasLoadedLatest,\s*monitoringRange,\s*reconnectCount,\s*resultId,\s*resultCompletedAt,\s*signalsReloadKey,\s*\]\);$/,
+  );
+  assert.match(hook, /const resultId = latestData\?\.id;\s*const resultCompletedAt = latestData\?\.completedAt;/);
+  // A newer run or unmounting aborts the request; a late answer is ignored.
+  assert.match(effect, /signal: requestSignal\(run\.signal\)/);
+  assert.match(effect, /const json = res\.ok \? await res\.json\(\) : null;\s*if \(run\.signal\.aborted\) return;/);
+  assert.match(effect, /if \(run\.signal\.aborted \|\| e instanceof SessionExpiredError\) return;/);
+  assert.match(effect, /return \(\) => run\.abort\(\);/);
+});
+
+test("a failed /signals read is kept as an error with a retry, never shown as no signal", async () => {
+  const hook = await readSource("components/dashboard/hooks/UseDashboardOverview.ts");
+  assert.match(hook, /const \[signalsError, setSignalsError\] = useState<DataError \| null>\(null\);/);
+  // A non-200 answer is an HttpError; a good answer clears the error.
+  assert.match(hook, /if \(json\?\.code !== 200 \|\| !json\.data\) throw new HttpError\(res\.status\);\s*setSignalsData\(json\.data\.rawPpgData \|\| \[\]\);\s*setSignalsError\(null\);/);
+  assert.match(
+    hook,
+    /console\.error\("Gagal memuat data sinyal:", e\);\s*setSignalsError\(\s*describeCaughtError\(e, e instanceof HttpError \? e\.status : undefined\),\s*\);/,
+  );
+  // The retry keeps the panel (and focus) until its answer.
+  assert.match(hook, /\} finally \{\s*if \(!run\.signal\.aborted\) setIsSignalsRetrying\(false\);\s*\}/);
+  assert.match(
+    hook,
+    /const reloadSignals = useCallback\(\(\) => \{\s*setIsSignalsRetrying\(true\);\s*setSignalsReloadKey\(\(key\) => key \+ 1\);\s*\}, \[\]\);/,
+  );
+  assert.match(hook, /signalsError,\s*reloadSignals,\s*isSignalsRetrying,/);
+
+  const overview = await readSource("components/dashboard/DashboardOverview.tsx");
+  assert.match(
+    overview,
+    /\{signalsError \? \(\s*<div[^>]*>\s*<DataErrorState\s*compact\s*live="status"\s*message=\{signalsError\.message\}\s*onRetry=\{reloadSignals\}\s*retrying=\{isSignalsRetrying\}\s*title="Grafik belum bisa dimuat"\s*\/>\s*<\/div>\s*\) : \(\s*<SignalChart/,
+  );
+  // The empty-state sentence belongs to the chart, which is not shown on an error.
+  assert.doesNotMatch(overview, /Belum ada sinyal pada rentang ini\./);
+  assert.ok(
+    (await readSource("components/dashboard/SignalChart.tsx")).includes("Belum ada sinyal pada rentang ini."),
+  );
+});
+
 test("paginates history rows and lets users choose page size", async () => {
   const [historyComponent, historyHook] = await Promise.all([
     readSource("components/dashboard/HistoryView.tsx"),

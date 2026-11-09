@@ -1,3 +1,7 @@
+import {
+  apiFetch,
+  SessionExpiredError,
+} from "@/features/auth/session/client/ApiFetch";
 import { AuthResponseSchema } from "@/features/auth/session/shared/SessionSchema";
 import type { AuthResponse } from "@/features/auth/session/shared/SessionTypes";
 import {
@@ -7,11 +11,23 @@ import {
   type UpdateProfileRequest,
 } from "@/features/profile/shared/ProfileSchema";
 import type {
+  ProfileFailure,
   ProfileMutationResponse,
   ProfileResponse,
 } from "@/features/profile/shared/ProfileTypes";
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
+
+/**
+ * A request that threw. An expired session is a 401 (apiFetch is already
+ * sending the reader to /login); anything else keeps what was thrown, so the
+ * caller can tell a dropped connection apart.
+ */
+function thrownFailure(error: unknown, message: string): ProfileFailure {
+  return error instanceof SessionExpiredError
+    ? { success: false, message, status: 401 }
+    : { success: false, message, cause: error };
+}
 
 async function readProfileResponse(
   response: Response,
@@ -52,24 +68,26 @@ async function readMutationResponse(
 }
 
 export async function fetchCurrentProfile(
-  fetcher: Fetcher = fetch,
+  fetcher: Fetcher = apiFetch,
 ): Promise<ProfileResponse> {
+  const fallbackMessage = "Data profil tidak dapat dimuat.";
   try {
     const response = await fetcher("/api/v1/auth/me", {
       method: "GET",
       credentials: "same-origin",
       cache: "no-store",
     });
-    return readProfileResponse(response, "Data profil tidak dapat dimuat.");
-  } catch {
-    return { success: false, message: "Data profil tidak dapat dimuat." };
+    return readProfileResponse(response, fallbackMessage);
+  } catch (error) {
+    return thrownFailure(error, fallbackMessage);
   }
 }
 
 export async function updateProfile(
   input: UpdateProfileRequest,
-  fetcher: Fetcher = fetch,
+  fetcher: Fetcher = apiFetch,
 ): Promise<ProfileMutationResponse> {
+  const fallbackMessage = "Profil tidak dapat diperbarui.";
   try {
     const response = await fetcher("/api/v1/auth/me/update", {
       method: "PUT",
@@ -77,16 +95,17 @@ export async function updateProfile(
       body: JSON.stringify(input),
       credentials: "same-origin",
     });
-    return readMutationResponse(response, "Profil tidak dapat diperbarui.");
-  } catch {
-    return { success: false, message: "Profil tidak dapat diperbarui." };
+    return readMutationResponse(response, fallbackMessage);
+  } catch (error) {
+    return thrownFailure(error, fallbackMessage);
   }
 }
 
 export async function updatePassword(
   input: UpdatePasswordRequest,
-  fetcher: Fetcher = fetch,
+  fetcher: Fetcher = apiFetch,
 ): Promise<ProfileMutationResponse> {
+  const fallbackMessage = "Kata sandi tidak dapat diperbarui.";
   try {
     const response = await fetcher("/api/v1/auth/me/update-password", {
       method: "PATCH",
@@ -94,18 +113,13 @@ export async function updatePassword(
       body: JSON.stringify(input),
       credentials: "same-origin",
     });
-    return readMutationResponse(
-      response,
-      "Kata sandi tidak dapat diperbarui.",
-    );
-  } catch {
-    return {
-      success: false,
-      message: "Kata sandi tidak dapat diperbarui.",
-    };
+    return readMutationResponse(response, fallbackMessage);
+  } catch (error) {
+    return thrownFailure(error, fallbackMessage);
   }
 }
 
+// Plain fetch: a 401 here only means the session was already over.
 export async function logoutAccount(
   fetcher: Fetcher = fetch,
 ): Promise<AuthResponse> {

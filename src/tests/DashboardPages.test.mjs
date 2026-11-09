@@ -125,7 +125,7 @@ test("adds route-entry motion, reduced-motion support, and device navigation", a
   ]);
 
   assert.match(globalStyles, /dashboard-enter/);
-  assert.match(globalStyles, /signal-draw/);
+  assert.doesNotMatch(globalStyles, /signal-draw|monitor-sweep/);
   assert.match(globalStyles, /prefers-reduced-motion/);
   assert.match(deviceForm, /useRouter/);
   assert.match(deviceForm, /router\.push\("\/dashboard"\)/);

@@ -19,6 +19,11 @@ export const DEVICE_REFRESH_MS = 30_000;
  * goes back to its idle poll (every 5 s), which is what updates lastSeen.
  */
 export const AFTER_SESSION_RECHECK_MS = 8_000;
+/**
+ * The overview's re-check fires this long after the end: a second past the
+ * threshold, so the request is surely sent late enough to be judged.
+ */
+export const AFTER_SESSION_RECHECK_DELAY_MS = AFTER_SESSION_RECHECK_MS + 1_000;
 
 type DeviceStateInput = {
   device: { status?: string; lastSeen?: string | null } | null;
@@ -31,6 +36,12 @@ type DeviceStateInput = {
   now: number | null;
   /** A session holds the wristband (see sessionHoldsDevice): it is not judged. */
   sessionActive?: boolean;
+  /**
+   * Whether the page knows if a session is still recording (after a reload,
+   * the newest history row says). Until then the device is not judged: a
+   * recording wristband's lastSeen is frozen, so it would look offline.
+   */
+  resumeChecked?: boolean;
 };
 
 /**
@@ -39,7 +50,8 @@ type DeviceStateInput = {
  * "stale", as the backend's start check sees it. While a session holds the
  * wristband it is "recording": it only polls (and so updates lastSeen) while
  * idle, so during a recording the backend's lastSeen freezes and its sweep may
- * even mark it OFFLINE.
+ * even mark it OFFLINE. Until the page knows whether a session is still
+ * recording (resumeChecked) it is "loading" for the same reason.
  */
 export function deviceState({
   device,
@@ -47,9 +59,10 @@ export function deviceState({
   error,
   now,
   sessionActive = false,
+  resumeChecked = true,
 }: DeviceStateInput): DeviceState {
   if (sessionActive) return "recording";
-  if (isLoading) return "loading";
+  if (isLoading || !resumeChecked) return "loading";
   if (error) return "error";
   if (!device) return "none";
   if (device.status !== "ONLINE") return "offline";
@@ -65,7 +78,8 @@ export function deviceState({
  * nothing: while it records or is analysed, and after it ended until a device
  * answer arrives that was requested at least 8 s after the end (by then the
  * wristband is back on its idle poll). `endedAt` and `answerRequestedAt` are
- * both read from this device's clock.
+ * both read from the monotonic page clock (performance.now()), so a clock
+ * adjustment cannot stretch or cut the hold.
  */
 export function sessionHoldsDevice({
   phase,
@@ -85,6 +99,29 @@ export function sessionHoldsDevice({
     answerRequestedAt === null ||
     answerRequestedAt < endedAt + AFTER_SESSION_RECHECK_MS
   );
+}
+
+/**
+ * How long from `now` until the after-session device re-check is due (never
+ * negative); both times on the monotonic page clock.
+ */
+export function afterSessionRecheckDelay(endedAt: number, now: number): number {
+  return Math.max(0, endedAt + AFTER_SESSION_RECHECK_DELAY_MS - now);
+}
+
+/**
+ * A session end remembered from an earlier visit to /dashboard in this page
+ * life, kept only while its hold can still matter: until 8 s after the end.
+ * Later, any device request the page sends is judged anyway, and a stale end
+ * would only show "recording" while the device loads.
+ */
+export function rememberedSessionEnd(
+  endedAt: number | null,
+  now: number,
+): number | null {
+  return endedAt !== null && now < endedAt + AFTER_SESSION_RECHECK_MS
+    ? endedAt
+    : null;
 }
 
 /**
@@ -109,3 +146,28 @@ export const DEVICE_STATUS_LABEL: Record<DeviceState, string> = {
   error: "Tidak diketahui",
   recording: "Sedang merekam",
 };
+
+/**
+ * The status card value for this moment. A held wristband ("recording") is
+ * recording only while the session records; after it (analysing, a result,
+ * a timeout, a refused Stop) the hold lasts until the wristband is asked
+ * again, and the card must not contradict the signal card.
+ */
+export function deviceStatusLabel(
+  state: DeviceState,
+  phase: MonitoringPhase,
+): string {
+  if (state === "recording" && phase !== "recording") {
+    return "Baru selesai merekam";
+  }
+
+  return DEVICE_STATUS_LABEL[state];
+}
+
+/** Whether the status card shows the live dot: connected, or recording right now. */
+export function deviceStatusLive(
+  state: DeviceState,
+  phase: MonitoringPhase,
+): boolean {
+  return state === "online" || (state === "recording" && phase === "recording");
+}

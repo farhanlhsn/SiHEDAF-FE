@@ -45,6 +45,7 @@ export function DeviceOfflineCard({
     return (
       <div className={cardClassName}>
         <DataErrorState
+          live="status"
           message={`${error.title}. ${error.message}`}
           onRetry={onRetry}
           retrying={refreshing}
@@ -105,9 +106,12 @@ export function DeviceOfflineCard({
       </ol>
       <button
         aria-busy={refreshing || undefined}
-        className="mt-5 inline-flex h-12 items-center justify-center rounded-full border-[1.5px] border-primary-900/20 bg-white px-6 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300 disabled:cursor-wait disabled:border-primary-900/15 disabled:text-primary-900/70 disabled:hover:bg-white"
-        disabled={refreshing}
-        onClick={onRetry}
+        aria-disabled={refreshing || undefined}
+        className="mt-5 inline-flex h-12 items-center justify-center rounded-full border-[1.5px] border-primary-900/20 bg-white px-6 text-[0.9375rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-300 aria-disabled:cursor-wait aria-disabled:border-primary-900/15 aria-disabled:text-primary-900/70 aria-disabled:hover:bg-white"
+        onClick={() => {
+          // aria-disabled keeps focus on the button, so the click is ignored here.
+          if (!refreshing) onRetry();
+        }}
         type="button"
       >
         {refreshing ? "Memeriksa…" : "Periksa lagi"}
