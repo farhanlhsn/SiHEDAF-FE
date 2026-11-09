@@ -118,7 +118,10 @@ test("paginates history rows and lets users choose page size", async () => {
   assert.match(historySource, /type PageItem/);
   assert.match(historySource, /pages\.map/);
   assert.match(historySource, /hiddenOnMobile/);
-  assert.match(historySource, /hidden sm:inline/);
+  // Prev/next keep their word as the accessible name on phones (icon only visually).
+  assert.match(historySource, /sr-only sm:not-sr-only">Sebelumnya</);
+  assert.match(historySource, /sr-only sm:not-sr-only">Selanjutnya</);
+  assert.doesNotMatch(historySource, /aria-label="Halaman (sebelumnya|berikutnya)"/);
   assert.doesNotMatch(historySource, /overflow-x-auto|min-w-\[900px\]/);
 });
 

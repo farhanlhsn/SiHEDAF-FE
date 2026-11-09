@@ -56,6 +56,7 @@ export function DashboardShell({ children, initialUser }: DashboardShellProps) {
           />
 
           <aside
+            aria-label="Menu dashboard"
             className={`print:hidden fixed inset-y-0 left-0 z-40 w-[260px] shrink-0 border-r border-primary-900/15 bg-white transition-[width,transform,box-shadow] duration-300 ease-out lg:sticky lg:top-0 lg:h-dvh lg:translate-x-0 lg:shadow-none ${
               isMobileOpen
                 ? "translate-x-0 shadow-[12px_0_40px_rgba(0,39,88,0.12)]"

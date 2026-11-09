@@ -3,6 +3,8 @@ type TeamCardProps = {
   name: string;
   linkedInLabel?: string;
   imageSrc?: string;
+  /** Load the photo right away; set for the cards that are above the fold. */
+  eager?: boolean;
 };
 
 import Image from "next/image";
@@ -13,6 +15,7 @@ export function TeamCard({
   name,
   linkedInLabel,
   imageSrc,
+  eager = false,
 }: TeamCardProps) {
   const hasLinkedIn = Boolean(linkedInLabel && linkedInLabel.includes("http"));
 
@@ -27,6 +30,7 @@ export function TeamCard({
             alt={name}
             className="object-cover object-center transition-transform duration-700 hover:scale-105"
             fill
+            loading={eager ? "eager" : "lazy"}
             sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1280px) 25vw, 20vw"
             src={imageSrc}
           />

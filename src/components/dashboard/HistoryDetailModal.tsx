@@ -51,7 +51,10 @@ export function HistoryDetailModal({ item, onClose }: HistoryDetailModalProps) {
   const isNeutral = !isAlert && !isNormal;
   const facts = item
     ? [
-        { label: "Waktu", value: formatWib(item.requestedAt) ?? "—" },
+        {
+          label: "Waktu",
+          value: formatWib(item.completedAt ?? item.requestedAt) ?? "—",
+        },
         {
           label: "Durasi rekaman",
           value: recordingDuration(item.ppgResult?.rawPpgData) ?? "—",

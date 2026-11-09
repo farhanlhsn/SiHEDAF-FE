@@ -30,3 +30,22 @@ test("exposes an automatic horizontal ScrollArea component", async () => {
   assert.match(component, /bg-primary-200/);
   assert.doesNotMatch(component, /forceMount/);
 });
+
+test("names the scroll region and only exposes it while the content overflows", async () => {
+  const component = await readFile(
+    path.join(project, "src/components/ui/ScrollArea.tsx"),
+    "utf8",
+  );
+
+  assert.match(component, /new ResizeObserver/);
+  assert.match(component, /new MutationObserver/);
+  assert.match(component, /document\.fonts\?\.ready/);
+  // Rows slide in 5px (stagger-item), which widens the content until the animation ends.
+  assert.match(component, /addEventListener\("animationend", measure\)/);
+  assert.match(component, /scrollWidth - viewport\.clientWidth > 1/);
+  assert.match(component, /role: "region"/);
+  assert.match(component, /tabIndex: 0/);
+  assert.match(component, /\{overflows \? \(\s*<ScrollAreaPrimitive\.Scrollbar/);
+  // aria-label on the bare scrollbar div is not allowed; the viewport region carries the name.
+  assert.doesNotMatch(component, /<ScrollAreaPrimitive\.Scrollbar[^>]*aria-label/);
+});

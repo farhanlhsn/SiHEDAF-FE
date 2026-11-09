@@ -22,15 +22,14 @@ export function ProfileAvatar({
   return (
     <span
       aria-label={profileImage ? `Foto profil ${fullname}` : undefined}
-      className={`grid shrink-0 place-items-center rounded-full border-4 border-white bg-primary-800 bg-cover bg-center font-bold tracking-[-0.02em] text-white ${className}`}
+      className={`grid shrink-0 place-items-center rounded-full border-4 border-white bg-primary-800 bg-cover bg-center font-bold tracking-[-0.02em] text-white ${profileImage ? "" : "before:content-[attr(data-initials)]"} ${className}`}
+      data-initials={profileImage ? undefined : profileInitials(fullname)}
       role={profileImage ? "img" : undefined}
       style={
         profileImage
           ? { backgroundImage: `url("${profileImage.replaceAll('"', "%22")}")` }
           : undefined
       }
-    >
-      {profileImage ? null : profileInitials(fullname)}
-    </span>
+    />
   );
 }

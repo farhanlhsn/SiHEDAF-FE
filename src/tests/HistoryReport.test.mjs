@@ -281,6 +281,12 @@ test("detail Device ID is the paired number; the doctor report window and Waktu 
   assert.match(detail, /\{ label: "Device ID", value: item\.device\?\.deviceNumber \|\| "—" \}/);
   assert.doesNotMatch(detail, /item\.deviceId/);
   assert.match(detail, /reportHref\(\s*rangeEndingOn\(item\.completedAt \?\? item\.requestedAt\),?\s*\)/);
+  assert.match(detail, /label: "Waktu",\s*value: formatWib\(item\.completedAt \?\? item\.requestedAt\)/);
+  assert.doesNotMatch(detail, /formatWib\(item\.requestedAt\)/);
+
+  const list = await read("components/dashboard/HistoryView.tsx");
+  assert.match(list, /const analysedAt = row\.completedAt \?\? row\.requestedAt;/);
+  assert.doesNotMatch(list, /formatWib\(row\.requestedAt/);
 
   const hook = await read("components/dashboard/hooks/UseHistoryView.ts");
   assert.match(hook, /device\?: \{ deviceNumber\?: string \} \| null;/);

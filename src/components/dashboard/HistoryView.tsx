@@ -179,7 +179,11 @@ export function HistoryView() {
             </h2>
           </div>
 
-          <ScrollArea className="w-full" viewportClassName="pb-2">
+          <ScrollArea
+            className="w-full"
+            label="Tabel riwayat analisis"
+            viewportClassName="pb-2"
+          >
             <table className="w-full min-w-[680px] table-fixed border-collapse text-left">
               <thead>
                 <tr className="border-b border-primary-900/10 text-[0.875rem] font-semibold text-primary-900/75">
@@ -220,8 +224,11 @@ export function HistoryView() {
                     const isAlert = isAlertKind(result);
                     const isNormal = result === "normal";
                     const isNeutral = !isAlert && !isNormal;
-                    const dateLabel = formatWib(row.requestedAt, "date");
-                    const timeLabel = formatWib(row.requestedAt, "time");
+                    // "Waktu Analisis": when the analysis finished, like the latest
+                    // result and the doctor report (requestedAt only if still running).
+                    const analysedAt = row.completedAt ?? row.requestedAt;
+                    const dateLabel = formatWib(analysedAt, "date");
+                    const timeLabel = formatWib(analysedAt, "time");
 
                     return (
                       <tr
@@ -245,7 +252,7 @@ export function HistoryView() {
                           >
                             <span className="block text-[0.9375rem] font-semibold text-primary-900">
                               {dateLabel ?? "—"}
-                            </span>
+                            </span>{" "}
                             <span className="mt-0.5 block text-[0.875rem] text-primary-900/75">
                               {timeLabel ?? ""}
                             </span>
@@ -312,7 +319,6 @@ export function HistoryView() {
               className="flex w-full items-center justify-between gap-1 sm:w-auto sm:justify-start sm:gap-2"
             >
               <button
-                aria-label="Halaman sebelumnya"
                 className={pagerButtonClassName}
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
@@ -323,7 +329,7 @@ export function HistoryView() {
                   className="size-4"
                   strokeWidth={2.5}
                 />
-                <span className="hidden sm:inline">Sebelumnya</span>
+                <span className="sr-only sm:not-sr-only">Sebelumnya</span>
               </button>
 
               <div className="flex items-center gap-1 sm:mx-1 sm:gap-1.5">
@@ -411,7 +417,6 @@ export function HistoryView() {
               </div>
 
               <button
-                aria-label="Halaman berikutnya"
                 className={pagerButtonClassName}
                 disabled={currentPage === totalPages}
                 onClick={() =>
@@ -419,7 +424,7 @@ export function HistoryView() {
                 }
                 type="button"
               >
-                <span className="hidden sm:inline">Selanjutnya</span>
+                <span className="sr-only sm:not-sr-only">Selanjutnya</span>
                 <ChevronRight
                   aria-hidden="true"
                   className="size-4"

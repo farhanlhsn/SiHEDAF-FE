@@ -60,8 +60,8 @@ export function TeamSection() {
       </div>
 
       <div className="mx-auto mt-14 grid w-[calc(100%-40px)] max-w-[1440px] grid-cols-1 gap-5 sm:w-[calc(100%-64px)] sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-        {teamMembers.map((member) => (
-          <TeamCard key={member.name} {...member} />
+        {teamMembers.map((member, index) => (
+          <TeamCard eager={index < 4} key={member.name} {...member} />
         ))}
       </div>
     </section>

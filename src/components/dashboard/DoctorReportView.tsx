@@ -170,6 +170,7 @@ export function DoctorReportView({ initialParams }: DoctorReportViewProps) {
                   // Six columns do not fit a phone: scroll sideways there; print fits A4.
                   <ScrollArea
                     className="mt-3 w-full print:overflow-visible"
+                    label="Tabel kejadian AF dan AFL"
                     viewportClassName="pb-2 print:pb-0"
                   >
                     <table className="w-full min-w-[640px] border-collapse text-left print:min-w-0">

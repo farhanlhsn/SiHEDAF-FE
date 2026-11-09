@@ -50,17 +50,20 @@ export function DashboardTopbar({
           className="flex h-11 items-center gap-2.5 rounded-full border border-primary-900/15 bg-white pr-3 pl-1.5 text-[0.875rem] font-semibold text-primary-900 transition-colors hover:bg-paper-deep focus-visible:outline-2 focus-visible:outline-primary-300 sm:pr-4"
           href="/profil"
         >
-          {user ? (
-            <ProfileAvatar
-              className="h-8 w-8 border-0 text-[0.8125rem]"
-              fullname={user.fullname}
-              profileImage={user.profileImage}
-            />
-          ) : (
-            <span className="grid h-8 w-8 place-items-center rounded-full bg-primary-800 text-[0.8125rem] font-semibold text-white">
-              {profileInitials(fullname)}
-            </span>
-          )}
+          <span aria-hidden="true" className="contents">
+            {user ? (
+              <ProfileAvatar
+                className="h-8 w-8 border-0 text-[0.8125rem]"
+                fullname={user.fullname}
+                profileImage={user.profileImage}
+              />
+            ) : (
+              <span
+                className="grid h-8 w-8 place-items-center rounded-full bg-primary-800 text-[0.8125rem] font-semibold text-white before:content-[attr(data-initials)]"
+                data-initials={profileInitials(fullname)}
+              />
+            )}
+          </span>
           <span className="hidden max-w-40 truncate sm:inline">{fullname}</span>
           <ChevronRight
             aria-hidden="true"
