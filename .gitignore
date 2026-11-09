@@ -69,3 +69,6 @@ temp/
 *.pem
 *.key
 *.crt
+
+# Playwright
+/playwright/.cache/
