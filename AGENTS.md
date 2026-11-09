@@ -60,7 +60,7 @@ Sebelum mengubah API, route, layout, metadata, atau convention Next.js, baca pan
 ### Tim Kami
 
 - Route `/tim-kami` dengan shared header/footer.
-- Empat team cards sesuai role pada desain.
+- Sepuluh team cards: empat anggota dengan foto dan LinkedIn, ditambah enam kartu placeholder ("Nama Anggota 5–10", tanpa foto dan tanpa tautan LinkedIn) yang menunggu data asli. Grid 1/2/4/5 kolom (`xl:grid-cols-5`); kunci daftar memakai nama, bukan peran, supaya peran yang sama tidak bentrok.
 - Foto anggota selain data yang tersedia masih menggunakan tampilan placeholder.
 
 ### Authentication dan perangkat

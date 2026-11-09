@@ -27,7 +27,7 @@ export function TeamCard({
             alt={name}
             className="object-cover object-center transition-transform duration-700 hover:scale-105"
             fill
-            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 25vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1280px) 25vw, 20vw"
             src={imageSrc}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/80" />

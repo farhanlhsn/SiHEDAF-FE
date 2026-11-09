@@ -27,6 +27,13 @@ const teamMembers = [
     linkedInLabel: "https://www.linkedin.com/in/agung-ramadhan08/",
     imageSrc: "/team/agung.png",
   },
+  // Placeholder cards until the real members, roles, and photos are provided.
+  { role: "Peran Anggota 5", name: "Nama Anggota 5" },
+  { role: "Peran Anggota 6", name: "Nama Anggota 6" },
+  { role: "Peran Anggota 7", name: "Nama Anggota 7" },
+  { role: "Peran Anggota 8", name: "Nama Anggota 8" },
+  { role: "Peran Anggota 9", name: "Nama Anggota 9" },
+  { role: "Peran Anggota 10", name: "Nama Anggota 10" },
 ];
 
 export function TeamSection() {
@@ -46,15 +53,15 @@ export function TeamSection() {
             <span className="font-extralight">di balik SiHEDAF.</span>
           </h1>
           <p className="max-w-[420px] text-[1.125rem] leading-[1.6] text-primary-900/80 lg:col-span-4">
-            Empat orang yang merancang antarmuka, membangun sistem, dan melatih
-            model AI pendeteksi Atrial Fibrillation.
+            Tim yang merancang antarmuka, membangun sistem, dan melatih model AI
+            pendeteksi Atrial Fibrillation.
           </p>
         </div>
       </div>
 
-      <div className="mx-auto mt-14 grid w-[calc(100%-40px)] max-w-[1440px] grid-cols-1 gap-5 sm:w-[calc(100%-64px)] sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto mt-14 grid w-[calc(100%-40px)] max-w-[1440px] grid-cols-1 gap-5 sm:w-[calc(100%-64px)] sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
         {teamMembers.map((member) => (
-          <TeamCard key={member.role} {...member} />
+          <TeamCard key={member.name} {...member} />
         ))}
       </div>
     </section>

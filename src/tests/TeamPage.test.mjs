@@ -90,6 +90,8 @@ test("renders four blank team cards with active route navigation", async (contex
   assert.match(teamSource, /name: "Hauzan Rafi Attallah"/);
   assert.match(teamSource, /name: "Muhammad Rifki Anandita"/);
   assert.match(teamSource, /name: "Agung Ramadhan"/);
+  assert.equal((teamSource.match(/role: "/g) ?? []).length, 10);
+  assert.match(teamSource, /key=\{member\.name\}/);
   assert.match(cardSource, /LinkedIn/);
   assert.match(cardSource, /bg-gradient-to-b/);
   assert.match(headerSource, /from "next\/link"/);
