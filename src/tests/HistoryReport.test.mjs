@@ -145,6 +145,12 @@ test("date range picker formats in the runtime's local zone", async () => {
   assert.doesNotMatch(source, /timeZone/);
 });
 
+test("date range popover anchors to the trigger's left edge so it never leaves a narrow screen", async () => {
+  const source = await read("components/dashboard/DateRangePicker.tsx");
+  assert.match(source, /absolute top-\[calc\(100%\+12px\)\] left-0 /);
+  assert.doesNotMatch(source, /top-\[calc\(100%\+12px\)\] right-0/);
+});
+
 test("report page sets a document title", async () => {
   const source = await read("app/(dashboard)/riwayat/laporan/page.tsx");
   assert.match(source, /import type \{ Metadata \} from "next"/);

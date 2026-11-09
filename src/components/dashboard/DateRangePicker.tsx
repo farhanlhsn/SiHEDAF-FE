@@ -75,7 +75,7 @@ export function DateRangePicker({ onChange, value }: DateRangePickerProps) {
       {isOpen ? (
         <div
           aria-label="Pilih rentang tanggal"
-          className="page-enter absolute top-[calc(100%+12px)] right-0 z-40 w-[min(340px,calc(100vw-2rem))] rounded-[24px] border border-primary-900/10 bg-white p-4 shadow-[0_22px_60px_rgba(0,39,88,0.16)]"
+          className="page-enter absolute top-[calc(100%+12px)] left-0 z-40 w-[min(340px,calc(100vw-2rem))] rounded-[24px] border border-primary-900/10 bg-white p-4 shadow-[0_22px_60px_rgba(0,39,88,0.16)]"
           role="dialog"
         >
           <DayPicker
