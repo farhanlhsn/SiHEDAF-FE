@@ -1,6 +1,9 @@
 type StatusMarkProps = {
   size?: "small" | "medium" | "large";
+  /** Visual: "af" also draws AFL (both are alert kinds). */
   status: "af" | "normal";
+  /** Accessible name; pass RESULT_COPY[kind].label so AFL is announced as AFL. */
+  label?: string;
 };
 
 const sizes = {
@@ -9,12 +12,12 @@ const sizes = {
   small: "h-9 w-9",
 };
 
-export function StatusMark({ size = "medium", status }: StatusMarkProps) {
+export function StatusMark({ size = "medium", status, label }: StatusMarkProps) {
   const isNormal = status === "normal";
 
   return (
     <span
-      aria-label={isNormal ? "Normal Rhythm" : "Terdeteksi AF"}
+      aria-label={label ?? (isNormal ? "Normal Rhythm" : "Terdeteksi AF")}
       className={`${sizes[size]} relative inline-grid shrink-0 place-items-center rounded-full ${
         isNormal ? "bg-primary-50 text-primary-300" : "bg-af-50 text-af-500"
       }`}

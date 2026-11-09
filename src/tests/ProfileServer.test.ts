@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { SessionServiceError } from "../features/auth/session/server/SessionServiceError";
+import {
+  SESSION_EXPIRED,
+  SessionServiceError,
+} from "../features/auth/session/server/SessionServiceError";
 import {
   getCurrentProfile,
   updateCurrentPassword,
@@ -108,6 +111,18 @@ test("normalizes unauthorized, validation, and malformed responses", async () =>
       fetcher: async () => Response.json({}, { status: 401 }),
     }),
     (error) => error instanceof SessionServiceError && error.status === 401,
+  );
+
+  // The backend answers an expired access token with 403, not 401.
+  await assert.rejects(
+    getCurrentProfile("expired-access-token", {
+      baseUrl,
+      fetcher: async () => Response.json({}, { status: 403 }),
+    }),
+    (error) =>
+      error instanceof SessionServiceError &&
+      error.status === 401 &&
+      error.message === SESSION_EXPIRED,
   );
 
   await assert.rejects(

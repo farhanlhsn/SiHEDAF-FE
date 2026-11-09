@@ -111,9 +111,10 @@ test("composes every dashboard view with the reference content", async (context)
     await readSource("components/dashboard/ProfileView.tsx"),
     /href="\/profil\/ubah"/,
   );
-  assert.match(
+  // The chart shows finished recordings only, so it stays static while recording.
+  assert.doesNotMatch(
     await readSource("components/dashboard/SignalChart.tsx"),
-    /signal-draw/,
+    /signal-draw|monitor-sweep/,
   );
 });
 
@@ -124,7 +125,7 @@ test("adds route-entry motion, reduced-motion support, and device navigation", a
   ]);
 
   assert.match(globalStyles, /dashboard-enter/);
-  assert.match(globalStyles, /signal-draw/);
+  assert.doesNotMatch(globalStyles, /signal-draw|monitor-sweep/);
   assert.match(globalStyles, /prefers-reduced-motion/);
   assert.match(deviceForm, /useRouter/);
   assert.match(deviceForm, /router\.push\("\/dashboard"\)/);

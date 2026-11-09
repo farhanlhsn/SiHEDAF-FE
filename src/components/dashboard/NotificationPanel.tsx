@@ -1,17 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, PanelRightClose } from "lucide-react";
+import { Check, Info, PanelRightClose } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
 import { formatWib } from "@/components/dashboard/DashboardFormat";
+import {
+  NOTIFICATION_KIND_LABEL,
+  notificationKind,
+} from "@/components/dashboard/NotificationKind";
 import { StatusMark } from "@/components/dashboard/StatusMark";
 import { useOnlineStatus } from "@/components/ui/hooks/UseOnlineStatus";
 import { DataErrorState } from "@/components/ui/DataErrorState";
 import {
   describeCaughtError,
   type DataError,
+  HttpError,
 } from "@/components/ui/FetchError";
 import {
   apiFetch,
@@ -32,12 +37,6 @@ type NotificationPanelProps = {
   onClose: () => void;
   onUnreadChange?: (hasUnread: boolean) => void;
 };
-
-class HttpError extends Error {
-  constructor(readonly status: number) {
-    super(`HTTP ${status}`);
-  }
-}
 
 export function NotificationPanel({
   onClose,
@@ -156,6 +155,7 @@ export function NotificationPanel({
         ) : loadError ? (
           <DataErrorState
             compact
+            live="status"
             message={loadError.message}
             onRetry={() => setReloadCount((count) => count + 1)}
             title={loadError.title}
@@ -176,19 +176,30 @@ export function NotificationPanel({
                   className="absolute top-[18px] bottom-[18px] left-[17px] w-[2px] bg-primary-900/10"
                 />
                 {items.map((notif) => {
-                  const lowerTitle = notif.title.toLowerCase();
-                  const isAf =
-                    lowerTitle.includes("af") || lowerTitle.includes("atrial");
+                  // Only `type` decides the icon; the title is content.
+                  const kind = notificationKind(notif);
 
                   return (
                     <li
                       className="stagger-item relative flex items-start gap-3 pb-6 last:pb-0"
                       key={notif.id}
                     >
-                      <StatusMark
-                        size="small"
-                        status={isAf ? "af" : "normal"}
-                      />
+                      {kind === "alert" ? (
+                        <StatusMark
+                          label={NOTIFICATION_KIND_LABEL.alert}
+                          size="small"
+                          status="af"
+                        />
+                      ) : (
+                        // Neutral: "Pengukuran Selesai" is sent even when the AI failed.
+                        <span
+                          aria-label={NOTIFICATION_KIND_LABEL.info}
+                          className="relative inline-grid h-9 w-9 shrink-0 place-items-center rounded-full border border-primary-900/10 bg-white text-primary-500"
+                          role="img"
+                        >
+                          <Info aria-hidden="true" size={18} strokeWidth={2} />
+                        </span>
+                      )}
                       <div className="min-w-0 flex-1 pt-0.5">
                         <p className="flex items-center gap-2 text-[0.9375rem] font-semibold text-primary-900">
                           {notif.title}

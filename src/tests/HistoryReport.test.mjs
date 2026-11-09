@@ -23,19 +23,14 @@ test("history detail modal shows facts, plain-language copy and AF report link",
   assert.match(source, /PpgTrace/);
   assert.match(source, /formatConfidence/);
   assert.match(source, /Tidak tersedia/);
-  assert.match(
-    source,
-    /Jarak antar detak pada rekaman ini terlihat teratur\. Tetap pantau secara berkala\./,
-  );
-  assert.match(
-    source,
-    /AI menemukan pola tidak teratur yang mirip Atrial Fibrillation\. Ini bukan diagnosis; tunjukkan hasil ini ke dokter, terutama bila ada keluhan\./,
-  );
-  assert.match(source, /Irama Jantung Normal/);
-  assert.match(source, /Terdeteksi Potensi AF/);
+  assert.match(source, /classifyResult\(item\)/);
+  assert.match(source, /RESULT_COPY\[result\]/);
+  assert.match(source, /copy\.sentence/);
+  assert.match(source, /copy\.title/);
+  assert.doesNotMatch(source, /resultStatus|isNormalResult/);
   assert.match(source, /reportHref\(rangeEndingOn\(/);
   assert.match(source, /Buat laporan dokter/);
-  assert.match(source, /isNormal \?[\s\S]*Buat laporan dokter|!isNormal[\s\S]*Buat laporan dokter/);
+  assert.match(source, /isAlert \?[\s\S]*Buat laporan dokter/);
 });
 
 test("history view state lives in the hook", async () => {
@@ -62,11 +57,16 @@ test("doctor report view carries the required copy and states", async () => {
     "window.print()",
     "print:hidden",
     "Laporan Pemantauan Irama Jantung",
-    "Tidak ada AF terdeteksi pada periode ini.",
+    "Tidak ada AF atau AFL terdeteksi pada periode ini.",
+    "AFL terdeteksi",
+    "Tanpa hasil",
+    "Jenis",
     "Belum ada rekaman pada periode ini.",
-    "rekaman pertama pada periode ini",
+    // History is newest first, so a cut-off report scanned the newest rows.
+    "rekaman terbaru pada periode ini",
+    "Angka ringkasan hanya mencakup rekaman tersebut",
     "bukan diagnosis",
-    "Grafik ditampilkan tanpa skala waktu",
+    "Durasi dan skala waktu grafik dihitung dari laju sampel 50 Hz.",
     "<PpgTrace",
     "<PulseLoader",
     "<DataErrorState",
@@ -112,18 +112,32 @@ test("global print rules target A4 and keep colours", async () => {
   assert.match(source, /print-color-adjust:\s*exact/);
 });
 
-test("report only claims no AF when the summary agrees", async () => {
-  const source = await read("components/dashboard/DoctorReportView.tsx");
-  assert.match(source, /totalAfib === 0\s*\?\s*"Tidak ada AF terdeteksi pada periode ini\."/);
-  assert.ok(source.includes("Ringkasan mencatat ${report.summary.totalAfib} kejadian AF, tetapi kejadian tersebut berada di luar ${report.scanned} rekaman pertama yang ditampilkan. Persempit periode laporan untuk melihatnya."));
-  assert.match(source, /report\.truncated\s*\?\s*`Ringkasan mencatat/);
-  assert.ok(source.includes("Ringkasan mencatat ${report.summary.totalAfib} kejadian AF, tetapi rinciannya tidak tersedia."));
+test("report counts come from the period's items, not the API summary", async () => {
+  const view = await read("components/dashboard/DoctorReportView.tsx");
+  assert.ok(view.includes("Tidak ada AF atau AFL terdeteksi pada periode ini."));
+  assert.match(view, /report\.truncated \? null/);
+  assert.match(view, /summary\?\.af \?\? 0\) \+ \(summary\?\.flutter \?\? 0\)/);
+  assert.match(view, /report\.summary\.other > 0/);
+  assert.doesNotMatch(view, /totalAfib|totalNormal|totalData/);
+  for (const file of ["components/dashboard/hooks/UseDoctorReport.ts", "components/dashboard/ReportData.ts"]) {
+    assert.doesNotMatch(await read(file), /json\.data\.summary|\.summary\?\./, file);
+  }
+  const data = await read("components/dashboard/ReportData.ts");
+  assert.match(data, /addDays\(range\.from, -1\)/);
+  assert.match(data, /jakartaDay\(/);
 });
 
 test("report normal share comes from the normal count, via splitShares, not 100 minus AF", async () => {
   const source = await read("components/dashboard/DoctorReportView.tsx");
-  assert.match(source, /splitShares\(\s*\[summary\?\.totalNormal \?\? 0, summary\?\.totalAfib \?\? 0\],\s*total,?\s*\)/);
+  assert.match(source, /splitShares\(\[summary\?\.normal \?\? 0, alerts\], total\)/);
   assert.doesNotMatch(source, /100 - afShare/);
+});
+
+test("history summary is labelled all-time and notes the date range", async () => {
+  const source = await read("components/dashboard/HistoryView.tsx");
+  assert.ok(source.includes("Ringkasan sepanjang waktu"));
+  assert.ok(source.includes("Ringkasan mencakup seluruh riwayat, bukan hanya rentang tanggal yang dipilih."));
+  assert.match(source, /dateRange\?\.from/);
 });
 
 test("date range picker formats in the runtime's local zone", async () => {
@@ -155,7 +169,10 @@ test("first-run guide shows only after the latest data loaded and is empty", asy
   );
   assert.doesNotMatch(hook, /finally\s*\{\s*if \(!cancelled\) setHasLoadedLatest/);
   assert.match(overview, /showFirstRun\s*\?\s*\(\s*<FirstRunGuide/);
-  assert.match(hook, /showFirstRun =\s*hasLoadedLatest && !isDeviceLoading && !latestData/);
+  assert.match(
+    hook,
+    /showFirstRun =\s*hasLoadedLatest &&\s*!isDeviceLoading &&\s*!latestData &&\s*!latestError &&\s*resumeChecked;/,
+  );
   assert.match(overview, /<article[^>]*id="monitor"/);
   assert.match(overview, /!hasLoadedLatest[\s\S]*?Memuat hasil terakhir/);
   assert.match(guide, /<a[\s\S]*?href="#monitor"/);
@@ -178,12 +195,15 @@ test("records without a result label get a neutral unknown state, not normal", a
   const modal = await read("components/dashboard/HistoryDetailModal.tsx");
   const view = await read("components/dashboard/HistoryView.tsx");
 
-  assert.ok(modal.includes("Hasil analisis belum tersedia"));
-  assert.ok(modal.includes("Rekaman ini belum memiliki hasil analisis AI."));
-  assert.match(modal, /isUnknown/);
+  const kinds = await read("components/dashboard/ResultKind.ts");
+
+  assert.ok(kinds.includes("Hasil analisis belum tersedia"));
+  assert.ok(kinds.includes("Rekaman ini belum memiliki hasil analisis AI."));
+  assert.ok(kinds.includes("Belum ada hasil"));
+  assert.match(modal, /isNeutral/);
   assert.doesNotMatch(modal, /\?\? true/);
-  assert.ok(view.includes("Belum ada hasil"));
-  assert.match(view, /isUnknown/);
+  assert.match(view, /isNeutral/);
+  assert.match(view, /RESULT_COPY\[result\]/);
   assert.doesNotMatch(view, /\?\? true/);
 });
 
@@ -193,4 +213,79 @@ test("dashboard modal moves focus into the dialog and restores it on close", asy
   assert.match(modal, /\.focus\(/);
   assert.ok(modal.includes("tabIndex={-1}"));
   assert.match(modal, /isConnected/);
+});
+
+test("recording durations and trace ticks come from the 50 Hz sample count", async () => {
+  const [detail, modal, report, trace, chart] = await Promise.all([
+    read("components/dashboard/HistoryDetailModal.tsx"),
+    read("components/dashboard/AiResultModal.tsx"),
+    read("components/dashboard/DoctorReportView.tsx"),
+    read("components/dashboard/PpgTrace.tsx"),
+    read("components/dashboard/SignalChart.tsx"),
+  ]);
+
+  // The "Durasi rekaman" fact, "—" when unknown.
+  assert.match(detail, /label: "Durasi rekaman",\s*value: recordingDuration\(item\.ppgResult\?\.rawPpgData\) \?\? "—"/);
+  assert.match(modal, /const duration = recordingDuration\(data\?\.ppgResult\?\.rawPpgData\);/);
+  assert.match(modal, /Durasi rekaman<\/dt>[\s\S]{0,160}\{duration \?\? "—"\}/);
+  // A "Durasi" column in the report's event table.
+  assert.match(report, /<th className="pb-2 font-semibold">Durasi<\/th>/);
+  assert.match(report, /\{recordingDuration\(item\.ppgResult\?\.rawPpgData\) \?\? "—"\}/);
+  assert.doesNotMatch(report, /tanpa skala waktu/);
+
+  // The three traces of a single recording get time ticks at 50 Hz.
+  for (const [name, source] of [["detail", detail], ["modal", modal], ["report", report]]) {
+    assert.match(source, /<PpgTrace[^>]*sampleRate=\{SAMPLE_RATE_HZ\}/s, `${name} trace lacks ticks`);
+  }
+  assert.match(trace, /sampleRate\?: number;/);
+  assert.match(trace, /traceTicks\(data\?\.length \?\? 0, sampleRate\)/);
+  assert.match(trace, /aria-hidden="true"[\s\S]{0,120}text-\[0\.8125rem\]/);
+  assert.match(trace, /if \(ticks === null\) return trace;/);
+
+  // The live chart concatenates sessions: it keeps its minute labels.
+  assert.doesNotMatch(chart, /sampleRate|SAMPLE_RATE_HZ|Signal"/);
+  assert.match(chart, /minutesLabel\(rangeMinutes\)/);
+});
+
+test("nothing on the dashboard counts beats", async () => {
+  for (const file of [
+    "components/dashboard/Signal.ts",
+    "components/dashboard/PpgTrace.tsx",
+    "components/dashboard/HistoryDetailModal.tsx",
+    "components/dashboard/AiResultModal.tsx",
+    "components/dashboard/DoctorReportView.tsx",
+    "components/dashboard/DashboardOverview.tsx",
+    "components/dashboard/SignalChart.tsx",
+  ]) {
+    const source = await read(file);
+    // Signal.ts may say so in its doc comment; nothing else names beats or peaks.
+    const code = source.replace(/\/\*\*[\s\S]*?\*\//g, "");
+    assert.doesNotMatch(code, /\bbpm\b|peak|denyut per menit|detak per menit/i, file);
+  }
+});
+
+test("the report's six-column event table scrolls sideways on phones and fits print", async () => {
+  const report = await read("components/dashboard/DoctorReportView.tsx");
+  assert.match(report, /<ScrollArea\s+className="mt-3 w-full print:overflow-visible"/);
+  assert.match(report, /<table className="w-full min-w-\[640px\] border-collapse text-left print:min-w-0">/);
+});
+
+test("a cut-off report names the scanned rows as the newest, never the first", async () => {
+  const source = await read("components/dashboard/DoctorReportView.tsx");
+  assert.ok(source.includes("dari {report.scanned} rekaman terbaru pada periode ini."));
+  assert.doesNotMatch(source, /rekaman pertama/);
+});
+
+test("detail Device ID is the paired number; the doctor report window and Waktu follow completedAt", async () => {
+  const detail = await read("components/dashboard/HistoryDetailModal.tsx");
+  assert.match(detail, /\{ label: "Device ID", value: item\.device\?\.deviceNumber \|\| "—" \}/);
+  assert.doesNotMatch(detail, /item\.deviceId/);
+  assert.match(detail, /reportHref\(\s*rangeEndingOn\(item\.completedAt \?\? item\.requestedAt\),?\s*\)/);
+
+  const hook = await read("components/dashboard/hooks/UseHistoryView.ts");
+  assert.match(hook, /device\?: \{ deviceNumber\?: string \} \| null;/);
+
+  const report = await read("components/dashboard/DoctorReportView.tsx");
+  assert.match(report, /formatWib\(item\.completedAt \?\? item\.requestedAt\)/);
+  assert.doesNotMatch(report, /formatWib\(item\.requestedAt\)/);
 });

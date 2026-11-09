@@ -6,6 +6,7 @@ import {
   describeCaughtError,
   latestOutcome,
   type DataError,
+  HttpError,
 } from "@/components/ui/FetchError";
 
 import { useOnlineStatus } from "@/components/ui/hooks/UseOnlineStatus";
@@ -14,16 +15,21 @@ import {
   SessionExpiredError,
 } from "@/features/auth/session/client/ApiFetch";
 import {
-  DEVICE_STATUS_LABEL,
+  DEVICE_REFRESH_MS,
+  afterSessionRecheckDelay,
   deviceState,
+  deviceStatusLabel,
+  deviceStatusLive,
+  sessionHoldsDevice,
 } from "@/components/dashboard/DeviceState";
 import {
   useMyDevice,
   type MeasurementDevice,
 } from "@/components/dashboard/hooks/UseMyDevice";
 import { firstRunSteps } from "@/components/dashboard/FirstRun";
-import { resultStatus } from "@/components/dashboard/DashboardFormat";
+import { classifyResult } from "@/components/dashboard/ResultKind";
 import {
+  requestSignal,
   restartAction,
   toggleBlock,
 } from "@/components/dashboard/MonitoringSession";
@@ -37,6 +43,7 @@ export type MeasurementData = {
   resultLabel?: string;
   resultClass?: number;
   confidenceLevel?: number;
+  requestedAt?: string;
   completedAt?: string;
   updatedAt?: string;
   createdAt?: string;
@@ -47,33 +54,48 @@ export type MeasurementData = {
   };
 };
 
-class HttpError extends Error {
-  constructor(readonly status: number) {
-    super(`HTTP ${status}`);
-  }
-}
-
 export function useDashboardOverview() {
   const { user } = useProfile();
   const { online, reconnectCount } = useOnlineStatus();
   const [monitoringRange, setMonitoringRange] = useState("12");
 
+  // Re-checked every 30 s so online, stale and offline stay current.
   const {
     device: deviceData,
     isLoading: isDeviceLoading,
     isRefreshing: isDeviceRefreshing,
     error: deviceError,
+    checkedAt: deviceCheckedAt,
+    requestedAt: deviceRequestedAt,
     reload: reloadDevice,
-  } = useMyDevice();
+  } = useMyDevice({ refreshMs: DEVICE_REFRESH_MS });
   const [latestData, setLatestData] = useState<MeasurementData | null>(null);
   const [hasLoadedLatest, setHasLoadedLatest] = useState(false);
   const [latestError, setLatestError] = useState<DataError | null>(null);
   const [latestReloadKey, setLatestReloadKey] = useState(0);
   const [signalsData, setSignalsData] = useState<number[]>([]);
+  // The last /signals read failed: the chart says so instead of "no signal".
+  const [signalsError, setSignalsError] = useState<DataError | null>(null);
+  const [signalsReloadKey, setSignalsReloadKey] = useState(0);
+  const [isSignalsRetrying, setIsSignalsRetrying] = useState(false);
 
   const session = useMonitoringSession({ onFreshResult: setLatestData });
-  const { adoptInitial } = session;
+  const { adoptInitial, endedAt: sessionEndedAt, resumeChecked } = session;
   const isMonitoringActive = session.phase === "recording";
+
+  // Once a session ends the wristband returns to its idle poll; ask for it
+  // again after that so its state is judged on a fresh answer. Coming back
+  // to /dashboard within the hold schedules the rest of the wait.
+  useEffect(() => {
+    if (sessionEndedAt === null) return;
+
+    const timerId = setTimeout(
+      reloadDevice,
+      afterSessionRecheckDelay(sessionEndedAt, performance.now()),
+    );
+
+    return () => clearTimeout(timerId);
+  }, [reloadDevice, sessionEndedAt]);
 
   useEffect(() => {
     let cancelled = false;
@@ -119,59 +141,101 @@ export function useDashboardOverview() {
     setLatestReloadKey((key) => key + 1);
   }, []);
 
+  // /signals only holds COMPLETED recordings, so it changes when a result
+  // arrives, never during a recording: no polling. It is read once the first
+  // /latest has answered (it sets the result keys, so a load reads /signals
+  // once), then on a range change, on reconnect, when a new result lands and
+  // on "Coba lagi".
+  const resultId = latestData?.id;
+  const resultCompletedAt = latestData?.completedAt;
   useEffect(() => {
+    if (!hasLoadedLatest) return;
+    // A newer run or unmounting aborts this one, so no late answer lands.
+    const run = new AbortController();
+
     async function fetchSignals() {
       try {
         const res = await apiFetch(
           `/api/v1/measurement/signals?minutes=${monitoringRange}`,
+          { signal: requestSignal(run.signal) },
         );
-        const json = await res.json();
-        if (json.code === 200 && json.data) {
-          setSignalsData(json.data.rawPpgData || []);
-        }
+        const json = res.ok ? await res.json() : null;
+        if (run.signal.aborted) return;
+        if (json?.code !== 200 || !json.data) throw new HttpError(res.status);
+        setSignalsData(json.data.rawPpgData || []);
+        setSignalsError(null);
       } catch (e) {
-        if (e instanceof SessionExpiredError) return;
+        if (run.signal.aborted || e instanceof SessionExpiredError) return;
         console.error("Gagal memuat data sinyal:", e);
+        setSignalsError(
+          describeCaughtError(e, e instanceof HttpError ? e.status : undefined),
+        );
+      } finally {
+        if (!run.signal.aborted) setIsSignalsRetrying(false);
       }
     }
 
-    fetchSignals();
+    void fetchSignals();
 
-    let intervalId: NodeJS.Timeout;
-    if (isMonitoringActive) {
-      intervalId = setInterval(fetchSignals, 3000);
-    }
+    return () => run.abort();
+  }, [
+    hasLoadedLatest,
+    monitoringRange,
+    reconnectCount,
+    resultId,
+    resultCompletedAt,
+    signalsReloadKey,
+  ]);
 
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [monitoringRange, isMonitoringActive]);
+  // The error panel stays while retrying, so focus stays on its button.
+  const reloadSignals = useCallback(() => {
+    setIsSignalsRetrying(true);
+    setSignalsReloadKey((key) => key + 1);
+  }, []);
 
   const firstName = user?.fullname ? user.fullname.split(" ")[0] : "Pengguna";
-  const result = resultStatus(latestData?.resultLabel);
+  const result = latestData ? classifyResult(latestData) : "pending";
   // The one source for every device claim: card, status value, toggle, modal.
+  // Staleness is judged when the device answered (every 30 s here). While a
+  // session holds the wristband (it does not update lastSeen while measuring)
+  // it is "recording" instead, and the 30 s answers are not judged. After a
+  // reload it stays "loading" until the page knows whether a session is still
+  // recording, so a frozen lastSeen never flashes the offline card.
   const deviceStatus = deviceState({
     device: deviceData,
     isLoading: isDeviceLoading,
     error: deviceError,
+    now: deviceCheckedAt,
+    sessionActive: sessionHoldsDevice({
+      phase: session.phase,
+      endedAt: sessionEndedAt,
+      answerRequestedAt: deviceRequestedAt,
+    }),
+    resumeChecked,
   });
   const firstRunGuideSteps = firstRunSteps({
-    deviceOnline: deviceStatus === "online",
+    deviceOnline: deviceStatus === "online" || deviceStatus === "recording",
     monitoringActive:
       session.phase === "recording" || session.phase === "analysing",
     hasResult: Boolean(latestData),
   });
 
-  // Wait for the device request too, or step 1 flashes "current" while loading.
+  // Wait for the device request (and the reload check) too, or step 1 flashes
+  // "current" while loading.
   const showFirstRun =
-    hasLoadedLatest && !isDeviceLoading && !latestData && !latestError;
+    hasLoadedLatest &&
+    !isDeviceLoading &&
+    !latestData &&
+    !latestError &&
+    resumeChecked;
 
   return {
     user,
     firstName,
     deviceData,
     deviceStatus,
-    deviceStatusLabel: DEVICE_STATUS_LABEL[deviceStatus],
+    deviceStatusLabel: deviceStatusLabel(deviceStatus, session.phase),
+    deviceStatusLive: deviceStatusLive(deviceStatus, session.phase),
     deviceError,
     isDeviceRefreshing,
     reloadDevice,
@@ -181,11 +245,15 @@ export function useDashboardOverview() {
     reloadLatest,
     showFirstRun,
     signalsData,
+    signalsError,
+    reloadSignals,
+    isSignalsRetrying,
     result,
     firstRunGuideSteps,
     isMonitoringActive,
     phase: session.phase,
-    elapsed: session.elapsed,
+    clock: session.clock,
+    autoFinished: session.autoFinished,
     monitoringRange,
     setMonitoringRange,
     isTogglingAction: session.isTogglingAction,

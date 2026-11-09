@@ -95,14 +95,12 @@ async function authenticatedRequest({
   }
 
   if (!response.ok) {
-    if (response.status === 401) {
+    // The backend answers an expired access token with 403, not 401.
+    if (response.status === 401 || response.status === 403) {
       throw new SessionServiceError(SESSION_EXPIRED, 401);
     }
     if (response.status === 400 || response.status === 422) {
       throw new SessionServiceError(badRequestMessage, 400);
-    }
-    if (response.status === 403) {
-      throw new SessionServiceError("Anda tidak memiliki akses.", 403);
     }
     throw new SessionServiceError(PROFILE_SERVICE_UNAVAILABLE, 502);
   }

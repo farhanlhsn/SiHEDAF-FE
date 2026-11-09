@@ -4,21 +4,10 @@ import test from "node:test";
 import {
   formatConfidence,
   formatWib,
-  isNormalResult,
-  resultStatus,
   shareOf,
   splitShares,
   tracePath,
 } from "../components/dashboard/DashboardFormat";
-
-test("reads the AI label as normal, AF, or unknown", () => {
-  assert.equal(isNormalResult("Normal Rhythm"), true);
-  assert.equal(isNormalResult("normal"), true);
-  assert.equal(isNormalResult("AF Detected"), false);
-  assert.equal(isNormalResult("Atrial Fibrillation"), false);
-  assert.equal(isNormalResult(undefined), null);
-  assert.equal(isNormalResult(""), null);
-});
 
 test("formats AI confidence from either a ratio or a percentage", () => {
   assert.equal(formatConfidence(0.964), "96,4%");
@@ -63,15 +52,6 @@ test("refuses to draw a trace from missing or single-sample data", () => {
 
 test("centres a flat signal instead of dividing by zero", () => {
   assert.equal(tracePath([3, 3, 3], 100, 40), "M0 20L50 20L100 20");
-});
-
-test("reads result status as normal, af, or unknown", () => {
-  assert.equal(resultStatus("Normal Rhythm"), "normal");
-  assert.equal(resultStatus("AF Detected"), "af");
-  assert.equal(resultStatus("Atrial Fibrillation"), "af");
-  assert.equal(resultStatus(undefined), "unknown");
-  assert.equal(resultStatus(null), "unknown");
-  assert.equal(resultStatus(""), "unknown");
 });
 
 test("splits counts into shares that always add up to 100", () => {

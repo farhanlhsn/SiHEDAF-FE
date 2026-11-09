@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   describeCaughtError,
   type DataError,
+  HttpError,
 } from "@/components/ui/FetchError";
 import { useOnlineStatus } from "@/components/ui/hooks/UseOnlineStatus";
 import type { DateRange } from "@daypicker/react";
@@ -14,20 +15,18 @@ import {
 
 export type HistoryItem = {
   id?: number;
+  status?: string;
   resultLabel?: string;
   resultClass?: number;
   confidenceLevel?: number;
   requestedAt?: string;
+  completedAt?: string;
+  /** Internal device UUID: never shown; the paired ID is device.deviceNumber. */
   deviceId?: string;
+  device?: { deviceNumber?: string } | null;
   ppgData?: number[];
   ppgResult?: { rawPpgData?: number[] };
 };
-
-class HttpError extends Error {
-  constructor(readonly status: number) {
-    super(`HTTP ${status}`);
-  }
-}
 
 export function useHistoryView() {
   const { reconnectCount } = useOnlineStatus();

@@ -2,6 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  NetworkError,
+  SessionExpiredError,
+} from "../features/auth/session/client/ApiFetch";
+import { describeFetchError } from "../components/ui/FetchError";
+import {
   fetchCurrentProfile,
   logoutAccount,
   updatePassword,
@@ -89,10 +94,11 @@ test("profile client normalizes unauthorized and malformed responses", async () 
   const malformed = await fetchCurrentProfile(async () =>
     Response.json({ code: 200 }),
   );
+  const thrown = new TypeError("offline");
   const offline = await updateProfile(
     { fullname: "User Satu" },
     async () => {
-      throw new TypeError("offline");
+      throw thrown;
     },
   );
 
@@ -108,5 +114,55 @@ test("profile client normalizes unauthorized and malformed responses", async () 
   assert.deepEqual(offline, {
     success: false,
     message: "Profil tidak dapat diperbarui.",
+    cause: thrown,
   });
+});
+
+test("an expired session (apiFetch is already redirecting) is a quiet 401", async () => {
+  const expired = async (): Promise<Response> => {
+    throw new SessionExpiredError();
+  };
+
+  assert.deepEqual(await fetchCurrentProfile(expired), {
+    success: false,
+    message: "Data profil tidak dapat dimuat.",
+    status: 401,
+  });
+  assert.deepEqual(await updateProfile({ fullname: "User Satu" }, expired), {
+    success: false,
+    message: "Profil tidak dapat diperbarui.",
+    status: 401,
+  });
+  assert.deepEqual(
+    await updatePassword(
+      { old_password: "User!123", new_password: "User!1234", confirm_password: "User!1234" },
+      expired,
+    ),
+    { success: false, message: "Kata sandi tidak dapat diperbarui.", status: 401 },
+  );
+});
+
+test("a request with no answer keeps its cause, so the reader hears about the connection", async () => {
+  const noAnswer = new NetworkError(new TypeError("Failed to fetch"));
+  const failing = async (): Promise<Response> => {
+    throw noAnswer;
+  };
+
+  for (const result of [
+    await fetchCurrentProfile(failing),
+    await updateProfile({ fullname: "User Satu" }, failing),
+    await updatePassword(
+      { old_password: "User!123", new_password: "User!1234", confirm_password: "User!1234" },
+      failing,
+    ),
+  ]) {
+    assert.equal(result.success, false);
+    if (result.success) continue;
+    assert.equal(result.cause, noAnswer);
+    assert.equal(result.status, undefined);
+    assert.equal(
+      describeFetchError({ online: true, status: result.status, error: result.cause }).title,
+      "Koneksi internet terputus",
+    );
+  }
 });

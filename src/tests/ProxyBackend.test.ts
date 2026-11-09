@@ -73,6 +73,36 @@ test("refreshes once and retries on 401", async () => {
   assert.equal(authOf(calls[1]), "Bearer new");
 });
 
+test("refreshes once and retries on 403", async () => {
+  const { calls, fetcher, cookieStore } = setup([
+    Response.json({ code: 403 }, { status: 403 }),
+    Response.json({ code: 200, data: 1 }),
+  ]);
+  const response = await proxyBackend("notification", undefined, {
+    fetcher,
+    cookieStore,
+    refresher: async () => ({ accessToken: "new" }) as never,
+  });
+  assert.equal(response.status, 200);
+  assert.equal(calls.length, 2);
+  assert.equal(authOf(calls[1]), "Bearer new");
+});
+
+test("a 403 after the retry is an expired session", async () => {
+  const { calls, fetcher, cookieStore } = setup([
+    Response.json({ code: 403 }, { status: 403 }),
+    Response.json({ code: 403 }, { status: 403 }),
+  ]);
+  const response = await proxyBackend("notification", undefined, {
+    fetcher,
+    cookieStore,
+    refresher: async () => ({ accessToken: "new" }) as never,
+  });
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), { code: 401, message: "Sesi berakhir." });
+  assert.equal(calls.length, 2);
+});
+
 test("reports an expired session when refresh fails", async () => {
   const { fetcher, cookieStore } = setup([
     Response.json({ code: 401 }, { status: 401 }),

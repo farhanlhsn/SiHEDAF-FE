@@ -26,7 +26,8 @@ export function useUpdatePassword() {
 
       try {
         const result = await updatePassword(input);
-        if (!result.success) setError(result);
+        // Expired: apiFetch is already sending the reader to /login.
+        if (!result.success && result.status !== 401) setError(result);
         return result;
       } finally {
         inFlight.current = false;

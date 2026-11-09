@@ -13,11 +13,11 @@ import { DashboardModal } from "@/components/dashboard/DashboardModal";
 import { InstallGuide } from "@/components/dashboard/InstallGuide";
 import { ProfileAvatar } from "@/components/dashboard/ProfileAvatar";
 import { TextSizeSetting } from "@/components/dashboard/TextSizeSetting";
+import { describeCaughtError } from "@/components/ui/FetchError";
 import { PulseLoader } from "@/components/ui/PulseLoader";
 import { useMyDevice } from "@/components/dashboard/hooks/UseMyDevice";
 import { useLogout } from "@/features/profile/client/hooks/UseLogout";
 import { useUpdatePassword } from "@/features/profile/client/hooks/UseUpdatePassword";
-import { SESSION_EXPIRED_PATH } from "@/features/auth/session/client/ApiFetch";
 import { useProfile } from "@/features/profile/client/ProfileProvider";
 import {
   type UpdatePasswordRequest,
@@ -86,6 +86,8 @@ export function ProfileView() {
     if (!result) return;
 
     if (!result.success) {
+      // Expired: apiFetch is already sending the reader to /login.
+      if (result.status === 401) return;
       for (const [field, messages] of Object.entries(
         result.fieldErrors ?? {},
       )) {
@@ -94,11 +96,13 @@ export function ProfileView() {
           type: "server",
         });
       }
-      if (result.status === 401) {
-        router.replace(SESSION_EXPIRED_PATH);
-        return;
+      if (result.cause === undefined) {
+        toast.error(result.message);
+      } else {
+        // No answer at all says "Koneksi internet terputus".
+        const failure = describeCaughtError(result.cause, result.status);
+        toast.error(failure.title, { description: failure.message });
       }
-      toast.error(result.message);
       return;
     }
 

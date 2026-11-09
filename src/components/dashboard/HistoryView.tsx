@@ -7,10 +7,18 @@ import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   formatConfidence,
   formatWib,
-  resultStatus,
   splitShares,
 } from "@/components/dashboard/DashboardFormat";
+import {
+  classifyResult,
+  isAlertKind,
+  RESULT_COPY,
+} from "@/components/dashboard/ResultKind";
 import { HistoryDetailModal } from "@/components/dashboard/HistoryDetailModal";
+import {
+  dateFilterNote,
+  SUMMARY_COMPUTED_NOTE,
+} from "@/components/dashboard/HistoryNotes";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { Sparkline } from "@/components/dashboard/Sparkline";
 import { StatusMark } from "@/components/dashboard/StatusMark";
@@ -53,6 +61,9 @@ export function HistoryView() {
     setCurrentPage(1);
   }
 
+  const filterNote = dateRange?.from
+    ? dateFilterNote(-dateRange.from.getTimezoneOffset())
+    : null;
   const [total, afCount, normalCount] = summaries.map(
     (summary) => summary.value,
   );
@@ -81,8 +92,22 @@ export function HistoryView() {
             </Link>
           </div>
         </div>
+        {filterNote ? (
+          <p className="mt-3 max-w-[640px] text-[0.875rem] leading-[1.5] text-primary-900/80">
+            {filterNote}
+          </p>
+        ) : null}
 
-        <div className="mt-10 grid grid-cols-3 border-y border-primary-900/10 py-6 sm:py-8">
+        <h2 className="mt-10 text-[1.0625rem] font-bold text-primary-900">
+          Ringkasan sepanjang waktu
+        </h2>
+        {dateRange?.from ? (
+          <p className="mt-1 text-[0.875rem] text-primary-900/80">
+            Ringkasan mencakup seluruh riwayat, bukan hanya rentang tanggal yang dipilih.
+          </p>
+        ) : null}
+
+        <div className="mt-4 grid grid-cols-3 border-y border-primary-900/10 py-6 sm:py-8">
           {summaries.map((summary, index) => (
             <div
               className="border-l border-primary-900/10 px-3 first:border-l-0 first:pl-0 sm:px-8"
@@ -105,6 +130,10 @@ export function HistoryView() {
             </div>
           ))}
         </div>
+
+        <p className="mt-3 max-w-[640px] text-[0.875rem] leading-[1.5] text-primary-900/80">
+          {SUMMARY_COMPUTED_NOTE}
+        </p>
 
         <figure className="mt-6">
           <div
@@ -186,9 +215,11 @@ export function HistoryView() {
                   </tr>
                 ) : (
                   historyData.map((row) => {
-                    const result = resultStatus(row.resultLabel);
-                    const isUnknown = result === "unknown";
+                    const result = classifyResult(row);
+                    const copy = RESULT_COPY[result];
+                    const isAlert = isAlertKind(result);
                     const isNormal = result === "normal";
+                    const isNeutral = !isAlert && !isNormal;
                     const dateLabel = formatWib(row.requestedAt, "date");
                     const timeLabel = formatWib(row.requestedAt, "time");
 
@@ -222,8 +253,9 @@ export function HistoryView() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
-                            {isUnknown ? null : (
+                            {isNeutral ? null : (
                               <StatusMark
+                                label={copy.label}
                                 size="small"
                                 status={isNormal ? "normal" : "af"}
                               />
@@ -231,24 +263,22 @@ export function HistoryView() {
                             <div>
                               <p
                                 className={`text-[0.9375rem] font-semibold ${
-                                  isUnknown
+                                  isNeutral
                                     ? "text-primary-900/70"
                                     : isNormal
                                       ? "text-primary-500"
                                       : "text-af-700"
                                 }`}
                               >
-                                {isUnknown
-                                  ? "Belum ada hasil"
-                                  : isNormal
-                                    ? "Normal Rhythm"
-                                    : "Terdeteksi AF"}
+                                {copy.label}
                               </p>
-                              {isUnknown ? null : (
+                              {isNeutral ? null : (
                                 <p className="mt-0.5 text-[0.875rem] text-primary-900/75">
                                   {isNormal
-                                    ? "Tidak ditemukan pola AF"
-                                    : "Pola AF teridentifikasi"}
+                                    ? "Tidak ditemukan pola AF atau AFL"
+                                    : result === "flutter"
+                                      ? "Pola AFL teridentifikasi"
+                                      : "Pola AF teridentifikasi"}
                                 </p>
                               )}
                             </div>
@@ -260,7 +290,7 @@ export function HistoryView() {
                         <td className="px-6 py-3">
                           <Sparkline
                             data={row.ppgResult?.rawPpgData}
-                            tone={isNormal || isUnknown ? "blue" : "pink"}
+                            tone={isAlert ? "pink" : "blue"}
                           />
                         </td>
                       </tr>

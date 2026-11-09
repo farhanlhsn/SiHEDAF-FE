@@ -11,6 +11,7 @@ import {
 import {
   describeCaughtError,
   type DataError,
+  HttpError,
 } from "@/components/ui/FetchError";
 import { useOnlineStatus } from "@/components/ui/hooks/UseOnlineStatus";
 import { useMyDevice } from "@/components/dashboard/hooks/UseMyDevice";
@@ -28,12 +29,6 @@ import {
   type ReportRange,
 } from "@/components/dashboard/ReportRange";
 import { useProfile } from "@/features/profile/client/ProfileProvider";
-
-class HttpError extends Error {
-  constructor(readonly status?: number) {
-    super("Gagal mengambil riwayat.");
-  }
-}
 
 type InitialParams = { from?: string | string[]; to?: string | string[] };
 
@@ -53,11 +48,6 @@ const fetchHistoryPage: FetchHistoryPage = async (page, pageSize, range) => {
   return {
     items,
     totalPages: json.data.metadata?.totalPages ?? 1,
-    summary: {
-      totalData: json.data.summary?.totalData ?? 0,
-      totalAfib: json.data.summary?.totalAfib ?? 0,
-      totalNormal: json.data.summary?.totalNormal ?? 0,
-    },
   };
 };
 
